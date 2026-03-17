@@ -3,12 +3,6 @@
     "name": "InputSystem_Actions",
     "maps": [
         {
-            "name": "Player",
-            "id": "df70fa95-8a34-4494-b137-73ab6b9c7d37",
-            "actions": [],
-            "bindings": []
-        },
-        {
             "name": "UI",
             "id": "272f6d14-89ba-496f-b7ff-215263d3219f",
             "actions": [
@@ -464,7 +458,7 @@
                     "name": "",
                     "id": "24066f69-da47-44f3-a07e-0015fb02eb2e",
                     "path": "<Mouse>/middleButton",
-                    "interactions": "",
+                    "interactions": "Hold(duration=0.2,pressPoint=0.1)",
                     "processors": "",
                     "groups": "Keyboard&Mouse",
                     "action": "MiddleClick",
