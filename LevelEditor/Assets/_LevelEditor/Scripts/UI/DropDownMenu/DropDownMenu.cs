@@ -22,7 +22,11 @@ public class DropDownMenu : MonoBehaviour
                 menuRect,
                 mousePos);
 
-            if (!clickedMenu)
+            bool clickedButton = RectTransformUtility.RectangleContainsScreenPoint(
+                buttonRect,
+                mousePos);
+
+            if (!clickedMenu && !clickedButton)
             {
                 menuPanel.SetActive(false);
             }
