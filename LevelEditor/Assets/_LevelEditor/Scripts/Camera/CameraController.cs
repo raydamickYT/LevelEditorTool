@@ -14,6 +14,7 @@ public class CameraController : MonoBehaviour
         cam = GetComponent<Camera>();
 
         EventManager.Instance.AddDelegateListener("OnMiddleMouseButton", (Action<InputAction.CallbackContext>)OnMoveCamera);
+        EventManager.Instance.AddDelegateListener("OnScrollWheel", (Action<InputAction.CallbackContext>)OnCameraZoom);
     }
     void Update()
     {
@@ -25,7 +26,7 @@ public class CameraController : MonoBehaviour
         Vector3 delta = lastMouseWorldPos - currentMouseWorldPos;
 
         transform.position += delta;
-        
+
         lastMouseWorldPos = GetMouseWorldPosition();
     }
     private Vector3 GetMouseWorldPosition()
@@ -43,5 +44,16 @@ public class CameraController : MonoBehaviour
             lastMouseWorldPos = GetMouseWorldPosition();
         }
         if (context.canceled) isPanning = false;
+    }
+
+    private void OnCameraZoom(InputAction.CallbackContext context)
+    {
+        if (isPanning) return; //to prevent zooming while panning
+
+        float scrollValue = context.ReadValue<Vector2>().y;
+        cam.orthographicSize -= scrollValue * 0.5f;
+        cam.orthographicSize = Mathf.Clamp(cam.orthographicSize, 2f, 20f);
+
+        EventManager.Instance.TriggerUnityEvent("OnCameraZoom");
     }
 }

@@ -29,6 +29,7 @@ public class InputHandler : MonoBehaviour, InputSystem_Actions.IUIActions
         {
             Instance = null;
         }
+        EventManager.Instance.RemoveAllListeners();
     }
 
 
@@ -65,6 +66,7 @@ public class InputHandler : MonoBehaviour, InputSystem_Actions.IUIActions
     public void OnScrollWheel(InputAction.CallbackContext context)
     {
         // throw new System.NotImplementedException();
+        EventManager.Instance.TriggerDelegate("OnScrollWheel", context);
     }
 
     public void OnSubmit(InputAction.CallbackContext context)

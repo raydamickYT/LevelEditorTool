@@ -4,57 +4,33 @@ using UnityEngine.InputSystem;
 
 public class BackgroundGridController : MonoBehaviour
 {
-    public GameObject BackgroundGridParent;
-    public GameObject BackgroundGrid; //prefab of the grid
-    public Camera TargetCam;
-    private bool isPanning;
-    private Vector3 lastMouseWorldPos;
+    [Tooltip("Extra margin to ensure the grid covers the entire view")]
+    public float EdgeMargin = 2f;
+    private Camera cam;
+    private bool gridNeedsResize;
 
     // Start is called once before the first execution of Update after the MonoBehaviour is created
-    void Start()
+    void Awake()
     {
-        if(BackgroundGrid == null)
+        cam = Camera.main;
+        if(cam == null)
         {
-            Debug.LogError($"BackgroundGrid is not assigned in the inspector for {gameObject.name}.");
+            Debug.LogError("Main Camera not found. Please ensure there is a camera in the scene tagged as 'MainCamera'.");
         }
-        if(TargetCam == null)
-        {
-            Debug.LogError($"TargetCam is not assigned in the inspector for {gameObject.name}.");
-            return;
-        }
-
-        EventManager.Instance.AddDelegateListener("OnMiddleMouseButton", (Action<InputAction.CallbackContext>)OnMoveCamera);
+        EventManager.Instance.AddUnityEventListener("OnCameraZoom", () => gridNeedsResize = true);
     }
 
     // Update is called once per frame
-    void Update()
+    void LateUpdate()
     {
-        if (Mouse.current == null) return;
+        if(!gridNeedsResize) return;
 
-        if (!isPanning) return;
+        var viewHeight = 2 * cam.orthographicSize + EdgeMargin;
+        var viewWidth = viewHeight * cam.aspect;
+        Vector3 newScale = new Vector3(viewWidth, viewHeight, 1);
 
-        Vector3 currentMouseWorldPos = GetMouseWorldPosition();
-        Vector3 delta = lastMouseWorldPos - currentMouseWorldPos;
+        gameObject.transform.localScale = newScale;
 
-        BackgroundGrid.transform.position += delta;
-        lastMouseWorldPos = GetMouseWorldPosition();
-    }
-
-    private Vector3 GetMouseWorldPosition()
-    {
-        Vector2 mouseScreenPos = Mouse.current.position.ReadValue();
-        Vector3 worldPos = TargetCam.ScreenToWorldPoint(new Vector3(mouseScreenPos.x, mouseScreenPos.y, TargetCam.nearClipPlane));
-        worldPos.z = 0f;
-        return worldPos;
-    }
-
-    public void OnMoveCamera(InputAction.CallbackContext context)
-    {
-        if (context.started)
-        {
-            isPanning = true;
-            lastMouseWorldPos = GetMouseWorldPosition();
-        }
-        if (context.canceled) isPanning = false;
+        gridNeedsResize = false;
     }
 }
