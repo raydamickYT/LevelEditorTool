@@ -5,15 +5,19 @@ Shader "Custom/GridFragmentShader"
         [MainColor] _BaseColor("Base Color", Color) = (1, 1, 1, 1)
         [MainTexture] _BaseMap("Base Map", 2D) = "white" {}
          _CellSize("CellSize", Float) = 1
+         _lineWidth("LineWidth", Float) = 0.5
     }
 
     SubShader
     {
-        Tags { "RenderType" = "Opaque" "RenderPipeline" = "UniversalPipeline" }
+        Tags { "Queue"="Transparent" "RenderType" = "Transparent" "RenderPipeline" = "UniversalPipeline" }
 
         Pass
         {
+            ZWrite Off
+            Blend SrcAlpha OneMinusSrcAlpha
             HLSLPROGRAM
+            
 
             #pragma vertex vert
             #pragma fragment frag
@@ -39,6 +43,7 @@ Shader "Custom/GridFragmentShader"
             CBUFFER_START(UnityPerMaterial)
                 half4 _BaseColor;
                 float _CellSize;
+                float _lineWidth;
                 float4 _BaseMap_ST;
             CBUFFER_END
 
@@ -54,7 +59,21 @@ Shader "Custom/GridFragmentShader"
             half4 frag(Varyings IN) : SV_Target
             {
                 // half4 color = SAMPLE_TEXTURE2D(_BaseMap, sampler_BaseMap, IN.uv) * _BaseColor;
-                half4 color = half4(frac(IN.positionWS.y / _CellSize), frac(IN.positionWS.x / _CellSize), 0, 1);
+                float p1 = frac(IN.positionWS.y / _CellSize);
+                float p2 = 1 - p1;
+                float distY = min(p1, p2);
+                float lineY = step(distY, _lineWidth);
+                
+                float p3 = frac(IN.positionWS.x / _CellSize);
+                float p4 = 1 - p3;
+                float distX = min(p3, p4);
+                float lineX = step(distX, _lineWidth);
+                
+                float gridMask = max(lineX, lineY);
+
+
+                half4 color = half4(_BaseColor.r, _BaseColor.g, _BaseColor.b, _BaseColor.a * gridMask);
+
                 return color;
             }
             ENDHLSL
