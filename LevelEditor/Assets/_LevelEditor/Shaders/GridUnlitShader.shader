@@ -62,12 +62,14 @@ Shader "Custom/GridFragmentShader"
                 float p1 = frac(IN.positionWS.y / _CellSize);
                 float p2 = 1 - p1;
                 float distY = min(p1, p2);
-                float lineY = step(distY, _lineWidth);
+                float aaY = fwidth(distY);
+                float lineY = 1- smoothstep((_lineWidth - aaY), (_lineWidth + aaY), distY);
                 
                 float p3 = frac(IN.positionWS.x / _CellSize);
                 float p4 = 1 - p3;
                 float distX = min(p3, p4);
-                float lineX = step(distX, _lineWidth);
+                float aaX = fwidth(distX);
+                float lineX = 1 - smoothstep((_lineWidth - aaX), (_lineWidth + aaX), distX);
                 
                 float gridMask = max(lineX, lineY);
 
