@@ -5,27 +5,18 @@ using UnityEngine.InputSystem;
 
 public static class RaycastHelper
 {
-    public static bool IsPointerOverLayer(LayerMask layerMask)
+    public static bool TryGetPointerHit2D(Camera camera, LayerMask layerMask, out RaycastHit2D hitInfo, float maxDistance = Mathf.Infinity)
     {
-        if (EventSystem.current == null || Mouse.current == null)
+        hitInfo = default;
+
+        if (camera == null || Mouse.current == null)
             return false;
 
-        PointerEventData pointerData = new PointerEventData(EventSystem.current)
-        {
-            position = Mouse.current.position.ReadValue()
-        };
 
-        List<RaycastResult> results = new List<RaycastResult>();
-        EventSystem.current.RaycastAll(pointerData, results);
+        Vector2 mousePosition = Mouse.current.position.ReadValue();
+        Vector3 worldPosition = camera.ScreenToWorldPoint(mousePosition);
 
-        foreach (RaycastResult result in results)
-        {
-            int hitLayer = result.gameObject.layer;
-
-            if (((1 << hitLayer) & layerMask.value) != 0)
-                return true;
-        }
-
-        return false;
+        hitInfo = Physics2D.Raycast(worldPosition, Vector2.zero, maxDistance, layerMask);
+        return hitInfo.collider != null;
     }
 }
