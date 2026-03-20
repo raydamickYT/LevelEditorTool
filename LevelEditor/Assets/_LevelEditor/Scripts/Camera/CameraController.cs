@@ -1,5 +1,6 @@
 using System;
 using UnityEngine;
+using UnityEngine.EventSystems;
 using UnityEngine.InputSystem;
 
 public class CameraController : MonoBehaviour
@@ -7,6 +8,7 @@ public class CameraController : MonoBehaviour
     public Camera cam;
     public bool isPanning;
     private Vector3 lastMouseWorldPos;
+    [SerializeField] private LayerMask targetLayer;
 
     // Start is called once before the first execution of Update after the MonoBehaviour is created
     void Start()
@@ -48,7 +50,9 @@ public class CameraController : MonoBehaviour
 
     private void OnCameraZoom(InputAction.CallbackContext context)
     {
+        if(!context.performed) return; //to prevent zooming when scroll wheel is not used
         if (isPanning) return; //to prevent zooming while panning
+        if(UIHelper.IsPointerOverUI()) return; //to prevent zooming when pointer is over UI
 
         float scrollValue = context.ReadValue<Vector2>().y;
         cam.orthographicSize -= scrollValue * 0.5f;
