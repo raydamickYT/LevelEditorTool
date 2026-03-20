@@ -19,4 +19,9 @@ public static class RaycastHelper
         hitInfo = Physics2D.Raycast(worldPosition, Vector2.zero, maxDistance, layerMask);
         return hitInfo.collider != null;
     }
+
+    public static bool IsClickingOnLayer(Camera camera, LayerMask layerMask, float maxDistance = Mathf.Infinity)
+    {
+        return TryGetPointerHit2D(camera, layerMask, out _, maxDistance);
+    }
 }

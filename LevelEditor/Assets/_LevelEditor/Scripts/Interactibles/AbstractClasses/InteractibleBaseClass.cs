@@ -22,5 +22,8 @@ public class InteractibleBaseClass : MonoBehaviour, ISelectable
         Debug.Log($"{gameObject.name} has been selected.");
     }
 
-
+    public virtual void OnDeselect()
+    {
+        // throw new System.NotImplementedException();
+    }
 }
