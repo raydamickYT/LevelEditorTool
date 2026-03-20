@@ -58,7 +58,6 @@ Shader "Custom/GridFragmentShader"
 
             half4 frag(Varyings IN) : SV_Target
             {
-                // half4 color = SAMPLE_TEXTURE2D(_BaseMap, sampler_BaseMap, IN.uv) * _BaseColor;
                 float p1 = frac(IN.positionWS.y / _CellSize);
                 float p2 = 1 - p1;
                 float distY = min(p1, p2);

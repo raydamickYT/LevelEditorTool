@@ -250,7 +250,7 @@ MonoBehaviour:
   m_Content: {fileID: 486586259}
   m_Horizontal: 1
   m_Vertical: 1
-  m_MovementType: 2
+  m_MovementType: 1
   m_Elasticity: 0.1
   m_Inertia: 1
   m_DecelerationRate: 0.135
@@ -1310,7 +1310,7 @@ GameObject:
   - component: {fileID: 871594555}
   - component: {fileID: 871594554}
   m_Layer: 5
-  m_Name: ObjectMenu
+  m_Name: Canvas
   m_TagString: Untagged
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
@@ -1814,7 +1814,19 @@ MonoBehaviour:
   m_TargetGraphic: {fileID: 1453942608}
   m_OnClick:
     m_PersistentCalls:
-      m_Calls: []
+      m_Calls:
+      - m_Target: {fileID: 1453942611}
+        m_TargetAssemblyTypeName: ObjectButtonController, Assembly-CSharp
+        m_MethodName: OnButtonPress
+        m_Mode: 1
+        m_Arguments:
+          m_ObjectArgument: {fileID: 0}
+          m_ObjectArgumentAssemblyTypeName: UnityEngine.Object, UnityEngine
+          m_IntArgument: 0
+          m_FloatArgument: 0
+          m_StringArgument: 
+          m_BoolArgument: 0
+        m_CallState: 2
 --- !u!114 &1453942611
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -1828,7 +1840,6 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::ObjectButtonController
   ObjectToSpawn: {fileID: 8104007950616682118, guid: 31605b0f92ce23f42b2bb1bae105a082, type: 3}
-  parentCanvas: {fileID: 0}
 --- !u!1 &1461409535
 GameObject:
   m_ObjectHideFlags: 0
