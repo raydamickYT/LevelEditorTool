@@ -1,4 +1,5 @@
 using System;
+using Unity.VisualScripting;
 using UnityEngine;
 using UnityEngine.EventSystems;
 using UnityEngine.InputSystem;
@@ -14,9 +15,9 @@ public class CameraController : MonoBehaviour
     void Start()
     {
         cam = GetComponent<Camera>();
+        InputHandler.Instance.onMiddleMouseButtonEvent += OnMoveCamera;
+        InputHandler.Instance.onScrollWheelEvent += OnCameraZoom;
 
-        EventManager.Instance.AddDelegateListener("OnMiddleMouseButton", (Action<InputAction.CallbackContext>)OnMoveCamera);
-        EventManager.Instance.AddDelegateListener("OnScrollWheel", (Action<InputAction.CallbackContext>)OnCameraZoom);
     }
     void Update()
     {

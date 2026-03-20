@@ -1,3 +1,4 @@
+using System;
 using UnityEngine;
 using UnityEngine.InputSystem;
 
@@ -18,9 +19,9 @@ public class InputHandler : MonoBehaviour, InputSystem_Actions.IUIActions
 
         Instance = this;
         inputCommands = new InputCommands();
-        
+
         inputActions = new InputSystem_Actions();
-        inputActions.UI.SetCallbacks(this); 
+        inputActions.UI.SetCallbacks(this);
         inputActions.UI.Enable();
     }
     void OnDestroy()
@@ -32,45 +33,35 @@ public class InputHandler : MonoBehaviour, InputSystem_Actions.IUIActions
         EventManager.Instance.RemoveAllListeners();
     }
 
-
+    public event Action<InputAction.CallbackContext> OnCancelEvent;
     public void OnCancel(InputAction.CallbackContext context)
-    {
-        // throw new System.NotImplementedException();
-    }
+        => OnCancelEvent?.Invoke(context);
 
+    public event Action<InputAction.CallbackContext> OnLeftMouseButtonEvent;
     public void OnClick(InputAction.CallbackContext context)
-    {
-        // throw new System.NotImplementedException();
-    }
+        => OnLeftMouseButtonEvent?.Invoke(context);
 
+    public event Action<InputAction.CallbackContext> onMiddleMouseButtonEvent;
     public void OnMiddleClick(InputAction.CallbackContext context)
-    {
-        EventManager.Instance.TriggerDelegate("OnMiddleMouseButton", context);
-    }
+        => onMiddleMouseButtonEvent?.Invoke(context);
 
+    public event Action<InputAction.CallbackContext> onRightMouseButtonEvent;
     public void OnNavigate(InputAction.CallbackContext context)
-    {
-        // throw new System.NotImplementedException();
-    }
+        => onRightMouseButtonEvent?.Invoke(context);
 
+    public event Action<InputAction.CallbackContext> onPointEvent;
     public void OnPoint(InputAction.CallbackContext context)
-    {
-        // throw new System.NotImplementedException();
-    }
+        => onPointEvent?.Invoke(context);
 
+    public event Action<InputAction.CallbackContext> onRightClickEvent;
     public void OnRightClick(InputAction.CallbackContext context)
-    {
-        // throw new System.NotImplementedException();
-    }
+        => onRightClickEvent?.Invoke(context);
 
+    public event Action<InputAction.CallbackContext> onScrollWheelEvent;
     public void OnScrollWheel(InputAction.CallbackContext context)
-    {
-        // throw new System.NotImplementedException();
-        EventManager.Instance.TriggerDelegate("OnScrollWheel", context);
-    }
+        => onScrollWheelEvent?.Invoke(context);
 
+    public event Action<InputAction.CallbackContext> onSubmitEvent;
     public void OnSubmit(InputAction.CallbackContext context)
-    {
-        // throw new System.NotImplementedException();
-    }
+        => onSubmitEvent?.Invoke(context);
 }
