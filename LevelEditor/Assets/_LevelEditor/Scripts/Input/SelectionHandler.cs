@@ -1,9 +1,11 @@
+using UnityEditor;
 using UnityEngine;
 using UnityEngine.InputSystem;
 
 public class SelectionHandler : MonoBehaviour
 {
     public Camera cam;
+    private selectionController selectionController;
 
     void Awake()
     {
@@ -12,31 +14,36 @@ public class SelectionHandler : MonoBehaviour
         {
             Debug.LogWarning($"No cam found on {gameObject.name} ");
         }
+
+        selectionController = new selectionController(cam);
     }
+
     // Start is called once before the first execution of Update after the MonoBehaviour is created
     void Start()
     {
         InputHandler.Instance.OnLeftMouseButtonEvent += OnLeftMouseButtonEvent;
     }
 
-    // Update is called once per frame
-    void Update()
-    {
-
-    }
-
     void OnLeftMouseButtonEvent(InputAction.CallbackContext context)
     {
         if (context.performed)
         {
-            HandleLeftClick();
+            selectionController.HandleLeftClick();
         }
     }
+}
 
+public class selectionController
+{
+    public Camera cam;
 
-    //TODO: dit moet verder afgemaakt worden als de andere classes zo ver zijn.
-    //ik heb de selectrion controller een normale class gemaakt zodat de meeste logica daar uitgevoerd kan worden.
-    void HandleLeftClick()
+    public selectionController(Camera cam)
+    {
+        this.cam = cam;
+    }
+
+    //ik heb de selection controller een normale class gemaakt zodat de meeste logica daar uitgevoerd kan worden.
+    public void HandleLeftClick()
     {
         RaycastHit2D hit;
         if (RaycastHelper.TryGetPointerHit2D(cam, LayerMask.GetMask("Selectable"), out hit))
@@ -44,10 +51,9 @@ public class SelectionHandler : MonoBehaviour
             EventManager.Instance.TriggerDelegate("OnObjectSelected", hit.collider.gameObject);
             return;
         }
-        else
+        else if (!UIHelper.IsPointerOverUI())
         {
             EventManager.Instance.TriggerUnityEvent("OnObjectDeselected");
         }
     }
-
 }

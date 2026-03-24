@@ -23,130 +23,80 @@ using UnityEngine;
 /// 
 /// verdere updates: multi mode single mode, group pivot, shared gizmo behaviour, ect.
 /// </summary>
-public class GizmoController : MonoBehaviour
+public class GizmoController
 {
-    private GizmoType currentGizmoType;
+    private GizmoType currentGizmoType = GizmoType.move;
     private GizmoTargetData currentTarget;
     private List<GizmoTargetData> currentTargetList = new List<GizmoTargetData>(); //for future use when multi select is implemented, for now it only holds 1 target data, but it can be easily expanded to hold multiple target data when multi select is implemented.
     private Dictionary<GameObject, GizmoTargetData> targetGizmoDictionary = new();
 
-
-    void Awake()
+    public void Register(GameObject rootObject, GizmoTargetData data)
     {
-        currentGizmoType = GizmoType.move;
-
-
-
-        EventManager.Instance.AddDelegateListener("OnGizmoTypeChanged", (Action<GizmoType>)OnChangeGizmoType);
-        EventManager.Instance.AddDelegateListener("OnRegisterToGizmoController", (Action<GameObject, GizmoTargetData>)RegisterToDict);
-        EventManager.Instance.AddDelegateListener("OnDeRegisterToGizmoController", (Action<GameObject>)DeRegisterFromDict);
-
-
-
-        EventManager.Instance.AddDelegateListener("OnObjectSelected", (Action<GameObject>)OnObjectSelected);
-        EventManager.Instance.AddUnityEventListener("OnObjectDeselected", OnObjectDeselected);
+        targetGizmoDictionary[rootObject] = data;
     }
 
-    public void AddSelectedTarget(GizmoTargetData _target)
+    public void Deregister(GameObject rootObject)
     {
-        currentTarget = _target;
-        currentTargetList.Add(_target);
+        targetGizmoDictionary.Remove(rootObject);
     }
 
-    //TODO kijken waar ik deze call. ik denk bij "ondeselect"
-    public void RemoveSelectedTarget()
+    public void TrySelect(GameObject selectedObject)
     {
-        currentTarget = null;
-        currentTargetList.Clear();
-    }
-
-    private void RegisterToDict(GameObject gizmoBaseObject, GizmoTargetData targetData)
-    {
-        if (targetGizmoDictionary.ContainsKey(gizmoBaseObject)) //if the gizmo type already exists in the dictionary, update the target data
-        {
-            targetGizmoDictionary[gizmoBaseObject] = targetData;
-        }
-        else //if the gizmo type doesn't exist in the dictionary, add it to the dictionary
-        {
-            targetGizmoDictionary.Add(gizmoBaseObject, targetData);
-        }
-    }
-
-    private void DeRegisterFromDict(GameObject gizmoBaseObject)
-    {
-        if (targetGizmoDictionary.ContainsKey(gizmoBaseObject)) //if the gizmo type already exists in the dictionary, update the target data
-        {
-            targetGizmoDictionary.Remove(gizmoBaseObject);
-        }
-    }
-
-    private void OnObjectSelected(GameObject selectedObject)
-    {
-        Debug.Log("object registered");
         if (!targetGizmoDictionary.ContainsKey(selectedObject)) return;
 
 
-        if (selectedObject.GetComponentInChildren<GizmoObject>() is GizmoObject gizmoObject)
+        if (targetGizmoDictionary.TryGetValue(selectedObject, out GizmoTargetData gizmoObject)) //note to self: if you notice you use this more often than once, try making a helper
         {
-            if (currentTarget != gizmoObject.gizmoTargetData)
-                OnTargetSelected(gizmoObject.gameObject, gizmoObject.gizmoTargetData);
+            if (currentTarget != gizmoObject)
+            {
+                if (currentTarget != null)
+                    ClearSelection();
+                OnTargetSelected(gizmoObject);
+            }
         }
     }
 
-    private void OnObjectDeselected()
-    {
-        if (currentTarget == null) return;
-        OnTargetDeselected();
-    }
-
     //this'll be the start of showing the gizmo, if the object is updated to "selected" the show function will be called
-    private void OnTargetSelected(GameObject gizmoBaseObject, GizmoTargetData targetData)
+    private void OnTargetSelected(GizmoTargetData targetData)
     {
         if (targetData.SelectableComponent == null)
         {
             Debug.LogWarning($"Object is missing selectable component {targetData.BaseObject.name}");
             return;
         }
+        currentTarget = targetData;
+        currentTargetList.Add(targetData);
 
-        targetData.SelectableComponent.OnSelect();
-        if (currentTargetList.Count > 0)
-        {
-            foreach (GizmoTargetData gizmoObject in currentTargetList)
-            {
-                gizmoObject.SelectableComponent.OnSelect();
-            }
-        }
+        //future: add multi selection logic
 
-        targetData.SelectableComponent.OnShow(currentGizmoType);
+        currentTarget.SelectableComponent.OnSelect();
+        currentTarget.SelectableComponent.OnShow(currentGizmoType);
 
-        AddSelectedTarget(targetData); //make sure to save the target data to the controller, so it can be used in the show and hide functions
     }
 
-    private void OnTargetDeselected()
+    public void ClearSelection()
     {
-        Debug.Log("deselecting target");
-        if (currentTargetList.Count > 0)
-        {
-            foreach (GizmoTargetData gizmoObject in currentTargetList)
-            {
-                gizmoObject.SelectableComponent.OnDeselect();
-            }
-        }
+        if (currentTarget == null) return;
+
+        //future: add multi selection logic
 
         currentTarget.SelectableComponent.OnDeselect(); //single target
         currentTarget.SelectableComponent.OnHide();
 
-        RemoveSelectedTarget();
+        currentTarget = null;
+        currentTargetList.Clear();
     }
 
     //deze functie mag alleen beheren of/welke gizmo aan staat, en welke uit staat. dus eigenlijk een combinatie van show en hide.
-    public void OnChangeGizmoType(GizmoType newgizmoType)
+    public void SetGizmoType(GizmoType newgizmoType)
     {
         if (currentGizmoType == newgizmoType) //if the gizmo type is the same as the current gizmo type, do nothing
             return;
 
         currentTarget.SelectableComponent.OnHide();
-        currentTarget.SelectableComponent.OnShow(newgizmoType);
+
+        currentGizmoType = newgizmoType;
+        currentTarget.SelectableComponent.OnShow(currentGizmoType);
     }
 
     public void UpdatePosition()

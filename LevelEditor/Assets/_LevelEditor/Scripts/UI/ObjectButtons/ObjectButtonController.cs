@@ -81,6 +81,7 @@ public class ObjectButtonController : MonoBehaviour, IBeginDragHandler, IEndDrag
         rect.sizeDelta = new Vector2(64, 64);
         rect.position = eventData.position;
     }
+    
     //helper function to remove the preview object.
     void RemoveSpawnedPreview()
     {
