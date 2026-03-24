@@ -1,6 +1,6 @@
 using UnityEngine;
 
-public class GizmoObject : MonoBehaviour, ISelectable
+public class GizmoObject : MonoBehaviour, IGizmoObject
 {
     public GizmoTargetData gizmoTargetData;
 
@@ -16,27 +16,64 @@ public class GizmoObject : MonoBehaviour, ISelectable
             Debug.LogError("GizmoTargetData is not assigned in the inspector for " + this.gameObject.name); //TODO this can be found in the children of this gameobj, so update it so that it searches first
             return;
         }
-        EventManager.Instance.TriggerDelegate("OnGizmoTargetUpdated", this.gameObject, gizmoTargetData);
+        EventManager.Instance.TriggerDelegate("OnRegisterToGizmoController", gizmoTargetData.BaseObject, gizmoTargetData);
     }
 
-    public void OnSelected()
+    void OnDestroy()
     {
-
-        // EventManager.Instance.TriggerDelegate("OnGizmoTargetUpdated", this.gameObject, gizmoTargetData);
+        EventManager.Instance.TriggerDelegate("OnDeRegisterToGizmoController", gizmoTargetData.BaseObject);
     }
 
-    public void OnDeselected()
+
+    //this'll be called anytime the gizmo changes or is activated
+    public void OnShow(GizmoType gizmoType)
     {
-        if (gizmoTargetData == null)
+        switch (gizmoType)
         {
-            return;
+            case GizmoType.none:
+                OnHide();
+                break;
+            case GizmoType.move:
+                gizmoTargetData.MoveGizmo.SetActive(true);
+                break;
+            case GizmoType.rotate:
+                gizmoTargetData.RotateGizmo.SetActive(true);
+                break;
+            case GizmoType.scale:
+                gizmoTargetData.ScaleGizmo.SetActive(true);
+                break;
+            default:
+                break;
         }
-        gizmoTargetData.IsSelected = false;
-        // EventManager.Instance.TriggerDelegate("OnGizmoTargetUpdated", this.gameObject, gizmoTargetData);
+
+        gizmoTargetData.type = gizmoType;
+    }
+
+    //deze functie mag alleen beheren of/welke gizmo uit staat.
+    // This function should be allowed to be 
+    public void OnHide()
+    {
+        switch (gizmoTargetData.type)
+        {
+            case GizmoType.none:
+                break;
+            case GizmoType.move:
+                gizmoTargetData.MoveGizmo.SetActive(false);
+                break;
+            case GizmoType.rotate:
+                gizmoTargetData.RotateGizmo.SetActive(false);
+                break;
+            case GizmoType.scale:
+                gizmoTargetData.ScaleGizmo.SetActive(false);
+                break;
+            default:
+                break;
+        }
     }
 
     public void OnSelect()
     {
+        Debug.Log("this object was selected");
         if (gizmoTargetData == null)
         {
             return;
@@ -46,6 +83,11 @@ public class GizmoObject : MonoBehaviour, ISelectable
 
     public void OnDeselect()
     {
-        throw new System.NotImplementedException();
+        if (gizmoTargetData == null)
+        {
+            return;
+        }
+        gizmoTargetData.IsSelected = false;
     }
+
 }

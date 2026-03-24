@@ -38,15 +38,15 @@ public class SelectionHandler : MonoBehaviour
     //ik heb de selectrion controller een normale class gemaakt zodat de meeste logica daar uitgevoerd kan worden.
     void HandleLeftClick()
     {
-        if (RaycastHelper.TryGetPointerHit2D(cam, LayerMask.GetMask("Selectable"), out RaycastHit2D hit))
+        RaycastHit2D hit;
+        if (RaycastHelper.TryGetPointerHit2D(cam, LayerMask.GetMask("Selectable"), out hit))
         {
-            Debug.Log("hit: " + hit.collider.gameObject.name);  
             EventManager.Instance.TriggerDelegate("OnObjectSelected", hit.collider.gameObject);
+            return;
         }
-
-        if (RaycastHelper.IsClickingOnLayer(cam, LayerMask.GetMask("Selectable")))
+        else
         {
-
+            EventManager.Instance.TriggerUnityEvent("OnObjectDeselected");
         }
     }
 

@@ -39,7 +39,9 @@ public class InputHandler : MonoBehaviour, InputSystem_Actions.IUIActions
 
     public event Action<InputAction.CallbackContext> OnLeftMouseButtonEvent;
     public void OnClick(InputAction.CallbackContext context)
-        => OnLeftMouseButtonEvent?.Invoke(context);
+    {
+        OnLeftMouseButtonEvent?.Invoke(context);
+    }
 
     public event Action<InputAction.CallbackContext> onMiddleMouseButtonEvent;
     public void OnMiddleClick(InputAction.CallbackContext context)
