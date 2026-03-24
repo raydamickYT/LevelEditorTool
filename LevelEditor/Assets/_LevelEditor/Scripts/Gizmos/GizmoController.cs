@@ -25,7 +25,7 @@ using UnityEngine;
 /// </summary>
 public class GizmoController : MonoBehaviour
 {
-    private GizmoType currentGizmoType, newGizmoType;
+    private GizmoType currentGizmoType;
     private GizmoTargetData currentTarget;
     private List<GizmoTargetData> currentTargetList = new List<GizmoTargetData>(); //for future use when multi select is implemented, for now it only holds 1 target data, but it can be easily expanded to hold multiple target data when multi select is implemented.
     private Dictionary<GameObject, GizmoTargetData> targetGizmoDictionary = new();
@@ -39,6 +39,7 @@ public class GizmoController : MonoBehaviour
 
         EventManager.Instance.AddDelegateListener("OnGizmoTypeChanged", (Action<GizmoType>)OnChangeGizmoType);
         EventManager.Instance.AddDelegateListener("OnGizmoTargetUpdated", (Action<GameObject, GizmoTargetData>)OnTargetSelected);
+        EventManager.Instance.AddDelegateListener("OnObjectSelected", (Action<GameObject>)OnObjectSelected);
 
         EventManager.Instance.AddUnityEventListener("OnHideGizmo", hide);
     }
@@ -58,13 +59,14 @@ public class GizmoController : MonoBehaviour
 
     //deze functie mag alleen beheren of/welke gizmo aan staat.
     //TODO: functionaliteit voor meerdere objecten toevoegen
-    private void show()
+    private void show(GizmoType gizmoType)
     {
         if (currentTarget == null)
             return;
 
-
-        switch (newGizmoType)
+        Debug.Log("Target found changing it's gizmo to: " + gizmoType);
+    
+        switch (gizmoType)
         {
             case GizmoType.none:
                 hide();
@@ -82,8 +84,7 @@ public class GizmoController : MonoBehaviour
                 break;
         }
 
-        currentGizmoType = newGizmoType;
-        newGizmoType = GizmoType.none;
+        currentGizmoType = gizmoType;
     }
 
     //deze functie mag alleen beheren of/welke gizmo uit staat.
@@ -123,23 +124,23 @@ public class GizmoController : MonoBehaviour
         }
     }
 
+    private void OnObjectSelected(GameObject selectedObject)
+    {
+        if (!targetGizmoDictionary.ContainsKey(selectedObject)) return;
+
+        if (selectedObject.GetComponentInChildren<GizmoObject>() is GizmoObject gizmoObject)
+        {
+            if (currentTarget != gizmoObject.gizmoTargetData)
+                OnTargetSelected(gizmoObject.gameObject, gizmoObject.gizmoTargetData);
+        }
+    }
+
     //this'll be the start of showing the gizmo, if the object is updated to "selected" the show function will be called
     private void OnTargetSelected(GameObject gizmoBaseObject, GizmoTargetData targetData)
     {
-        if (targetGizmoDictionary.ContainsKey(gizmoBaseObject)) //if the gizmo type already exists in the dictionary, update the target data
-        {
-            targetGizmoDictionary[gizmoBaseObject] = targetData;
-        }
-        else //if the gizmo type doesn't exist in the dictionary, add it to the dictionary
-        {
-            targetGizmoDictionary.Add(gizmoBaseObject, targetData);
-        }
-
-        if (targetData.IsSelected) //if the target data is selected, show the gizmo
-        {
-            AddSelectedTarget(targetData); //make sure to save the target data to the controller, so it can be used in the show and hide functions
-            show();
-        }
+        targetData.SelectableComponent.OnSelect();
+        AddSelectedTarget(targetData); //make sure to save the target data to the controller, so it can be used in the show and hide functions
+        show(currentGizmoType);
     }
 
     private void OnTargetDeselected()
@@ -154,11 +155,10 @@ public class GizmoController : MonoBehaviour
         if (currentGizmoType == newgizmoType) //if the gizmo type is the same as the current gizmo type, do nothing
             return;
 
-        newGizmoType = newgizmoType;
 
 
         hide();
-        show();
+        show(newgizmoType);
     }
 
     public void UpdatePosition()

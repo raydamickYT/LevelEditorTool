@@ -21,12 +21,8 @@ public class GizmoObject : MonoBehaviour, ISelectable
 
     public void OnSelected()
     {
-        if (gizmoTargetData == null)
-        {
-            return;
-        }
-        gizmoTargetData.IsSelected = true;
-        EventManager.Instance.TriggerDelegate("OnGizmoTargetUpdated", this.gameObject, gizmoTargetData);
+
+        // EventManager.Instance.TriggerDelegate("OnGizmoTargetUpdated", this.gameObject, gizmoTargetData);
     }
 
     public void OnDeselected()
@@ -36,12 +32,16 @@ public class GizmoObject : MonoBehaviour, ISelectable
             return;
         }
         gizmoTargetData.IsSelected = false;
-        EventManager.Instance.TriggerDelegate("OnGizmoTargetUpdated", this.gameObject, gizmoTargetData);
+        // EventManager.Instance.TriggerDelegate("OnGizmoTargetUpdated", this.gameObject, gizmoTargetData);
     }
 
     public void OnSelect()
     {
-        throw new System.NotImplementedException();
+        if (gizmoTargetData == null)
+        {
+            return;
+        }
+        gizmoTargetData.IsSelected = true;
     }
 
     public void OnDeselect()
