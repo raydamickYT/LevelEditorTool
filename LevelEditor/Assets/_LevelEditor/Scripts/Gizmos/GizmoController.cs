@@ -2,6 +2,7 @@ using System;
 using System.Collections;
 using System.Collections.Generic;
 using JetBrains.Annotations;
+using Unity.VisualScripting;
 using UnityEngine;
 
 
@@ -19,46 +20,49 @@ using UnityEngine;
 /// Hij toon en verbergt ook de gizmo, en update de positie van de gizmo.
 /// 
 /// dus nog geen: drag logica, selectie bepalen of input lezen.
+/// 
+/// verdere updates: multi mode single mode, group pivot, shared gizmo behaviour, ect.
 /// </summary>
 public class GizmoController : MonoBehaviour
 {
-    public static GizmoController Instance { get; private set; }
     private GizmoType currentGizmoType, newGizmoType;
-    private GizmoTargetData target;
+    private GizmoTargetData currentTarget;
+    private List<GizmoTargetData> currentTargetList = new List<GizmoTargetData>(); //for future use when multi select is implemented, for now it only holds 1 target data, but it can be easily expanded to hold multiple target data when multi select is implemented.
     private Dictionary<GameObject, GizmoTargetData> targetGizmoDictionary = new();
 
 
     void Awake()
     {
-        if (Instance != null && Instance != this)
-        {
-            Destroy(gameObject);
-        }
-        else
-        {
-            Instance = this;
-        }
+        currentGizmoType = GizmoType.move;
 
-        EventManager.Instance.AddDelegateListener("OnGizmoSelectionChanged", (Action<GameObject, GizmoType>)OnChangeGizmoType);
-        EventManager.Instance.AddDelegateListener("OnGizmoCreated", (Action<GameObject, GizmoTargetData>)UpdateDictionary);
+
+
+        EventManager.Instance.AddDelegateListener("OnGizmoTypeChanged", (Action<GizmoType>)OnChangeGizmoType);
+        EventManager.Instance.AddDelegateListener("OnGizmoTargetUpdated", (Action<GameObject, GizmoTargetData>)OnTargetSelected);
 
         EventManager.Instance.AddUnityEventListener("OnHideGizmo", hide);
     }
 
-    public void SetTarget(GizmoTargetData _target)
+    public void AddSelectedTarget(GizmoTargetData _target)
     {
-        target = _target;
+        currentTarget = _target;
+        currentTargetList.Add(_target);
     }
-    public void ClearTarget()
+
+    //TODO kijken waar ik deze call. ik denk bij "ondeselect"
+    public void RemoveSelectedTarget()
     {
-        target = null;
+        currentTarget = null;
+        currentTargetList.Clear();
     }
 
     //deze functie mag alleen beheren of/welke gizmo aan staat.
+    //TODO: functionaliteit voor meerdere objecten toevoegen
     private void show()
     {
-        if (target == null)
+        if (currentTarget == null)
             return;
+
 
         switch (newGizmoType)
         {
@@ -66,13 +70,13 @@ public class GizmoController : MonoBehaviour
                 hide();
                 break;
             case GizmoType.move:
-                target.MoveGizmo.SetActive(true);
+                currentTarget.MoveGizmo.SetActive(true);
                 break;
             case GizmoType.rotate:
-                target.RotateGizmo.SetActive(true);
+                currentTarget.RotateGizmo.SetActive(true);
                 break;
             case GizmoType.scale:
-                target.ScaleGizmo.SetActive(true);
+                currentTarget.ScaleGizmo.SetActive(true);
                 break;
             default:
                 break;
@@ -80,14 +84,13 @@ public class GizmoController : MonoBehaviour
 
         currentGizmoType = newGizmoType;
         newGizmoType = GizmoType.none;
-        ClearTarget(); //make sure to clear the target after changing the gizmo. This controller only needs to know what to switch to nothing else.
     }
 
     //deze functie mag alleen beheren of/welke gizmo uit staat.
     // This function should be allowed to be 
     private void hide()
     {
-        if (target == null)
+        if (currentTarget == null)
             return;
 
         switch (currentGizmoType)
@@ -95,20 +98,20 @@ public class GizmoController : MonoBehaviour
             case GizmoType.none:
                 break;
             case GizmoType.move:
-                target.MoveGizmo.SetActive(false);
+                currentTarget.MoveGizmo.SetActive(false);
                 break;
             case GizmoType.rotate:
-                target.RotateGizmo.SetActive(false);
+                currentTarget.RotateGizmo.SetActive(false);
                 break;
             case GizmoType.scale:
-                target.ScaleGizmo.SetActive(false);
+                currentTarget.ScaleGizmo.SetActive(false);
                 break;
             default:
                 break;
         }
     }
 
-    private void UpdateDictionary(GameObject gizmoBaseObject, GizmoTargetData targetData)
+    private void RegisterToDict(GameObject gizmoBaseObject, GizmoTargetData targetData)
     {
         if (targetGizmoDictionary.ContainsKey(gizmoBaseObject)) //if the gizmo type already exists in the dictionary, update the target data
         {
@@ -120,28 +123,42 @@ public class GizmoController : MonoBehaviour
         }
     }
 
+    //this'll be the start of showing the gizmo, if the object is updated to "selected" the show function will be called
+    private void OnTargetSelected(GameObject gizmoBaseObject, GizmoTargetData targetData)
+    {
+        if (targetGizmoDictionary.ContainsKey(gizmoBaseObject)) //if the gizmo type already exists in the dictionary, update the target data
+        {
+            targetGizmoDictionary[gizmoBaseObject] = targetData;
+        }
+        else //if the gizmo type doesn't exist in the dictionary, add it to the dictionary
+        {
+            targetGizmoDictionary.Add(gizmoBaseObject, targetData);
+        }
+
+        if (targetData.IsSelected) //if the target data is selected, show the gizmo
+        {
+            AddSelectedTarget(targetData); //make sure to save the target data to the controller, so it can be used in the show and hide functions
+            show();
+        }
+    }
+
+    private void OnTargetDeselected()
+    {
+        currentTarget.SelectableComponent.OnDeselect();
+        hide();
+    }
+
     //deze functie mag alleen beheren of/welke gizmo aan staat, en welke uit staat. dus eigenlijk een combinatie van show en hide.
-    public void OnChangeGizmoType(GameObject targetKey, GizmoType newgizmoType)
+    public void OnChangeGizmoType(GizmoType newgizmoType)
     {
         if (currentGizmoType == newgizmoType) //if the gizmo type is the same as the current gizmo type, do nothing
             return;
 
         newGizmoType = newgizmoType;
 
-        if (!targetGizmoDictionary.TryGetValue(targetKey, out GizmoTargetData targetData))
-        {
-            Debug.LogWarning("following object could not be found: " + targetKey);
-            return;
-        }
 
-        if (targetData != null && targetData.IsSelected) //if target data exists and is selected, switch the gizmo
-        {
-            SetTarget(targetData); //make sure to save the target data to the controller, so it can be used in the show and hide functions
-            hide();
-            show();
-            return;
-        }
-
+        hide();
+        show();
     }
 
     public void UpdatePosition()
@@ -169,4 +186,5 @@ public class GizmoTargetData
     public GameObject RotateGizmo;
     public GameObject ScaleGizmo;
     public bool IsSelected;
+    public ISelectable SelectableComponent; //de component die geselecteerd kan worden, deze heeft de select en deselect functies, zodat de gizmo controller niet hoeft te weten wat voor object het is, zolang het maar een ISelectable component heeft.
 }
