@@ -31,6 +31,7 @@ public class InputHandler : MonoBehaviour, InputSystem_Actions.IUIActions
             Instance = null;
         }
         EventManager.Instance.RemoveAllListeners();
+
     }
 
     public event Action<InputAction.CallbackContext> OnCancelEvent;

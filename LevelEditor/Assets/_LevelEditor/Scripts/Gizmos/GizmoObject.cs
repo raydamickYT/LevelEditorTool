@@ -2,7 +2,7 @@ using UnityEngine;
 
 public class GizmoObject : MonoBehaviour, IGizmoObject
 {
-    public GizmoTargetData gizmoTargetData;
+    public SelectableTargetData gizmoTargetData;
 
     public bool IsSelected { get { return gizmoTargetData != null && gizmoTargetData.IsSelected; } }
 
@@ -16,12 +16,12 @@ public class GizmoObject : MonoBehaviour, IGizmoObject
             Debug.LogError("GizmoTargetData is not assigned in the inspector for " + this.gameObject.name); //TODO this can be found in the children of this gameobj, so update it so that it searches first
             return;
         }
-        EventManager.Instance.TriggerDelegate("OnRegisterToGizmoController", gizmoTargetData.BaseObject, gizmoTargetData);
+        EventManager.Instance.TriggerDelegate("OnRegisterToSelectionController", gizmoTargetData.BaseObject, gizmoTargetData);
     }
 
     void OnDestroy()
     {
-        EventManager.Instance.TriggerDelegate("OnDeRegisterToGizmoController", gizmoTargetData.BaseObject);
+        EventManager.Instance.TriggerDelegate("OnDeRegisterToSelectionController", gizmoTargetData.BaseObject);
     }
 
 
