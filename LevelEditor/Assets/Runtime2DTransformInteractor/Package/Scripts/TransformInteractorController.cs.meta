@@ -1,0 +1,18 @@
+fileFormatVersion: 2
+guid: c3a2d7c6e2cfab045a8c9f488c1d090c
+MonoImporter:
+  externalObjects: {}
+  serializedVersion: 2
+  defaultReferences: []
+  executionOrder: 0
+  icon: {instanceID: 0}
+  userData: 
+  assetBundleName: 
+  assetBundleVariant: 
+AssetOrigin:
+  serializedVersion: 1
+  productId: 175502
+  packageName: Runtime 2D Transform Interactor
+  packageVersion: 1.1
+  assetPath: Assets/Runtime2DTransformInteractor/Package/Scripts/TransformInteractorController.cs
+  uploadId: 429596

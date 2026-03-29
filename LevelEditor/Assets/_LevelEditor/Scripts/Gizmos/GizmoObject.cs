@@ -4,19 +4,35 @@ public class GizmoObject : MonoBehaviour, IGizmoObject
 {
     public SelectableTargetData gizmoTargetData;
 
-    public bool IsSelected { get { return gizmoTargetData != null && gizmoTargetData.IsSelected; } }
+    public bool IsSelected => gizmoTargetData != null && gizmoTargetData.IsSelected;
 
+    public Transform TargetTransform => gizmoTargetData != null && gizmoTargetData.BaseObject != null
+        ? gizmoTargetData.BaseObject.transform
+        : null;
 
     // Start is called once before the first execution of Update after the MonoBehaviour is created
     void Start()
     {
-        gizmoTargetData.SelectableComponent = this;
         if (gizmoTargetData == null)
         {
             Debug.LogError("GizmoTargetData is not assigned in the inspector for " + this.gameObject.name); //TODO this can be found in the children of this gameobj, so update it so that it searches first
             return;
         }
+
+        gizmoTargetData.SelectableComponent = this;
         EventManager.Instance.TriggerDelegate("OnRegisterToSelectionController", gizmoTargetData.BaseObject, gizmoTargetData);
+    }
+
+    void LateUpdate()
+    {
+        if (!IsSelected || TargetTransform == null)
+            return;
+
+        Transform activeRoot = GetActiveGizmoRoot();
+        if (activeRoot == null)
+            return;
+
+        activeRoot.position = TargetTransform.position;
     }
 
     void OnDestroy()
@@ -28,21 +44,24 @@ public class GizmoObject : MonoBehaviour, IGizmoObject
     //this'll be called anytime the gizmo changes or is activated
     public void OnShow(GizmoType gizmoType)
     {
+        OnHide();
+
         switch (gizmoType)
         {
             case GizmoType.none:
                 OnHide();
                 break;
             case GizmoType.move:
-                gizmoTargetData.MoveGizmo.SetActive(true);
+                if (gizmoTargetData.MoveGizmo != null)
+                    gizmoTargetData.MoveGizmo.SetActive(true);
                 break;
             case GizmoType.rotate:
-                gizmoTargetData.RotateGizmo.SetActive(true);
+                if (gizmoTargetData.RotateGizmo != null)
+                    gizmoTargetData.RotateGizmo.SetActive(true);
                 break;
             case GizmoType.scale:
-                gizmoTargetData.ScaleGizmo.SetActive(true);
-                break;
-            default:
+                if (gizmoTargetData.ScaleGizmo != null)
+                    gizmoTargetData.ScaleGizmo.SetActive(true);
                 break;
         }
 
@@ -53,31 +72,25 @@ public class GizmoObject : MonoBehaviour, IGizmoObject
     // This function should be allowed to be 
     public void OnHide()
     {
-        switch (gizmoTargetData.type)
-        {
-            case GizmoType.none:
-                break;
-            case GizmoType.move:
-                gizmoTargetData.MoveGizmo.SetActive(false);
-                break;
-            case GizmoType.rotate:
-                gizmoTargetData.RotateGizmo.SetActive(false);
-                break;
-            case GizmoType.scale:
-                gizmoTargetData.ScaleGizmo.SetActive(false);
-                break;
-            default:
-                break;
-        }
+        if (gizmoTargetData == null)
+            return;
+
+        if (gizmoTargetData.MoveGizmo != null)
+            gizmoTargetData.MoveGizmo.SetActive(false);
+
+        if (gizmoTargetData.RotateGizmo != null)
+            gizmoTargetData.RotateGizmo.SetActive(false);
+
+        if (gizmoTargetData.ScaleGizmo != null)
+            gizmoTargetData.ScaleGizmo.SetActive(false);
     }
 
     public void OnSelect()
     {
-        Debug.Log("this object was selected");
+        // Debug.Log("this object was selected");
         if (gizmoTargetData == null)
-        {
             return;
-        }
+
         gizmoTargetData.IsSelected = true;
     }
 
@@ -88,6 +101,20 @@ public class GizmoObject : MonoBehaviour, IGizmoObject
             return;
         }
         gizmoTargetData.IsSelected = false;
+    }
+
+    public Transform GetActiveGizmoRoot()
+    {
+        if (gizmoTargetData == null)
+            return null;
+
+        return gizmoTargetData.type switch
+        {
+            GizmoType.move => gizmoTargetData.MoveGizmo != null ? gizmoTargetData.MoveGizmo.transform : null,
+            GizmoType.rotate => gizmoTargetData.RotateGizmo != null ? gizmoTargetData.RotateGizmo.transform : null,
+            GizmoType.scale => gizmoTargetData.ScaleGizmo != null ? gizmoTargetData.ScaleGizmo.transform : null,
+            _ => null
+        };
     }
 
 }

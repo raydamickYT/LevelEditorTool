@@ -1,0 +1,14 @@
+fileFormatVersion: 2
+guid: 12f3047570a8cc54fba44ef89ff4ab10
+TextScriptImporter:
+  externalObjects: {}
+  userData: 
+  assetBundleName: 
+  assetBundleVariant: 
+AssetOrigin:
+  serializedVersion: 1
+  productId: 175502
+  packageName: Runtime 2D Transform Interactor
+  packageVersion: 1.1
+  assetPath: Assets/Runtime2DTransformInteractor/Documentation/README.html
+  uploadId: 429596

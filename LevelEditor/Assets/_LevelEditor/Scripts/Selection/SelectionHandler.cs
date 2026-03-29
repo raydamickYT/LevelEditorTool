@@ -23,6 +23,7 @@ public class SelectionHandler : MonoBehaviour
         EventManager.Instance.AddDelegateListener("OnDeRegisterToSelectionController", (Action<GameObject>)HandleDeregister);
     }
 
+
     // Start is called once before the first execution of Update after the MonoBehaviour is created
     void OnEnable()
     {
@@ -31,7 +32,7 @@ public class SelectionHandler : MonoBehaviour
 
     void OnDisable()
     {
-        if(subscribeRoutine != null)
+        if (subscribeRoutine != null)
         {
             StopCoroutine(subscribeRoutine);
             subscribeRoutine = null;
@@ -54,6 +55,8 @@ public class SelectionHandler : MonoBehaviour
     {
         if (context.performed)
         {
+            if (RaycastHelper.IsClickingOnLayer(cam, LayerMask.GetMask("GizmoHandle")))
+                return;
             selectionController?.HandleLeftClick();
         }
     }

@@ -1,0 +1,18 @@
+fileFormatVersion: 2
+guid: 02b61df842a5ce44eb7eb96b25b7b34f
+MonoImporter:
+  externalObjects: {}
+  serializedVersion: 2
+  defaultReferences: []
+  executionOrder: 0
+  icon: {instanceID: 0}
+  userData: 
+  assetBundleName: 
+  assetBundleVariant: 
+AssetOrigin:
+  serializedVersion: 1
+  productId: 175502
+  packageName: Runtime 2D Transform Interactor
+  packageVersion: 1.1
+  assetPath: Assets/Runtime2DTransformInteractor/Package/Scripts/Corner.cs
+  uploadId: 429596

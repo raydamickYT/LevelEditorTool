@@ -1,0 +1,14 @@
+fileFormatVersion: 2
+guid: 16033d41a0bbcaa4da6de4b87a3403cd
+PrefabImporter:
+  externalObjects: {}
+  userData: 
+  assetBundleName: 
+  assetBundleVariant: 
+AssetOrigin:
+  serializedVersion: 1
+  productId: 175502
+  packageName: Runtime 2D Transform Interactor
+  packageVersion: 1.1
+  assetPath: Assets/Runtime2DTransformInteractor/Package/TransformInteractorController.prefab
+  uploadId: 429596

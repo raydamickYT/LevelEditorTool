@@ -5,15 +5,24 @@ public class GizmoController
 {
     private GizmoType currentGizmoType = GizmoType.move;
     private SelectableTargetData currentTarget;
-    
+
+    public SelectableTargetData CurrentTarget => currentTarget;
+    public GizmoType CurrentGizmoType => currentGizmoType;
+
     public void ShowGizmo(SelectableTargetData data)
     {
-        data.SelectableComponent?.OnShow(currentGizmoType);
+        if (data == null)
+            return;
+
         currentTarget = data;
+        currentTarget.SelectableComponent?.OnShow(currentGizmoType);
     }
 
     public void HideGizmo(SelectableTargetData data)
     {
+        if (data == null)
+            return;
+
         data.SelectableComponent?.OnHide();
 
         if (currentTarget == data)
@@ -22,20 +31,21 @@ public class GizmoController
 
     public void ClearTarget()
     {
-        if (currentTarget != null)
-            currentTarget = null;
+        currentTarget = null;
     }
 
-    //deze functie mag alleen beheren of/welke gizmo aan staat, en welke uit staat. dus eigenlijk een combinatie van show en hide.
-    public void SetGizmoType(GizmoType newgizmoType)
+    public void SetGizmoType(GizmoType newGizmoType)
     {
-        if (currentGizmoType == newgizmoType) //if the gizmo type is the same as the current gizmo type, do nothing
+        if (currentGizmoType == newGizmoType)
             return;
 
-        currentTarget.SelectableComponent?.OnHide();
+        if (currentTarget != null)
+            currentTarget.SelectableComponent?.OnHide();
 
-        currentGizmoType = newgizmoType;
-        currentTarget.SelectableComponent?.OnShow(currentGizmoType);
+        currentGizmoType = newGizmoType;
+
+        if (currentTarget != null)
+            currentTarget.SelectableComponent?.OnShow(currentGizmoType);
     }
 }
 

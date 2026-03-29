@@ -1,0 +1,14 @@
+fileFormatVersion: 2
+guid: c12a4135ad161f94096854615b5cd6b0
+DefaultImporter:
+  externalObjects: {}
+  userData: 
+  assetBundleName: 
+  assetBundleVariant: 
+AssetOrigin:
+  serializedVersion: 1
+  productId: 175502
+  packageName: Runtime 2D Transform Interactor
+  packageVersion: 1.1
+  assetPath: Assets/Runtime2DTransformInteractor/Demo/ExampleScene.unity
+  uploadId: 429596
