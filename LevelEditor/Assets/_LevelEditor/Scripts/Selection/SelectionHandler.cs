@@ -53,10 +53,8 @@ public class SelectionHandler : MonoBehaviour
 
     void OnLeftMouseButtonEvent(InputAction.CallbackContext context)
     {
-        if (context.performed)
+        if (context.started)
         {
-            if (RaycastHelper.IsClickingOnLayer(cam, LayerMask.GetMask("GizmoHandle")))
-                return;
             selectionController?.HandleLeftClick();
         }
     }

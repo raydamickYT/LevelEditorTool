@@ -123,7 +123,10 @@ public class ObjectButtonController : MonoBehaviour, IBeginDragHandler, IEndDrag
     {
         //cleanup preview and remove spawned object reference if they exist
         if (objectExists)
+        {
+            EventManager.Instance.TriggerDelegate("OnTrySelection", spawnedObject);
             spawnedObject = null;
+        }
 
         if (previewExists) //this check also makes sure that there is no objects spawned behind the menu.
             RemoveSpawnedPreview();
@@ -146,7 +149,7 @@ public class ObjectButtonController : MonoBehaviour, IBeginDragHandler, IEndDrag
                 return;
             }
 
-            SpawnSpritePreview(eventData); //if not spawn it. this way we can make sure that the preview is always active when hovering over the button.
+            SpawnSpritePreview(eventData); //if not spawn it. this way we can make sure that the preview is always active when hovering over the UI.
             return;
         }
 

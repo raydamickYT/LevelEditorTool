@@ -1,3 +1,4 @@
+using System;
 using System.Collections.Generic;
 using UnityEngine;
 
@@ -10,17 +11,25 @@ public class selectionController
 {
     public Camera cam;
     private Dictionary<GameObject, SelectableTargetData> selectedGameObjectsDictionary = new();
-    private SelectableTargetData currentSelection;
+    private SelectableTargetData _currentSelection;
+    public SelectableTargetData CurrentSelection => _currentSelection;
 
     public selectionController(Camera cam)
     {
         this.cam = cam;
+
+        EventManager.Instance.AddDelegateListener("OnTrySelection", (Action<GameObject>)TrySelect);
     }
 
     //ik heb de selection controller een normale class gemaakt zodat de meeste logica daar uitgevoerd kan worden.
     public void HandleLeftClick()
     {
         RaycastHit2D hit;
+        if (_currentSelection != null)
+        {
+            if (RaycastHelper.IsClickingOnLayer(cam, LayerMask.GetMask("GizmoHandle")))
+                return;
+        }
         if (RaycastHelper.TryGetPointerHit2D(cam, LayerMask.GetMask("Selectable"), out hit))
         {
             TrySelect(hit.collider.gameObject);
@@ -54,9 +63,9 @@ public class selectionController
 
         if (selectedGameObjectsDictionary.TryGetValue(selectedObject, out SelectableTargetData obj)) //note to self: if you notice you use this more often than once, try making a helper
         {
-            if (currentSelection != obj)
+            if (_currentSelection != obj)
             {
-                if (currentSelection != null)
+                if (_currentSelection != null)
                     ClearSelection();
                 OnTargetSelected(obj);
             }
@@ -71,10 +80,10 @@ public class selectionController
             Debug.LogWarning($"Object is missing selectable component {targetData.BaseObject.name}");
             return;
         }
-        currentSelection = targetData;
+        _currentSelection = targetData;
         // currentTargetList.Add(targetData);
 
-        currentSelection.SelectableComponent.OnSelect();
+        _currentSelection.SelectableComponent.OnSelect();
         //future: add multi selection logic
 
         EventManager.Instance.TriggerDelegate("OnShowGizmo", targetData);
@@ -83,14 +92,14 @@ public class selectionController
 
     public void ClearSelection()
     {
-        if (currentSelection == null) return;
+        if (_currentSelection == null) return;
 
         //future: add multi selection logic
 
-        currentSelection.SelectableComponent.OnDeselect(); //single target
-        EventManager.Instance.TriggerDelegate("OnHideGizmo", currentSelection);
+        _currentSelection.SelectableComponent.OnDeselect(); //single target
+        EventManager.Instance.TriggerDelegate("OnHideGizmo", _currentSelection);
 
-        currentSelection = null;
+        _currentSelection = null;
         EventManager.Instance.TriggerUnityEvent("OnSelectionCleared");
         // currentTargetList.Clear();
     }

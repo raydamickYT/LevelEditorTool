@@ -1,20 +1,37 @@
 using UnityEngine;
+using UnityEngine.InputSystem;
 
 public class GizmoUIController : MonoBehaviour
 {
-
-    public void EnableMoveGizmo()
+    void OnEnable()
     {
-        EventManager.Instance.TriggerDelegate("OnGizmoTypeChanged", GizmoType.move);
+        InputHandler.Instance.OnWEvent += EnableMoveGizmo;
+        InputHandler.Instance.OnEEvent += EnableRotateGizmo;
+        InputHandler.Instance.OnREvent += EnableScaleGizmo;
     }
 
-    public void EnableRotateGizmo()
+    void OnDisable()
     {
-        EventManager.Instance.TriggerDelegate("OnGizmoTypeChanged", GizmoType.rotate);
+        InputHandler.Instance.OnWEvent -= EnableMoveGizmo;
+        InputHandler.Instance.OnEEvent -= EnableRotateGizmo;
+        InputHandler.Instance.OnREvent -= EnableScaleGizmo;
     }
 
-    public void EnableScaleGizmo()
+    public void EnableMoveGizmo(InputAction.CallbackContext context)
     {
-        EventManager.Instance.TriggerDelegate("OnGizmoTypeChanged", GizmoType.scale);
+        if (context.started)
+            EventManager.Instance.TriggerDelegate("OnGizmoTypeChanged", GizmoType.move);
+    }
+
+    public void EnableRotateGizmo(InputAction.CallbackContext context)
+    {
+        if (context.started)
+            EventManager.Instance.TriggerDelegate("OnGizmoTypeChanged", GizmoType.rotate);
+    }
+
+    public void EnableScaleGizmo(InputAction.CallbackContext context)
+    {
+        if (context.started)
+            EventManager.Instance.TriggerDelegate("OnGizmoTypeChanged", GizmoType.scale);
     }
 }

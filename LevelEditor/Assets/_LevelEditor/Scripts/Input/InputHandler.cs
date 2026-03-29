@@ -6,7 +6,6 @@ public class InputHandler : MonoBehaviour, InputSystem_Actions.IUIActions
 {
     public static InputHandler Instance;
 
-    private InputCommands inputCommands;
     private InputSystem_Actions inputActions;
 
     private void Awake()
@@ -18,7 +17,6 @@ public class InputHandler : MonoBehaviour, InputSystem_Actions.IUIActions
         }
 
         Instance = this;
-        inputCommands = new InputCommands();
 
         inputActions = new InputSystem_Actions();
         inputActions.UI.SetCallbacks(this);
@@ -67,4 +65,15 @@ public class InputHandler : MonoBehaviour, InputSystem_Actions.IUIActions
     public event Action<InputAction.CallbackContext> onSubmitEvent;
     public void OnSubmit(InputAction.CallbackContext context)
         => onSubmitEvent?.Invoke(context);
+
+    public event Action<InputAction.CallbackContext> OnWEvent;
+    public void OnW(InputAction.CallbackContext context)
+        => OnWEvent?.Invoke(context);
+
+    public event Action<InputAction.CallbackContext> OnEEvent;
+    public void OnE(InputAction.CallbackContext context)
+        => OnEEvent?.Invoke(context);
+    public event Action<InputAction.CallbackContext> OnREvent;
+    public void OnR(InputAction.CallbackContext context)
+        => OnREvent?.Invoke(context);
 }
