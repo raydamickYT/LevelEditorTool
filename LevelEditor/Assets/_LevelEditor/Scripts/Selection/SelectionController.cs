@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using System.Linq;
 using UnityEngine;
 using UnityEngine.InputSystem;
 using UnityEngine.UI;
@@ -13,7 +14,7 @@ public class selectionController
 {
     public Camera cam;
     private Dictionary<GameObject, SelectableTargetData> selectableGameObjectsInSceneDict = new();
-    private SelectableTargetData _currentSelection;
+    // private SelectableTargetData _currentSelection;
     private HashSet<SelectableTargetData> _selectedGameObjects = new();
     private SelectionBoxView _selectionBoxView;
     private Vector2 _pressStartScreenPosition;
@@ -31,8 +32,8 @@ public class selectionController
     //ik heb de selection controller een normale class gemaakt zodat de meeste logica daar uitgevoerd kan worden.
     public void OnStartLeftClick()
     {
-        if (UIHelper.IsPointerOverUI()) return; 
-        if (_currentSelection != null) //first check if we're clicking on the gizmo, if so we ignore the click and wait for the next one
+        if (UIHelper.IsPointerOverUI()) return;
+        if (_selectedGameObjects.Count != 0) //first check if we're clicking on the gizmo, if so we ignore the click and wait for the next one
         {
             if (RaycastHelper.IsClickingOnLayer(cam, LayerMask.GetMask("GizmoHandle")))
             {
@@ -104,10 +105,12 @@ public class selectionController
     {
         selectableGameObjectsInSceneDict.Remove(rootObject);
     }
+
     public void ClearDict()
     {
         selectableGameObjectsInSceneDict.Clear();
     }
+
     public void SelectInRect(Rect screenRect)
     {
         ClearSelection();
@@ -117,39 +120,65 @@ public class selectionController
             GameObject targetobj = pair.Key;
             SelectableTargetData targetData = pair.Value;
 
-            Vector3 screenpoint3D = cam.WorldToScreenPoint(targetobj.transform.position);
-            if (screenpoint3D.z < 0f) continue; //if the object is behind the camera, we ignore it
 
-            Vector2 screenpoint = new Vector2(screenpoint3D.x, screenpoint3D.y);
-
-            if (screenRect.Contains(screenpoint))
+            if (IsObjectInsideScreenRect(targetobj, screenRect))
             {
-                OnTargetSelected(targetData);
+                Debug.Log(targetobj.transform.position);
+                if (targetobj.layer == LayerMask.NameToLayer("Selectable"))
+                {
+                    AddToSelection(targetData);
+                }
             }
         }
 
+        RefreshGizmo();
         //later kijken hoe de gizmo zich gedraagt bij het selecteren van meerdere objecten
     }
+    private bool IsObjectInsideScreenRect(GameObject targetObject, Rect screenRect)
+    {
+        Collider2D collider = targetObject.GetComponent<Collider2D>();
+        if (collider == null)
+            return false;
 
+        Bounds bounds = collider.bounds;
+
+        Vector3 bottomLeft = cam.WorldToScreenPoint(new Vector3(bounds.min.x, bounds.min.y, bounds.center.z));
+        Vector3 topRight = cam.WorldToScreenPoint(new Vector3(bounds.max.x, bounds.max.y, bounds.center.z));
+        Vector3 topLeft = cam.WorldToScreenPoint(new Vector3(bounds.min.x, bounds.max.y, bounds.center.z));
+        Vector3 bottomRight = cam.WorldToScreenPoint(new Vector3(bounds.max.x, bounds.min.y, bounds.center.z));
+
+        if (bottomLeft.z < 0f || topRight.z < 0f || topLeft.z < 0f || bottomRight.z < 0f)
+            return false;
+
+        float minX = Mathf.Min(bottomLeft.x, topRight.x, topLeft.x, bottomRight.x);
+        float maxX = Mathf.Max(bottomLeft.x, topRight.x, topLeft.x, bottomRight.x);
+        float minY = Mathf.Min(bottomLeft.y, topRight.y, topLeft.y, bottomRight.y);
+        float maxY = Mathf.Max(bottomLeft.y, topRight.y, topLeft.y, bottomRight.y);
+
+        Rect objectScreenRect = Rect.MinMaxRect(minX, minY, maxX, maxY);
+
+        return screenRect.Overlaps(objectScreenRect, true);
+    }
     public void TrySelect(GameObject selectedObject)
     {
-        if (!selectableGameObjectsInSceneDict.ContainsKey(selectedObject)) return;
+        if (!selectableGameObjectsInSceneDict.TryGetValue(selectedObject, out SelectableTargetData obj))
+            return;
 
+        if (_selectedGameObjects.Count == 1 && _selectedGameObjects.Contains(obj))
+            return;
 
-        if (selectableGameObjectsInSceneDict.TryGetValue(selectedObject, out SelectableTargetData obj)) //note to self: if you notice you use this more often than once, try making a helper
-        {
-            if (_currentSelection != obj)
-            {
-                if (_currentSelection != null)
-                    ClearSelection();
-                OnTargetSelected(obj);
-            }
-        }
+        ClearSelection();
+        AddToSelection(obj);
+        RefreshGizmo();
     }
+
     public void AddToSelection(SelectableTargetData targetData)
     {
         if (targetData?.SelectableComponent == null)
+        {
+            Debug.LogWarning($"Object is missing selectable component {targetData.BaseObject.name}");
             return;
+        }
 
         if (_selectedGameObjects.Add(targetData))
         {
@@ -157,43 +186,30 @@ public class selectionController
         }
     }
 
-    //this'll be the start of showing the gizmo, if the object is updated to "selected" the show function will be called
-    private void OnTargetSelected(SelectableTargetData targetData)
+    private void RefreshGizmo()
     {
-        if (targetData.SelectableComponent == null)
-        {
-            Debug.LogWarning($"Object is missing selectable component {targetData.BaseObject.name}");
-            return;
-        }
-        _currentSelection = targetData;
-        AddToSelection(targetData);
-        // currentTargetList.Add(targetData);
-
-        _currentSelection.SelectableComponent.OnSelect();
-        //future: add multi selection logic
-
-        EventManager.Instance.TriggerDelegate("OnShowGizmo", targetData);
-
+        Debug.Log("selected objects count: " + _selectedGameObjects.Count);
+        EventManager.Instance.TriggerDelegate("OnSelectionChanged", _selectedGameObjects);
+        // if (_selectedGameObjects.Count == 0)
+        // {
+        //     EventManager.Instance.TriggerUnityEvent("OnSelectionCleared");
+        // }
+        // else
+        // {
+        // }
     }
 
     public void ClearSelection()
     {
-        if (_currentSelection == null) return;
+        if (_selectedGameObjects.Count == 0) return;
 
         foreach (var item in _selectedGameObjects)
         {
-            item.SelectableComponent.OnDeselect();
-            item.SelectableComponent.OnHide();
+            item.SelectableComponent?.OnDeselect();
         }
+
         _selectedGameObjects.Clear();
-        //future: add multi selection logic
-
-        _currentSelection.SelectableComponent.OnDeselect(); //single target
-        EventManager.Instance.TriggerDelegate("OnHideGizmo", _currentSelection);
-
-        _currentSelection = null;
-        EventManager.Instance.TriggerUnityEvent("OnSelectionCleared");
-        // currentTargetList.Clear();
+        RefreshGizmo();
     }
 }
 

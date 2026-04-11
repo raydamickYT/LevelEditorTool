@@ -4,20 +4,20 @@ using UnityEngine.UI;
 
 public class SelectionBoxView : MonoBehaviour
 {
-    private RectTransform rectTransform, parentRectTransform;
+    public RectTransform rectTransform, parentRectTransform;
     public Rect CurrentSelectionRect => rectTransform.rect;
     // Start is called once before the first execution of Update after the MonoBehaviour is created
     void Start()
     {
-        Image image = GetComponentInChildren<Image>(true);
-        if (image == null)
-        {
-            Debug.LogError($"No image found in the children of {gameObject.name}. Please add one for the selection box to work.");
-            return;
-        }
+        // Image image = GetComponentInChildren<Image>(true);
+        // if (image == null)
+        // {
+        //     Debug.LogError($"No image found in the children of {gameObject.name}. Please add one for the selection box to work.");
+        //     return;
+        // }
 
-        rectTransform ??= image.rectTransform;
-        parentRectTransform ??= rectTransform.parent as RectTransform;
+        // rectTransform ??= image.rectTransform;
+        // parentRectTransform ??= rectTransform.parent as RectTransform;
 
 
         if (rectTransform == null || parentRectTransform == null)
