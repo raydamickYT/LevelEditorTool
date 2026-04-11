@@ -6,6 +6,7 @@ using UnityEngine.InputSystem;
 
 public class SelectionHandler : MonoBehaviour
 {
+    [SerializeField] private SelectionBoxView selectionBoxView;
     public Camera cam;
     private selectionController selectionController;
     private Coroutine subscribeRoutine;
@@ -18,11 +19,21 @@ public class SelectionHandler : MonoBehaviour
             Debug.LogWarning($"No cam found on {gameObject.name} ");
         }
 
-        selectionController = new selectionController(cam);
+        if(selectionBoxView == null)
+        {
+            Debug.LogError($"No selection box view assigned to {gameObject.name}, please assign one for the selection box to work.");
+        }
+        
+        selectionController = new selectionController(cam, selectionBoxView);
 
         EventManager.Instance.AddDelegateListener("OnRegisterToSelectionController", (Action<GameObject, SelectableTargetData>)HandleRegister);
         EventManager.Instance.AddDelegateListener("OnDeRegisterToSelectionController", (Action<GameObject>)HandleDeregister);
     }
+
+    void Start()
+    {
+    }
+
     void Update()
     {
         selectionController?.TickSelectionInput();

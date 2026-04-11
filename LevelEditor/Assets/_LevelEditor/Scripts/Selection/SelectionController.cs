@@ -2,6 +2,7 @@ using System;
 using System.Collections.Generic;
 using UnityEngine;
 using UnityEngine.InputSystem;
+using UnityEngine.UI;
 
 /// <summary>
 /// this class manages whatever is selected at that point in time, it will communicate this by sending out events for any class to read.
@@ -11,15 +12,18 @@ using UnityEngine.InputSystem;
 public class selectionController
 {
     public Camera cam;
-    private Dictionary<GameObject, SelectableTargetData> selectedGameObjectsDictionary = new();
+    private Dictionary<GameObject, SelectableTargetData> selectableGameObjectsInSceneDict = new();
     private SelectableTargetData _currentSelection;
+    private HashSet<SelectableTargetData> _selectedGameObjects = new();
+    private SelectionBoxView _selectionBoxView;
     private Vector2 _pressStartScreenPosition;
     private bool startedOnGizmo, isPointerDown, isBoxDragging;
     private float _dragThreshold = 10f;
 
-    public selectionController(Camera cam)
+    public selectionController(Camera cam, SelectionBoxView selectionBoxView)
     {
         this.cam = cam;
+        _selectionBoxView = selectionBoxView;
 
         EventManager.Instance.AddDelegateListener("OnTrySelection", (Action<GameObject>)TrySelect);
     }
@@ -27,6 +31,7 @@ public class selectionController
     //ik heb de selection controller een normale class gemaakt zodat de meeste logica daar uitgevoerd kan worden.
     public void OnStartLeftClick()
     {
+        if (UIHelper.IsPointerOverUI()) return; 
         if (_currentSelection != null) //first check if we're clicking on the gizmo, if so we ignore the click and wait for the next one
         {
             if (RaycastHelper.IsClickingOnLayer(cam, LayerMask.GetMask("GizmoHandle")))
@@ -35,17 +40,23 @@ public class selectionController
                 return;
             }
         }
+
         _pressStartScreenPosition = Mouse.current.position.ReadValue();
         isPointerDown = true;
 
     }
     public void OnStopLeftClick()
     {
-        if(!isPointerDown) return;
+        if (!isPointerDown) return;
 
         isPointerDown = false;
-        isBoxDragging = false;
-        EventManager.Instance.TriggerUnityEvent("OnHideSelectionBox");
+
+        if (isBoxDragging) //check if we were dragging a selection.
+        {
+            SelectInRect(_selectionBoxView.Hide());
+            isBoxDragging = false;
+            return;
+        }
 
         RaycastHit2D hit;
         if (startedOnGizmo) //if we clicked on the gizmo, we ignore this click and reset the bool for the next click
@@ -75,35 +86,57 @@ public class selectionController
         {
             isBoxDragging = true;
             // _selectionBoxView.Show();
-            EventManager.Instance.TriggerUnityEvent("OnShowSelectionBox");
+            _selectionBoxView.Show();
         }
 
         if (isBoxDragging)
         {
-            EventManager.Instance.TriggerDelegate("OnUpdateSelectionBox", _pressStartScreenPosition, currentMousePosition);
+            _selectionBoxView.UpdateBox(_pressStartScreenPosition, currentMousePosition);
             // _selectionBoxView.UpdateBox(_pressStartScreenPosition, currentMousePosition);
         }
     }
     public void Register(GameObject rootObject, SelectableTargetData data)
     {
-        selectedGameObjectsDictionary[rootObject] = data;
+        selectableGameObjectsInSceneDict[rootObject] = data;
     }
 
     public void Deregister(GameObject rootObject)
     {
-        selectedGameObjectsDictionary.Remove(rootObject);
+        selectableGameObjectsInSceneDict.Remove(rootObject);
     }
     public void ClearDict()
     {
-        selectedGameObjectsDictionary.Clear();
+        selectableGameObjectsInSceneDict.Clear();
+    }
+    public void SelectInRect(Rect screenRect)
+    {
+        ClearSelection();
+
+        foreach (var pair in selectableGameObjectsInSceneDict)
+        {
+            GameObject targetobj = pair.Key;
+            SelectableTargetData targetData = pair.Value;
+
+            Vector3 screenpoint3D = cam.WorldToScreenPoint(targetobj.transform.position);
+            if (screenpoint3D.z < 0f) continue; //if the object is behind the camera, we ignore it
+
+            Vector2 screenpoint = new Vector2(screenpoint3D.x, screenpoint3D.y);
+
+            if (screenRect.Contains(screenpoint))
+            {
+                OnTargetSelected(targetData);
+            }
+        }
+
+        //later kijken hoe de gizmo zich gedraagt bij het selecteren van meerdere objecten
     }
 
     public void TrySelect(GameObject selectedObject)
     {
-        if (!selectedGameObjectsDictionary.ContainsKey(selectedObject)) return;
+        if (!selectableGameObjectsInSceneDict.ContainsKey(selectedObject)) return;
 
 
-        if (selectedGameObjectsDictionary.TryGetValue(selectedObject, out SelectableTargetData obj)) //note to self: if you notice you use this more often than once, try making a helper
+        if (selectableGameObjectsInSceneDict.TryGetValue(selectedObject, out SelectableTargetData obj)) //note to self: if you notice you use this more often than once, try making a helper
         {
             if (_currentSelection != obj)
             {
@@ -111,6 +144,16 @@ public class selectionController
                     ClearSelection();
                 OnTargetSelected(obj);
             }
+        }
+    }
+    public void AddToSelection(SelectableTargetData targetData)
+    {
+        if (targetData?.SelectableComponent == null)
+            return;
+
+        if (_selectedGameObjects.Add(targetData))
+        {
+            targetData.SelectableComponent.OnSelect();
         }
     }
 
@@ -123,6 +166,7 @@ public class selectionController
             return;
         }
         _currentSelection = targetData;
+        AddToSelection(targetData);
         // currentTargetList.Add(targetData);
 
         _currentSelection.SelectableComponent.OnSelect();
@@ -136,6 +180,12 @@ public class selectionController
     {
         if (_currentSelection == null) return;
 
+        foreach (var item in _selectedGameObjects)
+        {
+            item.SelectableComponent.OnDeselect();
+            item.SelectableComponent.OnHide();
+        }
+        _selectedGameObjects.Clear();
         //future: add multi selection logic
 
         _currentSelection.SelectableComponent.OnDeselect(); //single target

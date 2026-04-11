@@ -5,6 +5,7 @@ using UnityEngine.UI;
 public class SelectionBoxView : MonoBehaviour
 {
     private RectTransform rectTransform, parentRectTransform;
+    public Rect CurrentSelectionRect => rectTransform.rect;
     // Start is called once before the first execution of Update after the MonoBehaviour is created
     void Start()
     {
@@ -28,9 +29,6 @@ public class SelectionBoxView : MonoBehaviour
         if (rectTransform.gameObject.activeSelf)
             Hide();
 
-        EventManager.Instance.AddUnityEventListener("OnShowSelectionBox", Show);
-        EventManager.Instance.AddUnityEventListener("OnHideSelectionBox", Hide);
-        EventManager.Instance.AddDelegateListener("OnUpdateSelectionBox", (Action<Vector2, Vector2>)UpdateBox);
     }
 
     public void Show()
@@ -59,8 +57,10 @@ public class SelectionBoxView : MonoBehaviour
         rectTransform.sizeDelta = max - min;
     }
 
-    public void Hide()
+    public Rect Hide()
     {
         rectTransform.gameObject.SetActive(false);
+        return CurrentSelectionRect;
+        //TODO: hier moet waarschijnlijk een event komen die het oppervlakte van de selectie box doorgeeft aan de selection controller
     }
 }
