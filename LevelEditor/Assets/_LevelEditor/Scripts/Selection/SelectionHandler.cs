@@ -1,5 +1,6 @@
 using System;
 using System.Collections;
+using UnityEditor;
 using UnityEngine;
 using UnityEngine.InputSystem;
 
@@ -22,7 +23,10 @@ public class SelectionHandler : MonoBehaviour
         EventManager.Instance.AddDelegateListener("OnRegisterToSelectionController", (Action<GameObject, SelectableTargetData>)HandleRegister);
         EventManager.Instance.AddDelegateListener("OnDeRegisterToSelectionController", (Action<GameObject>)HandleDeregister);
     }
-
+    void Update()
+    {
+        selectionController?.TickSelectionInput();
+    }
 
     // Start is called once before the first execution of Update after the MonoBehaviour is created
     void OnEnable()

@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using UnityEngine;
+using UnityEngine.InputSystem;
 
 /// <summary>
 /// this class manages whatever is selected at that point in time, it will communicate this by sending out events for any class to read.
@@ -12,7 +13,9 @@ public class selectionController
     public Camera cam;
     private Dictionary<GameObject, SelectableTargetData> selectedGameObjectsDictionary = new();
     private SelectableTargetData _currentSelection;
-    private bool startedOnGizmo;
+    private Vector2 _pressStartScreenPosition;
+    private bool startedOnGizmo, isPointerDown, isBoxDragging;
+    private float _dragThreshold = 10f;
 
     public selectionController(Camera cam)
     {
@@ -32,11 +35,20 @@ public class selectionController
                 return;
             }
         }
+        _pressStartScreenPosition = Mouse.current.position.ReadValue();
+        isPointerDown = true;
+
     }
     public void OnStopLeftClick()
     {
+        if(!isPointerDown) return;
+
+        isPointerDown = false;
+        isBoxDragging = false;
+        EventManager.Instance.TriggerUnityEvent("OnHideSelectionBox");
+
         RaycastHit2D hit;
-        if(startedOnGizmo) //if we clicked on the gizmo, we ignore this click and reset the bool for the next click
+        if (startedOnGizmo) //if we clicked on the gizmo, we ignore this click and reset the bool for the next click
         {
             startedOnGizmo = false;
             return;
@@ -53,7 +65,25 @@ public class selectionController
         }
     }
 
+    public void TickSelectionInput()
+    {
+        if (!isPointerDown) return;
 
+        Vector2 currentMousePosition = Mouse.current.position.ReadValue();
+        if (!isBoxDragging &&
+            Vector2.Distance(_pressStartScreenPosition, currentMousePosition) >= _dragThreshold)
+        {
+            isBoxDragging = true;
+            // _selectionBoxView.Show();
+            EventManager.Instance.TriggerUnityEvent("OnShowSelectionBox");
+        }
+
+        if (isBoxDragging)
+        {
+            EventManager.Instance.TriggerDelegate("OnUpdateSelectionBox", _pressStartScreenPosition, currentMousePosition);
+            // _selectionBoxView.UpdateBox(_pressStartScreenPosition, currentMousePosition);
+        }
+    }
     public void Register(GameObject rootObject, SelectableTargetData data)
     {
         selectedGameObjectsDictionary[rootObject] = data;
@@ -66,16 +96,6 @@ public class selectionController
     public void ClearDict()
     {
         selectedGameObjectsDictionary.Clear();
-    }
-
-    public void StartSelectionBox()
-    {
-        
-    }
-
-    public void StopSelectionBox()
-    {
-
     }
 
     public void TrySelect(GameObject selectedObject)
