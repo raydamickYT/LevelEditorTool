@@ -12,7 +12,7 @@ public class selectionController
     public Camera cam;
     private Dictionary<GameObject, SelectableTargetData> selectedGameObjectsDictionary = new();
     private SelectableTargetData _currentSelection;
-    public SelectableTargetData CurrentSelection => _currentSelection;
+    private bool startedOnGizmo;
 
     public selectionController(Camera cam)
     {
@@ -22,15 +22,27 @@ public class selectionController
     }
 
     //ik heb de selection controller een normale class gemaakt zodat de meeste logica daar uitgevoerd kan worden.
-    public void HandleLeftClick()
+    public void OnStartLeftClick()
     {
-        RaycastHit2D hit;
-        if (_currentSelection != null)
+        if (_currentSelection != null) //first check if we're clicking on the gizmo, if so we ignore the click and wait for the next one
         {
             if (RaycastHelper.IsClickingOnLayer(cam, LayerMask.GetMask("GizmoHandle")))
+            {
+                startedOnGizmo = true;
                 return;
+            }
         }
-        if (RaycastHelper.TryGetPointerHit2D(cam, LayerMask.GetMask("Selectable"), out hit))
+    }
+    public void OnStopLeftClick()
+    {
+        RaycastHit2D hit;
+        if(startedOnGizmo) //if we clicked on the gizmo, we ignore this click and reset the bool for the next click
+        {
+            startedOnGizmo = false;
+            return;
+        }
+
+        if (RaycastHelper.TryGetPointerHit2D(cam, LayerMask.GetMask("Selectable"), out hit)) //then we get to the selection logic, if we hit something with the selectable layer, we try to select it
         {
             TrySelect(hit.collider.gameObject);
             return;
@@ -54,6 +66,16 @@ public class selectionController
     public void ClearDict()
     {
         selectedGameObjectsDictionary.Clear();
+    }
+
+    public void StartSelectionBox()
+    {
+        
+    }
+
+    public void StopSelectionBox()
+    {
+
     }
 
     public void TrySelect(GameObject selectedObject)

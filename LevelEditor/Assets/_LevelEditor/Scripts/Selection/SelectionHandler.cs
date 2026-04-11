@@ -55,7 +55,12 @@ public class SelectionHandler : MonoBehaviour
     {
         if (context.started)
         {
-            selectionController?.HandleLeftClick();
+            selectionController?.OnStartLeftClick();
+        }
+
+        if(context.canceled)
+        {
+            selectionController?.OnStopLeftClick();
         }
     }
 
