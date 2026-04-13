@@ -124,7 +124,7 @@ public class ObjectButtonController : MonoBehaviour, IBeginDragHandler, IEndDrag
         //cleanup preview and remove spawned object reference if they exist
         if (objectExists)
         {
-            EventManager.Instance.TriggerDelegate("OnTrySelection", spawnedObject);
+            EventManager.Instance.TriggerDelegate(SelectionEvents.OnTrySelection, spawnedObject);
             spawnedObject = null;
         }
 

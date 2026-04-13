@@ -1,12 +1,10 @@
 using System;
 using System.Collections;
-using UnityEditor;
 using UnityEngine;
 using UnityEngine.InputSystem;
 
 public class SelectionHandler : MonoBehaviour
 {
-    [SerializeField] private SelectionBoxView selectionBoxView;
     public Camera cam;
     private selectionController selectionController;
     private Coroutine subscribeRoutine;
@@ -18,20 +16,11 @@ public class SelectionHandler : MonoBehaviour
         {
             Debug.LogWarning($"No cam found on {gameObject.name} ");
         }
-
-        if(selectionBoxView == null)
-        {
-            Debug.LogError($"No selection box view assigned to {gameObject.name}, please assign one for the selection box to work.");
-        }
         
-        selectionController = new selectionController(cam, selectionBoxView);
+        selectionController = new selectionController(cam);
 
-        EventManager.Instance.AddDelegateListener("OnRegisterToSelectionController", (Action<GameObject, SelectableTargetData>)HandleRegister);
-        EventManager.Instance.AddDelegateListener("OnDeRegisterToSelectionController", (Action<GameObject>)HandleDeregister);
-    }
-
-    void Start()
-    {
+        EventManager.Instance.AddDelegateListener(SelectionEvents.RegisterToSelectionController, (Action<GameObject, SelectableTargetData>)HandleRegister);
+        EventManager.Instance.AddDelegateListener(SelectionEvents.DeRegisterToSelectionController, (Action<GameObject>)HandleDeregister);
     }
 
     void Update()
@@ -84,4 +73,22 @@ public class SelectionHandler : MonoBehaviour
 
     private void HandleDeregister(GameObject obj)
         => selectionController?.Deregister(obj);
+}
+
+/// <summary>
+/// All the events we use for selection in a class with strings to prevent typos and make it easier to find where they're used. If an event needs to pass data, we can add a new one with the appropriate parameters, but for now these are the ones we need.
+/// </summary>
+public static class SelectionEvents
+{
+    public const string RegisterToSelectionController = "OnRegisterToSelectionController";
+    public const string DeRegisterToSelectionController = "OnDeRegisterToSelectionController";
+    public const string ShowSelectionBox = "ShowSelectionBox";
+    public const string UpdateSelectionBox = "UpdateSelectionBox";
+    public const string HideSelectionBox = "HideSelectionBox";
+    public const string OnSelectionChanged = "OnSelectionChanged";
+    public const string OnTrySelection = "OnTrySelection";
+
+    //signals
+    public static Func<Rect> FinalizeSelectionRect;
+
 }

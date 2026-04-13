@@ -20,7 +20,7 @@ public class GizmoObject : MonoBehaviour, IGizmoObject
         }
 
         gizmoTargetData.SelectableComponent = this;
-        EventManager.Instance.TriggerDelegate("OnRegisterToSelectionController", gizmoTargetData.BaseObject, gizmoTargetData);
+        EventManager.Instance.TriggerDelegate(SelectionEvents.RegisterToSelectionController, gizmoTargetData.BaseObject, gizmoTargetData);
     }
 
     void LateUpdate()
@@ -37,7 +37,7 @@ public class GizmoObject : MonoBehaviour, IGizmoObject
 
     void OnDestroy()
     {
-        EventManager.Instance.TriggerDelegate("OnDeRegisterToSelectionController", gizmoTargetData.BaseObject);
+        EventManager.Instance.TriggerDelegate(SelectionEvents.DeRegisterToSelectionController, gizmoTargetData.BaseObject);
     }
 
 

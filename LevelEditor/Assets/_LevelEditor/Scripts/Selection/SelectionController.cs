@@ -1,6 +1,5 @@
 using System;
 using System.Collections.Generic;
-using System.Linq;
 using UnityEngine;
 using UnityEngine.InputSystem;
 using UnityEngine.UI;
@@ -16,17 +15,16 @@ public class selectionController
     private Dictionary<GameObject, SelectableTargetData> selectableGameObjectsInSceneDict = new();
     // private SelectableTargetData _currentSelection;
     private HashSet<SelectableTargetData> _selectedGameObjects = new();
-    private SelectionBoxView _selectionBoxView;
+    // private SelectionBoxBase _selectionBoxView;
     private Vector2 _pressStartScreenPosition;
     private bool startedOnGizmo, isPointerDown, isBoxDragging;
     private float _dragThreshold = 10f;
 
-    public selectionController(Camera cam, SelectionBoxView selectionBoxView)
+    public selectionController(Camera cam)
     {
         this.cam = cam;
-        _selectionBoxView = selectionBoxView;
 
-        EventManager.Instance.AddDelegateListener("OnTrySelection", (Action<GameObject>)TrySelect);
+        EventManager.Instance.AddDelegateListener(SelectionEvents.OnTrySelection, (Action<GameObject>)TrySelect);
     }
 
     //ik heb de selection controller een normale class gemaakt zodat de meeste logica daar uitgevoerd kan worden.
@@ -54,7 +52,10 @@ public class selectionController
 
         if (isBoxDragging) //check if we were dragging a selection.
         {
-            SelectInRect(_selectionBoxView.Hide());
+            Rect rect = SelectionEvents.FinalizeSelectionRect?.Invoke() ?? default;
+            EventManager.Instance.TriggerUnityEvent(SelectionEvents.HideSelectionBox);
+            
+            SelectInRect(rect);
             isBoxDragging = false;
             return;
         }
@@ -86,14 +87,12 @@ public class selectionController
             Vector2.Distance(_pressStartScreenPosition, currentMousePosition) >= _dragThreshold)
         {
             isBoxDragging = true;
-            // _selectionBoxView.Show();
-            _selectionBoxView.Show();
+            EventManager.Instance.TriggerUnityEvent(SelectionEvents.ShowSelectionBox);
         }
 
         if (isBoxDragging)
         {
-            _selectionBoxView.UpdateBox(_pressStartScreenPosition, currentMousePosition);
-            // _selectionBoxView.UpdateBox(_pressStartScreenPosition, currentMousePosition);
+            EventManager.Instance.TriggerDelegate(SelectionEvents.UpdateSelectionBox, _pressStartScreenPosition, currentMousePosition);
         }
     }
     public void Register(GameObject rootObject, SelectableTargetData data)
@@ -189,14 +188,7 @@ public class selectionController
     private void RefreshGizmo()
     {
         Debug.Log("selected objects count: " + _selectedGameObjects.Count);
-        EventManager.Instance.TriggerDelegate("OnSelectionChanged", _selectedGameObjects);
-        // if (_selectedGameObjects.Count == 0)
-        // {
-        //     EventManager.Instance.TriggerUnityEvent("OnSelectionCleared");
-        // }
-        // else
-        // {
-        // }
+        EventManager.Instance.TriggerDelegate(SelectionEvents.OnSelectionChanged, _selectedGameObjects);
     }
 
     public void ClearSelection()

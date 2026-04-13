@@ -9,7 +9,7 @@ public class GizmoHandler : MonoBehaviour
     private void Awake()
     {
         // EventManager.Instance.AddDelegateListener("OnShowGizmo", (Action<SelectableTargetData>)HandleShowGizmo);
-        EventManager.Instance.AddDelegateListener("OnSelectionChanged", (Action<HashSet<SelectableTargetData>>)HandleHideGizmo);
+        EventManager.Instance.AddDelegateListener(SelectionEvents.OnSelectionChanged, (Action<HashSet<SelectableTargetData>>)HandleHideGizmo);
         EventManager.Instance.AddDelegateListener("OnGizmoTypeChanged", (Action<GizmoType>)HandleGizmoTypeChanged);
 
     }
