@@ -31,21 +31,28 @@ public class selectionController
     public void OnStartLeftClick()
     {
         if (UIHelper.IsPointerOverUI()) return;
-        if (_selectedGameObjects.Count != 0) //first check if we're clicking on the gizmo, if so we ignore the click and wait for the next one
+
+        startedOnGizmo = false;
+
+        if (RaycastHelper.IsClickingOnLayer(cam, LayerMask.GetMask("GizmoHandle"))) //first check if we're clicking on the gizmo, if so we ignore the click and wait for the next one
         {
-            if (RaycastHelper.IsClickingOnLayer(cam, LayerMask.GetMask("GizmoHandle")))
-            {
-                startedOnGizmo = true;
-                return;
-            }
+            startedOnGizmo = true;
+            return;
         }
 
         _pressStartScreenPosition = Mouse.current.position.ReadValue();
         isPointerDown = true;
-
     }
+
     public void OnStopLeftClick()
     {
+        if (startedOnGizmo)
+        {
+            startedOnGizmo = false;
+            isPointerDown = false;
+            isBoxDragging = false;
+            return;
+        }
         if (!isPointerDown) return;
 
         isPointerDown = false;
@@ -54,20 +61,13 @@ public class selectionController
         {
             Rect rect = SelectionEvents.FinalizeSelectionRect?.Invoke() ?? default;
             EventManager.Instance.TriggerUnityEvent(SelectionEvents.HideSelectionBox);
-            
+
             SelectInRect(rect);
             isBoxDragging = false;
             return;
         }
 
-        RaycastHit2D hit;
-        if (startedOnGizmo) //if we clicked on the gizmo, we ignore this click and reset the bool for the next click
-        {
-            startedOnGizmo = false;
-            return;
-        }
-
-        if (RaycastHelper.TryGetPointerHit2D(cam, LayerMask.GetMask("Selectable"), out hit)) //then we get to the selection logic, if we hit something with the selectable layer, we try to select it
+        if (RaycastHelper.TryGetPointerHit2D(cam, LayerMask.GetMask("Selectable"), out RaycastHit2D hit)) //then we get to the selection logic, if we hit something with the selectable layer, we try to select it
         {
             TrySelect(hit.collider.gameObject);
             return;
@@ -95,6 +95,7 @@ public class selectionController
             EventManager.Instance.TriggerDelegate(SelectionEvents.UpdateSelectionBox, _pressStartScreenPosition, currentMousePosition);
         }
     }
+
     public void Register(GameObject rootObject, SelectableTargetData data)
     {
         selectableGameObjectsInSceneDict[rootObject] = data;
@@ -158,12 +159,14 @@ public class selectionController
 
         return screenRect.Overlaps(objectScreenRect, true);
     }
+    
     public void TrySelect(GameObject selectedObject)
     {
         if (!selectableGameObjectsInSceneDict.TryGetValue(selectedObject, out SelectableTargetData obj))
             return;
 
-        if (_selectedGameObjects.Count == 1 && _selectedGameObjects.Contains(obj))
+        Debug.Log(_selectedGameObjects.Contains(obj));
+        if (_selectedGameObjects.Count >= 1 && _selectedGameObjects.Contains(obj))
             return;
 
         ClearSelection();

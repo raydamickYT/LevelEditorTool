@@ -24,13 +24,17 @@ public class GizmoController
     {
         HideCurrentGizmos(); //having this at the top will make sure that all gizmo's are hidden even if there's none selected.
         if (data == null || data.Count == 0)
+        {
+            groupGizmoObject?.ClearTarget();
             return;
+        }
 
         switch (data.Count)
         {
             case 1:
                 var target = data.FirstOrDefault();
-                target?.SelectableComponent?.OnShow(currentGizmoType);
+                // target?.SelectableComponent?.OnShow(currentGizmoType); //TODO: should switch to new gizmo workflow
+                ShowGizmo(target);
 
                 if (target != null)
                     _currentGizmoTargets.Add(target);
@@ -44,6 +48,27 @@ public class GizmoController
                 ShowGroupGizmo();
                 break;
         }
+    }
+
+    private void ShowGizmo(SelectableTargetData target)
+    {
+        if (groupGizmoObject == null)
+        {
+            Debug.LogError("No groupgizmoObject assigned.");
+            return;
+        }
+
+        if (target.BaseObject == null)
+        {
+            Debug.LogError("Target baseobject is null for: " + target.BaseObject.name);
+            return;
+        }
+
+        groupGizmoObject.SetTarget(target);
+        groupGizmoObject.gameObject.transform.position = target.BaseObject.transform.position;
+        // groupGizmoObject?.OnSelect();
+        groupGizmoObject?.OnShow(currentGizmoType);
+        groupGizmoActive = true;
     }
 
     private void ShowGroupGizmo()
@@ -61,7 +86,7 @@ public class GizmoController
 
         groupGizmoObject.gizmoTargetData.BaseObject = SetupTempParentObject(center);
         groupGizmoObject.gameObject.transform.position = center;
-        groupGizmoObject?.OnSelect();
+        // groupGizmoObject?.OnSelect();
         groupGizmoObject?.OnShow(currentGizmoType);
         groupGizmoActive = true;
     }
@@ -112,21 +137,16 @@ public class GizmoController
         return sum / selection.Count;
     }
 
-    public void HideCurrentGizmos()
+    public void HideCurrentGizmos(bool clearTarget = false)
     {
-        switch (_currentGizmoTargets.Count)
-        {
-            case 1:
-                var target = _currentGizmoTargets.FirstOrDefault();
-                target?.SelectableComponent?.OnHide();
-                break;
-            default:
-                ClearTempParent();
-                groupGizmoActive = false;
-                groupGizmoObject?.OnHide();
-                groupGizmoObject?.OnDeselect();
-                break;
-        }
+        if (_currentGizmoTargets.Count != 1)
+            ClearTempParent();
+
+        groupGizmoActive = false;
+        groupGizmoObject?.OnHide();
+
+        if (clearTarget)
+            groupGizmoObject?.ClearTarget();
 
         _currentGizmoTargets.Clear();
     }
@@ -143,8 +163,8 @@ public class GizmoController
             case false:
                 foreach (var target in _currentGizmoTargets)
                 {
-                    target.SelectableComponent?.OnHide();
-                    target.SelectableComponent?.OnShow(currentGizmoType);
+                    // target.SelectableComponent?.OnHide(); //TODO: should switch to new gizmo workflow
+                    // target.SelectableComponent?.OnShow(currentGizmoType);
                 }
                 break;
             default:
@@ -176,7 +196,7 @@ public class GizmoController
             case not null:
                 tempParentObject.transform.position = center;
                 tempParentObject.SetActive(true);
-                
+
                 foreach (var target in _currentGizmoTargets)
                 {
                     target.BaseObject.transform.SetParent(tempParentObject.transform);

@@ -1,10 +1,11 @@
+using System;
 using UnityEngine;
+using UnityEngine.Rendering;
 
 public class GizmoObject : MonoBehaviour, IGizmoObject
 {
-    public SelectableTargetData gizmoTargetData;
-
-    public bool IsSelected => gizmoTargetData != null && gizmoTargetData.IsSelected;
+    public GizmoTargetData gizmoTargetData;
+    public ISelectable selectableObject;
 
     public Transform TargetTransform => gizmoTargetData != null && gizmoTargetData.BaseObject != null
         ? gizmoTargetData.BaseObject.transform
@@ -19,13 +20,17 @@ public class GizmoObject : MonoBehaviour, IGizmoObject
             return;
         }
 
-        gizmoTargetData.SelectableComponent = this;
-        EventManager.Instance.TriggerDelegate(SelectionEvents.RegisterToSelectionController, gizmoTargetData.BaseObject, gizmoTargetData);
+        EventManager.Instance.AddDelegateListener(SelectionEvents.OnSelectionMade, (Action<SelectableTargetData>)SetTarget);
+
+        // gizmoTargetData.SelectableComponent = this;
+        // EventManager.Instance.TriggerDelegate(SelectionEvents.RegisterToSelectionController, gizmoTargetData.BaseObject, gizmoTargetData);
     }
 
     void LateUpdate()
     {
-        if (!IsSelected || TargetTransform == null)
+        // if (!IsSelected || TargetTransform == null) //TODO there should be another flag to check if the gizmo is active.
+        //     return;
+        if(selectableObject == null)
             return;
 
         Transform activeRoot = GetActiveGizmoRoot();
@@ -37,7 +42,7 @@ public class GizmoObject : MonoBehaviour, IGizmoObject
 
     void OnDestroy()
     {
-        EventManager.Instance.TriggerDelegate(SelectionEvents.DeRegisterToSelectionController, gizmoTargetData.BaseObject);
+        // EventManager.Instance.TriggerDelegate(SelectionEvents.DeRegisterToSelectionController, gizmoTargetData.BaseObject);
     }
 
 
@@ -65,6 +70,7 @@ public class GizmoObject : MonoBehaviour, IGizmoObject
                 break;
         }
 
+        Debug.Log("shwoing handles for gimzo: ");
         gizmoTargetData.type = gizmoType;
     }
 
@@ -74,6 +80,7 @@ public class GizmoObject : MonoBehaviour, IGizmoObject
     {
         if (gizmoTargetData == null)
             return;
+        Debug.Log("hiding handles for gimzo: ");
 
         if (gizmoTargetData.MoveGizmo != null)
             gizmoTargetData.MoveGizmo.SetActive(false);
@@ -83,25 +90,22 @@ public class GizmoObject : MonoBehaviour, IGizmoObject
 
         if (gizmoTargetData.ScaleGizmo != null)
             gizmoTargetData.ScaleGizmo.SetActive(false);
+
+        // selectableObject = null;
     }
 
-    public void OnSelect()
+    public void SetTarget(SelectableTargetData selectable)
     {
-        // Debug.Log("this object was selected");
-        if (gizmoTargetData == null)
-            return;
-
-        gizmoTargetData.IsSelected = true;
+        gizmoTargetData.BaseObject = selectable?.BaseObject;
+        selectableObject = selectable.SelectableComponent;
     }
 
-    public void OnDeselect()
+    public void ClearTarget()
     {
-        if (gizmoTargetData == null)
-        {
-            return;
-        }
-        gizmoTargetData.IsSelected = false;
+        gizmoTargetData.BaseObject = null;
+        selectableObject = null;
     }
+
 
     public Transform GetActiveGizmoRoot()
     {

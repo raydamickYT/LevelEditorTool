@@ -21,7 +21,7 @@ public class GizmoInteractionHandler : MonoBehaviour
     // Start is called once before the first execution of Update after the MonoBehaviour is created
     void Start()
     {
-        if(cam == null)
+        if (cam == null)
         {
             cam = Camera.main;
             if (cam == null)
@@ -95,8 +95,17 @@ public class GizmoInteractionHandler : MonoBehaviour
         if (!TryGetHandleUnderPointer(out GizmoHandle handle))
             return;
 
-        if (handle.Owner == null || !handle.Owner.IsSelected || handle.Owner.TargetTransform == null)
+        if (handle.Owner.selectableObject == null)
+        {
+            Debug.Log("Handle's owner has no selectableObject: " + handle.name);
             return;
+        }
+
+        if (handle.Owner == null || handle.Owner.selectableObject == null || !handle.Owner.selectableObject.IsSelected || handle.Owner.TargetTransform == null)
+        {
+            Debug.Log("Handle under pointer is not valid for dragging.");
+            return;
+        }
 
         activeHandle = handle;
         activeTarget = handle.Owner.TargetTransform;
@@ -205,6 +214,7 @@ public class GizmoInteractionHandler : MonoBehaviour
         handle = hit.collider.GetComponent<GizmoHandle>();
         if (handle == null)
             handle = hit.collider.GetComponentInParent<GizmoHandle>();
+
 
         return handle != null;
     }
