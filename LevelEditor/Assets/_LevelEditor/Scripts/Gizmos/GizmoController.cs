@@ -15,7 +15,7 @@ public class GizmoController
 
     private bool groupGizmoActive = false;
 
-    public GizmoController(GizmoObject _groupGizmoObject)
+    public GizmoController(GizmoObject _groupGizmoObject) //constructor
     {
         groupGizmoObject = _groupGizmoObject;
     }
