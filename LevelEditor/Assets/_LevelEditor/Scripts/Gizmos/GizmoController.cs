@@ -1,24 +1,23 @@
 using System.Collections.Generic;
 using System.Linq;
+using Unity.Mathematics;
+using UnityEngine;
 
 /// <summary>
 /// This class only manager the gizmo types and makes sure that the right object is displaying the right gizmo type
 /// </summary>
 public class GizmoController
 {
+    private GameObject tempParentObject;
     private GizmoType currentGizmoType = GizmoType.move;
-    private SelectableTargetData currentTarget;
+    private GizmoObject groupGizmoObject;
     private HashSet<SelectableTargetData> _currentGizmoTargets = new();
 
-    public GizmoType CurrentGizmoType => currentGizmoType;
+    private bool groupGizmoActive = false;
 
-    public void ShowGizmo(SelectableTargetData data)
+    public GizmoController(GizmoObject _groupGizmoObject)
     {
-        if (data == null)
-            return;
-
-        currentTarget = data;
-        currentTarget.SelectableComponent?.OnShow(currentGizmoType);
+        groupGizmoObject = _groupGizmoObject;
     }
 
     public void HandleSelectionChanged(HashSet<SelectableTargetData> data)
@@ -39,18 +38,94 @@ public class GizmoController
             default:
                 foreach (var t in data)
                 {
-                    t.SelectableComponent?.OnShow(currentGizmoType);
+                    // t.SelectableComponent?.OnShow(currentGizmoType);
                     _currentGizmoTargets.Add(t);
                 }
+                ShowGroupGizmo();
                 break;
         }
     }
 
+    private void ShowGroupGizmo()
+    {
+        if (_currentGizmoTargets == null || _currentGizmoTargets.Count == 0)
+            return;
+
+        if (groupGizmoObject == null)
+        {
+            Debug.LogError("No groupgizmoObject assigned.");
+            return;
+        }
+
+        Vector3 center = GetSelectionBoundsCenter(_currentGizmoTargets);
+
+        groupGizmoObject.gizmoTargetData.BaseObject = SetupTempParentObject(center);
+        groupGizmoObject.gameObject.transform.position = center;
+        groupGizmoObject?.OnSelect();
+        groupGizmoObject?.OnShow(currentGizmoType);
+        groupGizmoActive = true;
+    }
+
+    public Vector3 GetSelectionBoundsCenter(HashSet<SelectableTargetData> selection)
+    {
+        if (selection == null || selection.Count == 0)
+            return Vector3.zero;
+
+        bool hasBounds = false;
+        Bounds combinedBounds = default;
+
+        foreach (var target in selection)
+        {
+            Collider2D collider = target.BaseObject.GetComponent<Collider2D>();
+            if (collider == null)
+                continue;
+
+            if (!hasBounds)
+            {
+                combinedBounds = collider.bounds;
+                hasBounds = true;
+            }
+            else
+            {
+                combinedBounds.Encapsulate(collider.bounds);
+            }
+        }
+
+        if (!hasBounds)
+            return GetSelectionCenter(selection);
+
+        return combinedBounds.center;
+    }
+
+    public Vector3 GetSelectionCenter(HashSet<SelectableTargetData> selection)
+    {
+        if (selection == null || selection.Count == 0)
+            return Vector3.zero;
+
+        Vector3 sum = Vector3.zero;
+
+        foreach (var target in selection)
+        {
+            sum += target.BaseObject.transform.position;
+        }
+
+        return sum / selection.Count;
+    }
+
     public void HideCurrentGizmos()
     {
-        foreach (var target in _currentGizmoTargets)
+        switch (_currentGizmoTargets.Count)
         {
-            target.SelectableComponent?.OnHide();
+            case 1:
+                var target = _currentGizmoTargets.FirstOrDefault();
+                target?.SelectableComponent?.OnHide();
+                break;
+            default:
+                ClearTempParent();
+                groupGizmoActive = false;
+                groupGizmoObject?.OnHide();
+                groupGizmoObject?.OnDeselect();
+                break;
         }
 
         _currentGizmoTargets.Clear();
@@ -61,13 +136,69 @@ public class GizmoController
         if (currentGizmoType == newGizmoType)
             return;
 
-        if (currentTarget != null)
-            currentTarget.SelectableComponent?.OnHide();
-
         currentGizmoType = newGizmoType;
 
-        if (currentTarget != null)
-            currentTarget.SelectableComponent?.OnShow(currentGizmoType);
+        switch (groupGizmoActive)
+        {
+            case false:
+                foreach (var target in _currentGizmoTargets)
+                {
+                    target.SelectableComponent?.OnHide();
+                    target.SelectableComponent?.OnShow(currentGizmoType);
+                }
+                break;
+            default:
+                groupGizmoObject?.OnHide();
+                groupGizmoObject?.OnShow(currentGizmoType);
+                break;
+        }
+
+    }
+
+    public void ClearTempParent()
+    {
+        if (tempParentObject != null)
+        {
+            foreach (var target in _currentGizmoTargets)
+            {
+                target.BaseObject.transform.SetParent(null);
+            }
+            // Object.Destroy(tempParentObject); //I could do this but I think it'd be nicer to just reuse the same temp parent object.
+            // tempParentObject = null;
+            tempParentObject.SetActive(false);
+        }
+    }
+
+    public GameObject SetupTempParentObject(Vector3 center)
+    {
+        switch (tempParentObject)
+        {
+            case not null:
+                tempParentObject.transform.position = center;
+                tempParentObject.SetActive(true);
+                
+                foreach (var target in _currentGizmoTargets)
+                {
+                    target.BaseObject.transform.SetParent(tempParentObject.transform);
+                }
+
+                return tempParentObject;
+            default:
+                GameObject tempParent = new GameObject("GizmoTempParent");
+                tempParent.transform.position = center;
+                tempParent.transform.rotation = Quaternion.identity;
+                tempParent.SetActive(true);
+
+                foreach (var target in _currentGizmoTargets)
+                {
+                    target.BaseObject.transform.SetParent(tempParent.transform);
+                }
+                tempParentObject = tempParent;
+
+                break;
+        }
+
+        return tempParentObject;
     }
 }
 

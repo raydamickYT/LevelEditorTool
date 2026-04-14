@@ -20,18 +20,18 @@ public class GizmoUIController : MonoBehaviour
     public void EnableMoveGizmo(InputAction.CallbackContext context)
     {
         if (context.started)
-            EventManager.Instance.TriggerDelegate("OnGizmoTypeChanged", GizmoType.move);
+            EventManager.Instance.TriggerDelegate(GimzmoEvents.OnGizmoTypeChanged, GizmoType.move);
     }
 
     public void EnableRotateGizmo(InputAction.CallbackContext context)
     {
         if (context.started)
-            EventManager.Instance.TriggerDelegate("OnGizmoTypeChanged", GizmoType.rotate);
+            EventManager.Instance.TriggerDelegate(GimzmoEvents.OnGizmoTypeChanged, GizmoType.rotate);
     }
 
     public void EnableScaleGizmo(InputAction.CallbackContext context)
     {
         if (context.started)
-            EventManager.Instance.TriggerDelegate("OnGizmoTypeChanged", GizmoType.scale);
+            EventManager.Instance.TriggerDelegate(GimzmoEvents.OnGizmoTypeChanged, GizmoType.scale);
     }
 }
