@@ -16,8 +16,8 @@ public class GizmoInteractionHandler : MonoBehaviour
     private Vector3 targetStartScale;
     private float targetStartRotationZ;
     private float startMouseAngle;
-
     private bool isDragging;
+
     // Start is called once before the first execution of Update after the MonoBehaviour is created
     void Start()
     {
@@ -29,12 +29,6 @@ public class GizmoInteractionHandler : MonoBehaviour
                 Debug.LogWarning($"No cam found on {gameObject.name} ");
             }
         }
-    }
-
-    // Update is called once per frame
-    void Update()
-    {
-
     }
 
     private void OnEnable()
@@ -186,6 +180,8 @@ public class GizmoInteractionHandler : MonoBehaviour
 
         Vector3 resultScale = targetStartScale + (scaleDelta * activeHandle.ScaleSensitivity);
         activeTarget.localScale = ClampScale(resultScale);
+
+        UpdateActiveScaleHandleVisual(projectedDistance); //nice visual feedback for the user to see how much they're scaling along the axis.
     }
 
     private Vector3 ClampScale(Vector3 scale)
@@ -199,6 +195,9 @@ public class GizmoInteractionHandler : MonoBehaviour
 
     private void StopDragging()
     {
+        if (activeHandle is GizmoScaleHandle scaleHandle)
+            scaleHandle.ResetScaleVisual();
+
         isDragging = false;
         activeHandle = null;
         activeTarget = null;
@@ -232,5 +231,13 @@ public class GizmoInteractionHandler : MonoBehaviour
         Vector3 mouseWorld = GetMouseWorldPosition();
         Vector2 dir = mouseWorld - targetPosition;
         return Mathf.Atan2(dir.y, dir.x) * Mathf.Rad2Deg;
+    }
+
+    private void UpdateActiveScaleHandleVisual(float dragAmount)
+    {
+        if (activeHandle is not GizmoScaleHandle scaleHandle)
+            return;
+
+        scaleHandle.UpdateScaleVisual(dragAmount);
     }
 }

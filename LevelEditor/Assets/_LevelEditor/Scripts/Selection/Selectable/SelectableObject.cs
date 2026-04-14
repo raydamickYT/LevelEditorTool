@@ -15,13 +15,7 @@ public class SelectableObject : MonoBehaviour, ISelectable
     }
     void OnDestroy()
     {
-        EventManager.Instance.TriggerDelegate(SelectionEvents.DeRegisterToSelectionController, gameObject, TargetData);
-    }
-
-    // Update is called once per frame
-    void Update()
-    {
-
+        EventManager.Instance.TriggerDelegate(SelectionEvents.DeRegisterToSelectionController, gameObject);
     }
 
     public void OnDeselect()

@@ -8,16 +8,23 @@ public class GizmoHandle : MonoBehaviour
     [SerializeField] private float rotationSensitivity = 0.25f;
     [SerializeField] private float scaleSensitivity = 0.01f;
 
+
+    public Vector3 StartLocalPosition;
+
     public GizmoObject Owner => owner;
     public GizmoHandleMode Mode => mode;
     public GizmoAxis Axis => axis;
     public float RotationSensitivity => rotationSensitivity;
     public float ScaleSensitivity => scaleSensitivity;
 
-    private void Reset()
+    protected virtual void Start()
     {
-        if (owner == null)
-            owner = GetComponentInParent<GizmoObject>();
+        StartLocalPosition = transform.localPosition;
+    }
+
+    public void ResetVisualState()
+    {
+        transform.localPosition = StartLocalPosition;
     }
 
     public Vector3 GetAxisVectorWorld()

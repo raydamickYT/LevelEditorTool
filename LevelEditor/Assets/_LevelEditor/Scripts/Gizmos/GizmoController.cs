@@ -10,14 +10,13 @@ public class GizmoController
 {
     private GameObject tempParentObject;
     private GizmoType currentGizmoType = GizmoType.move;
-    private GizmoObject groupGizmoObject;
+    private GizmoObject gizmoObject;
     private HashSet<SelectableTargetData> _currentGizmoTargets = new();
 
-    private bool groupGizmoActive = false;
 
-    public GizmoController(GizmoObject _groupGizmoObject) //constructor
+    public GizmoController(GizmoObject _gizmoObject)
     {
-        groupGizmoObject = _groupGizmoObject;
+        gizmoObject = _gizmoObject;
     }
 
     public void HandleSelectionChanged(HashSet<SelectableTargetData> data)
@@ -25,7 +24,7 @@ public class GizmoController
         HideCurrentGizmos(); //having this at the top will make sure that all gizmo's are hidden even if there's none selected.
         if (data == null || data.Count == 0)
         {
-            groupGizmoObject?.ClearTarget();
+            gizmoObject?.ClearTarget();
             return;
         }
 
@@ -33,8 +32,7 @@ public class GizmoController
         {
             case 1:
                 var target = data.FirstOrDefault();
-                // target?.SelectableComponent?.OnShow(currentGizmoType); //TODO: should switch to new gizmo workflow
-                ShowGizmo(target);
+                ShowSingleGizmo(target);
 
                 if (target != null)
                     _currentGizmoTargets.Add(target);
@@ -42,7 +40,6 @@ public class GizmoController
             default:
                 foreach (var t in data)
                 {
-                    // t.SelectableComponent?.OnShow(currentGizmoType);
                     _currentGizmoTargets.Add(t);
                 }
                 ShowGroupGizmo();
@@ -50,9 +47,9 @@ public class GizmoController
         }
     }
 
-    private void ShowGizmo(SelectableTargetData target)
+    private void ShowSingleGizmo(SelectableTargetData target)
     {
-        if (groupGizmoObject == null)
+        if (gizmoObject == null)
         {
             Debug.LogError("No groupgizmoObject assigned.");
             return;
@@ -64,11 +61,9 @@ public class GizmoController
             return;
         }
 
-        groupGizmoObject.SetTarget(target);
-        groupGizmoObject.gameObject.transform.position = target.BaseObject.transform.position;
-        // groupGizmoObject?.OnSelect();
-        groupGizmoObject?.OnShow(currentGizmoType);
-        groupGizmoActive = true;
+        gizmoObject.SetTarget(target);
+        gizmoObject.gameObject.transform.position = target.BaseObject.transform.position;
+        gizmoObject?.OnShow(currentGizmoType);
     }
 
     private void ShowGroupGizmo()
@@ -76,65 +71,17 @@ public class GizmoController
         if (_currentGizmoTargets == null || _currentGizmoTargets.Count == 0)
             return;
 
-        if (groupGizmoObject == null)
+        if (gizmoObject == null)
         {
             Debug.LogError("No groupgizmoObject assigned.");
             return;
         }
 
-        Vector3 center = GetSelectionBoundsCenter(_currentGizmoTargets);
+        Vector3 center = SelectionBoundsCalculator.GetSelectionBoundsCenter(_currentGizmoTargets);
 
-        groupGizmoObject.gizmoTargetData.BaseObject = SetupTempParentObject(center);
-        groupGizmoObject.gameObject.transform.position = center;
-        // groupGizmoObject?.OnSelect();
-        groupGizmoObject?.OnShow(currentGizmoType);
-        groupGizmoActive = true;
-    }
-
-    public Vector3 GetSelectionBoundsCenter(HashSet<SelectableTargetData> selection)
-    {
-        if (selection == null || selection.Count == 0)
-            return Vector3.zero;
-
-        bool hasBounds = false;
-        Bounds combinedBounds = default;
-
-        foreach (var target in selection)
-        {
-            Collider2D collider = target.BaseObject.GetComponent<Collider2D>();
-            if (collider == null)
-                continue;
-
-            if (!hasBounds)
-            {
-                combinedBounds = collider.bounds;
-                hasBounds = true;
-            }
-            else
-            {
-                combinedBounds.Encapsulate(collider.bounds);
-            }
-        }
-
-        if (!hasBounds)
-            return GetSelectionCenter(selection);
-
-        return combinedBounds.center;
-    }
-
-    public Vector3 GetSelectionCenter(HashSet<SelectableTargetData> selection)
-    {
-        if (selection == null || selection.Count == 0)
-            return Vector3.zero;
-
-        Vector3 sum = Vector3.zero;
-
-        foreach (var target in selection)
-        {
-            sum += target.BaseObject.transform.position;
-        }
-
-        return sum / selection.Count;
+        gizmoObject.gizmoTargetData.BaseObject = SetupTempParentObject(center);
+        gizmoObject.gameObject.transform.position = center;
+        gizmoObject?.OnShow(currentGizmoType);
     }
 
     public void HideCurrentGizmos(bool clearTarget = false)
@@ -142,11 +89,10 @@ public class GizmoController
         if (_currentGizmoTargets.Count != 1)
             ClearTempParent();
 
-        groupGizmoActive = false;
-        groupGizmoObject?.OnHide();
+        gizmoObject?.OnHide();
 
         if (clearTarget)
-            groupGizmoObject?.ClearTarget();
+            gizmoObject?.ClearTarget();
 
         _currentGizmoTargets.Clear();
     }
@@ -158,20 +104,8 @@ public class GizmoController
 
         currentGizmoType = newGizmoType;
 
-        switch (groupGizmoActive)
-        {
-            case false:
-                foreach (var target in _currentGizmoTargets)
-                {
-                    // target.SelectableComponent?.OnHide(); //TODO: should switch to new gizmo workflow
-                    // target.SelectableComponent?.OnShow(currentGizmoType);
-                }
-                break;
-            default:
-                groupGizmoObject?.OnHide();
-                groupGizmoObject?.OnShow(currentGizmoType);
-                break;
-        }
+        gizmoObject?.OnHide();
+        gizmoObject?.OnShow(currentGizmoType);
 
     }
 
@@ -183,8 +117,7 @@ public class GizmoController
             {
                 target.BaseObject.transform.SetParent(null);
             }
-            // Object.Destroy(tempParentObject); //I could do this but I think it'd be nicer to just reuse the same temp parent object.
-            // tempParentObject = null;
+
             tempParentObject.SetActive(false);
         }
     }
@@ -230,3 +163,51 @@ public enum GizmoType
     scale
 }
 
+public static class SelectionBoundsCalculator
+{
+    public static Vector3 GetSelectionBoundsCenter(HashSet<SelectableTargetData> selection)
+    {
+        if (selection == null || selection.Count == 0)
+            return Vector3.zero;
+
+        bool hasBounds = false;
+        Bounds combinedBounds = default;
+
+        foreach (var target in selection)
+        {
+            Collider2D collider = target.BaseObject.GetComponent<Collider2D>();
+            if (collider == null)
+                continue;
+
+            if (!hasBounds)
+            {
+                combinedBounds = collider.bounds;
+                hasBounds = true;
+            }
+            else
+            {
+                combinedBounds.Encapsulate(collider.bounds);
+            }
+        }
+
+        if (!hasBounds)
+            return GetSelectionCenter(selection);
+
+        return combinedBounds.center;
+    }
+
+    public static Vector3 GetSelectionCenter(HashSet<SelectableTargetData> selection)
+    {
+        if (selection == null || selection.Count == 0)
+            return Vector3.zero;
+
+        Vector3 sum = Vector3.zero;
+
+        foreach (var target in selection)
+        {
+            sum += target.BaseObject.transform.position;
+        }
+
+        return sum / selection.Count;
+    }
+}

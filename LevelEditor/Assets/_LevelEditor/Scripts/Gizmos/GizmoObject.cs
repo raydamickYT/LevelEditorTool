@@ -6,6 +6,7 @@ public class GizmoObject : MonoBehaviour, IGizmoObject
 {
     public GizmoTargetData gizmoTargetData;
     public ISelectable selectableObject;
+    [SerializeField] private float gizmoBaseSize = 1f;
 
     public Transform TargetTransform => gizmoTargetData != null && gizmoTargetData.BaseObject != null
         ? gizmoTargetData.BaseObject.transform
@@ -21,31 +22,56 @@ public class GizmoObject : MonoBehaviour, IGizmoObject
         }
 
         EventManager.Instance.AddDelegateListener(SelectionEvents.OnSelectionMade, (Action<SelectableTargetData>)SetTarget);
-
-        // gizmoTargetData.SelectableComponent = this;
-        // EventManager.Instance.TriggerDelegate(SelectionEvents.RegisterToSelectionController, gizmoTargetData.BaseObject, gizmoTargetData);
     }
-
     void LateUpdate()
     {
-        // if (!IsSelected || TargetTransform == null) //TODO there should be another flag to check if the gizmo is active.
-        //     return;
-        if(selectableObject == null)
+        if (TargetTransform == null)
             return;
 
         Transform activeRoot = GetActiveGizmoRoot();
         if (activeRoot == null)
             return;
 
-        activeRoot.position = TargetTransform.position;
+        UpdateActiveGizmoScale();
     }
 
-    void OnDestroy()
+    private Vector3 GetInverseTargetScale()
     {
-        // EventManager.Instance.TriggerDelegate(SelectionEvents.DeRegisterToSelectionController, gizmoTargetData.BaseObject);
+        if (TargetTransform == null)
+            return Vector3.one;
+
+        Vector3 lossy = TargetTransform.lossyScale;
+
+        return new Vector3(
+            Mathf.Abs(lossy.x) > 0.0001f ? 1f / Mathf.Abs(lossy.x) : 1f,
+            Mathf.Abs(lossy.y) > 0.0001f ? 1f / Mathf.Abs(lossy.y) : 1f,
+            Mathf.Abs(lossy.z) > 0.0001f ? 1f / Mathf.Abs(lossy.z) : 1f
+        );
     }
+    private float GetZoomScale()
+    {
+        Camera cam = Camera.main;
+        if (cam == null)
+            return 1f;
 
+        if (cam.orthographic)
+            return cam.orthographicSize * 0.1f;
 
+        return 1f;
+    }
+    private void UpdateActiveGizmoScale()
+    {
+        Transform activeRoot = GetActiveGizmoRoot();
+        if (activeRoot == null)
+            return;
+
+        Vector3 inverseTargetScale = GetInverseTargetScale();
+        float zoomScale = GetZoomScale();
+
+        Vector3 finalScale = inverseTargetScale * (gizmoBaseSize * zoomScale);
+
+        activeRoot.localScale = finalScale;
+    }
     //this'll be called anytime the gizmo changes or is activated
     public void OnShow(GizmoType gizmoType)
     {
@@ -70,7 +96,6 @@ public class GizmoObject : MonoBehaviour, IGizmoObject
                 break;
         }
 
-        Debug.Log("shwoing handles for gimzo: ");
         gizmoTargetData.type = gizmoType;
     }
 
@@ -80,7 +105,6 @@ public class GizmoObject : MonoBehaviour, IGizmoObject
     {
         if (gizmoTargetData == null)
             return;
-        Debug.Log("hiding handles for gimzo: ");
 
         if (gizmoTargetData.MoveGizmo != null)
             gizmoTargetData.MoveGizmo.SetActive(false);
@@ -91,21 +115,23 @@ public class GizmoObject : MonoBehaviour, IGizmoObject
         if (gizmoTargetData.ScaleGizmo != null)
             gizmoTargetData.ScaleGizmo.SetActive(false);
 
-        // selectableObject = null;
+        gizmoTargetData.type = GizmoType.none;
     }
 
+    //setup the target to transform
     public void SetTarget(SelectableTargetData selectable)
     {
         gizmoTargetData.BaseObject = selectable?.BaseObject;
         selectableObject = selectable.SelectableComponent;
+        transform.SetParent(selectable.BaseObject.transform, false);
     }
 
     public void ClearTarget()
     {
         gizmoTargetData.BaseObject = null;
         selectableObject = null;
+        transform.SetParent(null);
     }
-
 
     public Transform GetActiveGizmoRoot()
     {
@@ -120,5 +146,4 @@ public class GizmoObject : MonoBehaviour, IGizmoObject
             _ => null
         };
     }
-
 }
