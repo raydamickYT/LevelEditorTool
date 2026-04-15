@@ -88,7 +88,7 @@ public static class SelectionEvents
     public const string OnSelectionChanged = "OnSelectionChanged";
     public const string OnTrySelection = "OnTrySelection";
     public const string OnSelectionMade = "OnSelectionMade";
-    public const string OnClearSelection = "OnClearSelection";
+    public const string OnDeleteSelected = "OnDeleteSelected";
 
     //signals
     public static Func<Rect> FinalizeSelectionRect;

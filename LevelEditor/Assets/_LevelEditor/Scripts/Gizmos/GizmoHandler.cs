@@ -9,7 +9,7 @@ public class GizmoHandler : MonoBehaviour
 
     private void Awake()
     {
-        EventManager.Instance.AddDelegateListener(SelectionEvents.OnSelectionChanged, (Action<HashSet<SelectableTargetData>>)HandleHideGizmo);
+        EventManager.Instance.AddDelegateListener(SelectionEvents.OnSelectionChanged, (Action<HashSet<SelectableTargetData>>)HandleGizmoChange);
         EventManager.Instance.AddDelegateListener(GimzmoEvents.OnGizmoTypeChanged, (Action<GizmoType>)HandleGizmoTypeChanged);
 
         if (GizmoObject == null || !GizmoObject.GetComponent<GizmoObject>())
@@ -21,7 +21,7 @@ public class GizmoHandler : MonoBehaviour
         gizmoController = new GizmoController(GizmoObject);
     }
 
-    private void HandleHideGizmo(HashSet<SelectableTargetData> data)
+    private void HandleGizmoChange(HashSet<SelectableTargetData> data)
      => gizmoController.HandleSelectionChanged(data);
     private void HandleGizmoTypeChanged(GizmoType type)
         => gizmoController.SetGizmoType(type);

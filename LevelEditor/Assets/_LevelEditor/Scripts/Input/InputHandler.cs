@@ -29,7 +29,6 @@ public class InputHandler : MonoBehaviour, InputSystem_Actions.IUIActions
             Instance = null;
         }
         EventManager.Instance.RemoveAllListeners();
-
     }
 
     public event Action<InputAction.CallbackContext> OnCancelEvent;
@@ -76,4 +75,8 @@ public class InputHandler : MonoBehaviour, InputSystem_Actions.IUIActions
     public event Action<InputAction.CallbackContext> OnREvent;
     public void OnR(InputAction.CallbackContext context)
         => OnREvent?.Invoke(context);
+    
+    public event Action<InputAction.CallbackContext> OnDeleteEvent;
+    public void OnDelete(InputAction.CallbackContext context)
+    => OnDeleteEvent?.Invoke(context);  
 }

@@ -25,6 +25,7 @@ public class selectionController
         this.cam = cam;
 
         EventManager.Instance.AddDelegateListener(SelectionEvents.OnTrySelection, (Action<GameObject>)TrySelect);
+        EventManager.Instance.AddUnityEventListener(SelectionEvents.OnDeleteSelected, TryDeleteSelected);
     }
 
     //ik heb de selection controller een normale class gemaakt zodat de meeste logica daar uitgevoerd kan worden.
@@ -94,6 +95,21 @@ public class selectionController
         {
             EventManager.Instance.TriggerDelegate(SelectionEvents.UpdateSelectionBox, _pressStartScreenPosition, currentMousePosition);
         }
+    }
+
+    public void TryDeleteSelected()
+    {
+        if (_selectedGameObjects.Count == 0) return;
+
+        EventManager.Instance.TriggerDelegate(SelectionEvents.OnSelectionChanged, new HashSet<SelectableTargetData>()); //clear the data in gizmo controller to prevent the gizmo object from beeing deleted
+
+        foreach (var item in _selectedGameObjects)
+        {
+            GameObject.Destroy(item.BaseObject);
+        }
+
+        _selectedGameObjects.Clear();
+        RefreshGizmo();
     }
 
     public void Register(GameObject rootObject, SelectableTargetData data)
@@ -190,7 +206,6 @@ public class selectionController
 
     private void RefreshGizmo()
     {
-        Debug.Log("selected objects count: " + _selectedGameObjects.Count);
         EventManager.Instance.TriggerDelegate(SelectionEvents.OnSelectionChanged, _selectedGameObjects);
     }
 
