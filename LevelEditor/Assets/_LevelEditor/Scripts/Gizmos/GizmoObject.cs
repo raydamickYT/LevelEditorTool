@@ -35,12 +35,12 @@ public class GizmoObject : MonoBehaviour, IGizmoObject
         UpdateActiveGizmoScale();
     }
 
-    private Vector3 GetInverseTargetScale()
+    private Vector3 GetInverseTargetScale(Transform transform)
     {
-        if (TargetTransform == null)
+        if (transform == null)
             return Vector3.one;
 
-        Vector3 lossy = TargetTransform.lossyScale;
+        Vector3 lossy = transform.lossyScale;
 
         return new Vector3(
             Mathf.Abs(lossy.x) > 0.0001f ? 1f / Mathf.Abs(lossy.x) : 1f,
@@ -65,7 +65,7 @@ public class GizmoObject : MonoBehaviour, IGizmoObject
         if (activeRoot == null)
             return;
 
-        Vector3 inverseTargetScale = GetInverseTargetScale();
+        Vector3 inverseTargetScale = GetInverseTargetScale(TargetTransform);
         float zoomScale = GetZoomScale();
 
         Vector3 finalScale = inverseTargetScale * (gizmoBaseSize * zoomScale);
@@ -123,7 +123,13 @@ public class GizmoObject : MonoBehaviour, IGizmoObject
     {
         gizmoTargetData.BaseObject = selectable?.BaseObject;
         selectableObject = selectable.SelectableComponent;
-        transform.SetParent(selectable.BaseObject.transform, false);
+
+        Transform parent = selectable.BaseObject.transform;
+        transform.SetParent(parent, false);
+
+        transform.localPosition = Vector3.zero;
+        transform.localRotation = Quaternion.identity;
+        transform.localScale = Vector3.one;
     }
 
     public void ClearTarget()
