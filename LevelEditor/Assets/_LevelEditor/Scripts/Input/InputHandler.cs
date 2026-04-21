@@ -1,4 +1,5 @@
 using System;
+using Unity.VisualScripting;
 using UnityEngine;
 using UnityEngine.InputSystem;
 
@@ -71,20 +72,25 @@ public class InputHandler : MonoBehaviour, InputSystem_Actions.IUIActions
     public void OnSubmit(InputAction.CallbackContext context)
         => onSubmitEvent?.Invoke(context);
 
-    public event Action<InputAction.CallbackContext> OnWEvent;
     public void OnW(InputAction.CallbackContext context)
-        => OnWEvent?.Invoke(context);
+    {
+        if (context.started)
+            triggerCommand(EditorCommand.SwitchMoveTool);
+    }
 
-    public event Action<InputAction.CallbackContext> OnEEvent;
     public void OnE(InputAction.CallbackContext context)
-        => OnEEvent?.Invoke(context);
-    public event Action<InputAction.CallbackContext> OnREvent;
+    {
+        if (context.started)
+            triggerCommand(EditorCommand.SwitchRotateTool);
+    }
     public void OnR(InputAction.CallbackContext context)
-        => OnREvent?.Invoke(context);
-    
-    public event Action<InputAction.CallbackContext> OnDeleteEvent;
+    {
+        if (context.started)
+            triggerCommand(EditorCommand.SwitchScaleTool);
+    }
+
     public void OnDelete(InputAction.CallbackContext context)
-    => OnDeleteEvent?.Invoke(context);
+    => triggerCommand(EditorCommand.Delete);
     public event Action<InputAction.CallbackContext> OnCtrlEvent;
     public void OnCtrl(InputAction.CallbackContext context)
     => OnCtrlEvent?.Invoke(context);
@@ -92,7 +98,15 @@ public class InputHandler : MonoBehaviour, InputSystem_Actions.IUIActions
     public void OnZ(InputAction.CallbackContext context)
     => OnZEvent?.Invoke(context);
 
-    public event Action<InputAction.CallbackContext> OnUndoEvent;
     public void OnUndo(InputAction.CallbackContext context)
-    => triggerCommand(EditorCommand.Undo);
+    {
+        if (context.started)
+            triggerCommand(EditorCommand.Undo);
+    }
+
+    public void OnRedo(InputAction.CallbackContext context)
+    {
+        if (context.started)
+            triggerCommand(EditorCommand.Redo);
+    }
 }
