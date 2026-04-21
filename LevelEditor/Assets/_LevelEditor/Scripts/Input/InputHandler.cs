@@ -31,6 +31,12 @@ public class InputHandler : MonoBehaviour, InputSystem_Actions.IUIActions
         EventManager.Instance.RemoveAllListeners();
     }
 
+    public event Action<EditorCommand> TriggerCMD;
+    void triggerCommand(EditorCommand editorCommand)
+    {
+        TriggerCMD?.Invoke(editorCommand);
+    }
+
     public event Action<InputAction.CallbackContext> OnCancelEvent;
     public void OnCancel(InputAction.CallbackContext context)
         => OnCancelEvent?.Invoke(context);
@@ -78,5 +84,15 @@ public class InputHandler : MonoBehaviour, InputSystem_Actions.IUIActions
     
     public event Action<InputAction.CallbackContext> OnDeleteEvent;
     public void OnDelete(InputAction.CallbackContext context)
-    => OnDeleteEvent?.Invoke(context);  
+    => OnDeleteEvent?.Invoke(context);
+    public event Action<InputAction.CallbackContext> OnCtrlEvent;
+    public void OnCtrl(InputAction.CallbackContext context)
+    => OnCtrlEvent?.Invoke(context);
+    public event Action<InputAction.CallbackContext> OnZEvent;
+    public void OnZ(InputAction.CallbackContext context)
+    => OnZEvent?.Invoke(context);
+
+    public event Action<InputAction.CallbackContext> OnUndoEvent;
+    public void OnUndo(InputAction.CallbackContext context)
+    => triggerCommand(EditorCommand.Undo);
 }

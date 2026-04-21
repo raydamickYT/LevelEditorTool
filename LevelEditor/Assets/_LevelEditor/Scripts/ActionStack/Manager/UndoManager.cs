@@ -29,22 +29,40 @@ public class UndoManager : MonoBehaviour
 
     void Update()
     {
-        if(UndoTestBool)
+        if (UndoTestBool)
         {
             UndoTestBool = false;
             Undo();
         }
     }
+    void OnEnable()
+    {
+        EventManager.Instance.AddDelegateListener(ShortcutBindingEvents.OnCommandTriggered, (Action<EditorCommand>)HandleCommand);
+    }
 
-    void OnDestroy()
+    void OnDisable()
     {
         Clear();
     }
 
+    private void HandleCommand(EditorCommand command)
+    {
+        switch (command)
+        {
+            case EditorCommand.Undo:
+                Undo();
+                break;
+
+            case EditorCommand.Redo:
+                Redo();
+                break;
+        }
+    }
+
     void Undo()
     {
-        if(undoStack.Count == 0) return;
-        
+        if (undoStack.Count == 0) return;
+
         var action = undoStack.Pop();
         action.Undo();
 
@@ -53,7 +71,7 @@ public class UndoManager : MonoBehaviour
 
     void Redo()
     {
-        if(redoStack.Count == 0) return;
+        if (redoStack.Count == 0) return;
 
         var action = redoStack.Pop();
         action.Redo();
@@ -80,5 +98,5 @@ public static class ActionStackEvents
     public const string UnregisterAction = "UnregisterAction";
     public const string Undo = "Undo";
     public const string Redo = "Redo";
-    public const string Clear = "Clear";    
+    public const string Clear = "Clear";
 }
