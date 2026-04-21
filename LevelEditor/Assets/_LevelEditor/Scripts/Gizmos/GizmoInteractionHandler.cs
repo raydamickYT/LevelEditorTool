@@ -1,4 +1,5 @@
 using System.Collections;
+using TransformGizmos;
 using UnityEngine;
 using UnityEngine.InputSystem;
 public class GizmoInteractionHandler : MonoBehaviour
@@ -17,6 +18,9 @@ public class GizmoInteractionHandler : MonoBehaviour
     private float targetStartRotationZ;
     private float startMouseAngle;
     private bool isDragging;
+
+    //undo stack
+    private TransformAction currentAction;
 
     // Start is called once before the first execution of Update after the MonoBehaviour is created
     void Start()
@@ -110,7 +114,32 @@ public class GizmoInteractionHandler : MonoBehaviour
         targetStartRotationZ = activeTarget.eulerAngles.z;
         startMouseAngle = GetMouseAngleToTarget(activeTarget.position);
 
+        var levelObj = activeHandle.Owner.transform.parent.GetComponent<LevelObject>();
+        if (levelObj != null)
+            currentAction = new TransformAction(levelObj);
+        else
+            Debug.LogWarning($"Active handle's owner does not have a LevelObject component. Undo/Redo will not work for this interaction. {activeHandle.Owner.transform.parent.name}");
+
         isDragging = true;
+    }
+
+    private void StopDragging()
+    {
+        if (activeHandle is GizmoScaleHandle scaleHandle)
+            scaleHandle.ResetScaleVisual();
+
+        if (currentAction != null)
+        {
+            currentAction?.CaptureAfterState();
+            if (currentAction.HasChanged())
+                EventManager.Instance.TriggerDelegate(ActionStackEvents.RegisterAction, currentAction);
+        }
+
+        currentAction = null;
+
+        isDragging = false;
+        activeHandle = null;
+        activeTarget = null;
     }
     private void UpdateDrag()
     {
@@ -193,15 +222,6 @@ public class GizmoInteractionHandler : MonoBehaviour
             Mathf.Max(minScale, scale.z));
     }
 
-    private void StopDragging()
-    {
-        if (activeHandle is GizmoScaleHandle scaleHandle)
-            scaleHandle.ResetScaleVisual();
-
-        isDragging = false;
-        activeHandle = null;
-        activeTarget = null;
-    }
 
     private bool TryGetHandleUnderPointer(out GizmoHandle handle)
     {

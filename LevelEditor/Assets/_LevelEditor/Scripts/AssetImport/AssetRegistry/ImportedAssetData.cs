@@ -1,9 +1,12 @@
 using System;
 using UnityEngine;
 
-public class ImportedAssetData 
+public class ImportedAssetData
 {
+    public class test
+    {
 
+    }
 }
 
 [Serializable]
