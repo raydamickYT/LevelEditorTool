@@ -7,7 +7,6 @@ public static class ObjectRegistry
     public static Dictionary<int, GameObject> objects = new();
     private static int currentID = 0;
 
-
     public static void OnObjectCreated(LevelObject levelObject)
     {
         if (levelObject == null)
@@ -25,6 +24,14 @@ public static class ObjectRegistry
 
         if (!objects.ContainsKey(id))
             objects.Add(id, levelObject);
+
+        else
+        {
+            if (objects[id].gameObject != null)
+                Debug.LogWarning($"{objects[id].gameObject} has the same objectID as {levelObject.name}");
+
+            objects[id] = levelObject;
+        }
     }
 
     public static void DeregisterObject(LevelObject levelObject)

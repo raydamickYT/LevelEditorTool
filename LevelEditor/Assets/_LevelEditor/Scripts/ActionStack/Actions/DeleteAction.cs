@@ -31,6 +31,7 @@ public class DeleteAction : IUndoableAction
     {
         instantiatedGameObject = GameObject.Instantiate(targetPrefabGameObject, beforeState.Position, beforeState.Rotation, beforeState.parent);
         instantiatedGameObject.transform.localScale = beforeState.Scale;
+        instantiatedGameObject.GetComponent<LevelObject>().PrefabReference = targetPrefabGameObject;
 
         ObjectRegistry.RegisterObject(instantiatedGameObject, targetID);
     }
