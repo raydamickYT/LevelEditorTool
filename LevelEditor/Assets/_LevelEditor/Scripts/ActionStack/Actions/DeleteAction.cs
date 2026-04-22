@@ -1,6 +1,14 @@
 using UnityEditor;
 using UnityEngine;
 
+/// <summary>
+/// This action will allow us to undo the deletion of a gameobject
+/// it needs to posses:
+/// - said gameobject's info before it got removed
+/// 
+/// and it will:
+/// - create a copy of that object on undo and regiser it to the <see cref="ObjectRegistry"/>
+/// </summary>
 public class DeleteAction : IUndoableAction
 {
     GameObject targetPrefabGameObject;

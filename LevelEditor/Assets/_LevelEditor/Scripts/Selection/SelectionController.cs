@@ -1,10 +1,8 @@
 using System;
 using System.Collections.Generic;
-using Mono.Cecil.Cil;
-using UnityEditor;
+using System.Linq;
 using UnityEngine;
 using UnityEngine.InputSystem;
-using UnityEngine.UI;
 
 /// <summary>
 /// this class manages whatever is selected at that point in time, it will communicate this by sending out events for any class to read.
@@ -35,7 +33,7 @@ public class selectionController
 
     private void OnDeleteTriggered(EditorCommand editorCommand)
     {
-        if(editorCommand == EditorCommand.Delete)
+        if (editorCommand == EditorCommand.Delete)
         {
             TryDeleteSelected();
         }
@@ -116,20 +114,44 @@ public class selectionController
 
         EventManager.Instance.TriggerDelegate(SelectionEvents.OnSelectionChanged, new HashSet<SelectableTargetData>()); //clear the data in gizmo controller to prevent the gizmo object from beeing deleted
 
-        foreach (var item in _selectedGameObjects)
+        switch (_selectedGameObjects.Count)
         {
-            var lvlObj = item.BaseObject.GetComponent<LevelObject>();
-            if(lvlObj != null)
-            {
-                deleteAction = new DeleteAction(lvlObj);
-            }
-            if(deleteAction != null)
-            {
-                EventManager.Instance.TriggerDelegate(ActionStackEvents.RegisterAction, deleteAction);
-            }
-            GameObject.Destroy(item.BaseObject);
+            case 1:
+                var obj = _selectedGameObjects.FirstOrDefault();
+                var lvlObj = obj.BaseObject.GetComponent<LevelObject>();
+                if (lvlObj != null)
+                {
+                    deleteAction = new DeleteAction(lvlObj);
+                }
+                if (deleteAction != null)
+                {
+                    EventManager.Instance.TriggerDelegate(ActionStackEvents.RegisterAction, deleteAction);
+                }
+                GameObject.Destroy(obj.BaseObject);
+                break;
+            default:
+                var actionList = new List<IUndoableAction>();
+
+                foreach (var item in _selectedGameObjects)
+                {
+                    var lvlObj2 = item.BaseObject.GetComponent<LevelObject>();
+                    if (lvlObj2 != null)
+                    {
+                        var action = new DeleteAction(lvlObj2);
+                        actionList.Add(action);
+                    }
+                    GameObject.Destroy(item.BaseObject);
+                }
+                if (actionList.Count > 0)
+                {
+                    var composite = new CompositeAction(actionList, "delete Selection");
+                    EventManager.Instance.TriggerDelegate(ActionStackEvents.RegisterAction, composite);
+                }
+
+                break;
         }
-        
+
+
         _selectedGameObjects.Clear();
         RefreshGizmo();
     }
@@ -197,7 +219,7 @@ public class selectionController
 
         return screenRect.Overlaps(objectScreenRect, true);
     }
-    
+
     public void TrySelect(GameObject selectedObject)
     {
         if (!selectableGameObjectsInSceneDict.TryGetValue(selectedObject, out SelectableTargetData obj))
