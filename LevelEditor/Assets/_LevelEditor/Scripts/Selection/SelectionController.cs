@@ -1,5 +1,7 @@
 using System;
 using System.Collections.Generic;
+using Mono.Cecil.Cil;
+using UnityEditor;
 using UnityEngine;
 using UnityEngine.InputSystem;
 using UnityEngine.UI;
@@ -20,12 +22,23 @@ public class selectionController
     private bool startedOnGizmo, isPointerDown, isBoxDragging;
     private float _dragThreshold = 10f;
 
+    //undo
+    private DeleteAction deleteAction;
+
     public selectionController(Camera cam)
     {
         this.cam = cam;
 
         EventManager.Instance.AddDelegateListener(SelectionEvents.OnTrySelection, (Action<GameObject>)TrySelect);
-        EventManager.Instance.AddUnityEventListener(SelectionEvents.OnDeleteSelected, TryDeleteSelected);
+        EventManager.Instance.AddDelegateListener(ShortcutBindingEvents.OnCommandTriggered, (Action<EditorCommand>)OnDeleteTriggered);
+    }
+
+    private void OnDeleteTriggered(EditorCommand editorCommand)
+    {
+        if(editorCommand == EditorCommand.Delete)
+        {
+            TryDeleteSelected();
+        }
     }
 
     //ik heb de selection controller een normale class gemaakt zodat de meeste logica daar uitgevoerd kan worden.
@@ -105,9 +118,18 @@ public class selectionController
 
         foreach (var item in _selectedGameObjects)
         {
+            var lvlObj = item.BaseObject.GetComponent<LevelObject>();
+            if(lvlObj != null)
+            {
+                deleteAction = new DeleteAction(lvlObj);
+            }
+            if(deleteAction != null)
+            {
+                EventManager.Instance.TriggerDelegate(ActionStackEvents.RegisterAction, deleteAction);
+            }
             GameObject.Destroy(item.BaseObject);
         }
-
+        
         _selectedGameObjects.Clear();
         RefreshGizmo();
     }

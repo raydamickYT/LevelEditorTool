@@ -1,9 +1,11 @@
+using Unity.VisualScripting;
 using UnityEngine;
 using UnityEngine.EventSystems;
 
 public class ObjectButtonController : MonoBehaviour, IBeginDragHandler, IEndDragHandler, IDragHandler
 {
-    public GameObject ObjectToSpawn;
+    public GameObject ObjectToSpawnPrefab;
+    private GameObject ParentObject;
     private GameObject spawnedObject, spawnedPreviewObject;
     public Canvas parentCanvas;
     private Sprite previewSprite;
@@ -20,17 +22,25 @@ public class ObjectButtonController : MonoBehaviour, IBeginDragHandler, IEndDrag
             Debug.LogWarning($"No parent canvas found on {gameObject.name}");
         }
 
-        if (ObjectToSpawn == null)
+        if (ObjectToSpawnPrefab == null)
         {
             Debug.LogWarning($"Object to spawned is not assigned on {gameObject.name}");
             return;
         }
 
-            previewSprite = ObjectToSpawn.GetComponent<SpriteRenderer>().sprite;
+        previewSprite = ObjectToSpawnPrefab.GetComponent<SpriteRenderer>().sprite;
         if (previewSprite == null)
         {
-            Debug.LogWarning($"No sprite was found on {ObjectToSpawn.name}. Please add a sprite to the object to be able to see a preview when dragging.");
+            Debug.LogWarning($"No sprite was found on {ObjectToSpawnPrefab.name}. Please add a sprite to the object to be able to see a preview when dragging.");
         }
+
+        if (ParentObject == null)
+            ParentObject = new GameObject("LevelObjects");
+    }
+
+    void OnDestroy()
+    {
+        ParentObject = null;
     }
 
     //helper function to spawn the actual object.
@@ -44,7 +54,19 @@ public class ObjectButtonController : MonoBehaviour, IBeginDragHandler, IEndDrag
         Vector3 pos = Camera.main.ScreenToWorldPoint(eventData.position);
         pos.z = 0f;
 
-        spawnedObject = Instantiate(ObjectToSpawn, pos, Quaternion.identity);
+        spawnedObject = Instantiate(ObjectToSpawnPrefab, pos, Quaternion.identity);
+        if (ParentObject == null)
+        {
+            ParentObject = new GameObject("LevelObjects");
+        }
+        spawnedObject.transform.SetParent(ParentObject.transform, true);
+        
+        var lvlObj = spawnedObject.GetComponent<LevelObject>();
+        if (lvlObj != null)
+        {
+            lvlObj.PrefabReference = ObjectToSpawnPrefab;
+            ObjectRegistry.OnObjectCreated(lvlObj); //register it
+        }
     }
 
     //helper function to remove the spawned object.
@@ -81,7 +103,7 @@ public class ObjectButtonController : MonoBehaviour, IBeginDragHandler, IEndDrag
         rect.sizeDelta = new Vector2(64, 64);
         rect.position = eventData.position;
     }
-    
+
     //helper function to remove the preview object.
     void RemoveSpawnedPreview()
     {

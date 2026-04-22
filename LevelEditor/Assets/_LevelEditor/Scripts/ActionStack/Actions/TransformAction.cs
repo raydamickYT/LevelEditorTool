@@ -1,3 +1,4 @@
+using System.Runtime.InteropServices;
 using UnityEngine;
 
 
@@ -11,11 +12,13 @@ public class TransformAction : IUndoableAction
     LevelObject target;
     LevelObject.Memento beforeState;
     LevelObject.Memento afterState;
+    int targetID;
 
     public TransformAction(LevelObject target)
     {
         this.target = target;
         beforeState = target.Save();
+        targetID = target.ObjectID;
     }
 
     public string DebugLabel => target.name;
@@ -32,6 +35,13 @@ public class TransformAction : IUndoableAction
 
     public void Undo()
     {
+        target = ObjectRegistry.GetLevelObject(targetID);
+        if (target == null)
+        {
+            Debug.LogWarning("object not found");
+            return;
+        }
+
         target.Restore(beforeState);
     }
 

@@ -19,7 +19,7 @@ MonoBehaviour:
     width: 1920
     height: 997
   m_ShowMode: 4
-  m_Title: Inspector
+  m_Title: Game
   m_RootView: {fileID: 2}
   m_MinSize: {x: 875, y: 300}
   m_MaxSize: {x: 10000, y: 10000}
@@ -1556,15 +1556,12 @@ MonoBehaviour:
       m_LastClickedID:
         m_Data: 0
       m_ExpandedIDs:
-      - m_Data: -1412
-      - m_Data: -1324
-      - m_Data: 49080
-      - m_Data: 49134
-      - m_Data: 49138
-      - m_Data: 49146
-      - m_Data: 49210
-      - m_Data: 49252
-      - m_Data: 49322
+      - m_Data: -30092
+      - m_Data: -1418
+      - m_Data: -1416
+      - m_Data: -1316
+      - m_Data: 49262
+      - m_Data: 49420
       m_RenameOverlay:
         m_UserAcceptedRename: 0
         m_Name: 
@@ -1639,7 +1636,7 @@ MonoBehaviour:
     m_SkipHidden: 0
     m_SearchArea: 1
     m_Folders:
-    - Assets/_LevelEditor/Scripts/_CustomEditorScripts
+    - Assets/_LevelEditor/Input
     m_Globs: []
     m_ProductIds: 
     m_AnyWithAssetOrigin: 0
@@ -1693,6 +1690,14 @@ MonoBehaviour:
     - m_Data: 50168
     - m_Data: 50170
     - m_Data: 50172
+    - m_Data: 50174
+    - m_Data: 50176
+    - m_Data: 50178
+    - m_Data: 50180
+    - m_Data: 50182
+    - m_Data: 50184
+    - m_Data: 50186
+    - m_Data: 50188
     m_RenameOverlay:
       m_UserAcceptedRename: 0
       m_Name: 
@@ -1719,9 +1724,9 @@ MonoBehaviour:
       m_Icon: {fileID: 0}
       m_ResourceFile: 
   m_AssetTreeState:
-    scrollPos: {x: 0, y: 0}
+    scrollPos: {x: 0, y: 11}
     m_SelectedIDs:
-    - m_Data: -21482
+    - m_Data: -27078
     m_LastClickedID:
       m_Data: 0
     m_ExpandedIDs:
@@ -1758,6 +1763,14 @@ MonoBehaviour:
     - m_Data: 50168
     - m_Data: 50170
     - m_Data: 50172
+    - m_Data: 50174
+    - m_Data: 50176
+    - m_Data: 50178
+    - m_Data: 50180
+    - m_Data: 50182
+    - m_Data: 50184
+    - m_Data: 50186
+    - m_Data: 50188
     m_RenameOverlay:
       m_UserAcceptedRename: 0
       m_Name: 
@@ -1785,8 +1798,8 @@ MonoBehaviour:
       m_ResourceFile: 
   m_ListAreaState:
     m_SelectedInstanceIDs:
-    - m_Data: -21482
-    m_LastClickedInstanceID: -21482
+    - m_Data: -27078
+    m_LastClickedInstanceID: -27078
     m_HadKeyboardFocusLastEvent: 0
     m_ExpandedInstanceIDs: []
     m_RenameOverlay:

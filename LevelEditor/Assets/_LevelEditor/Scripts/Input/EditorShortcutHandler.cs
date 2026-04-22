@@ -8,7 +8,6 @@ public class EditorShortcutHandler : MonoBehaviour
 {
     [SerializeField] private List<ShortCutBinding> shortcutBindings = new();
     private Dictionary<EditorCommand, EditorCommand> commandMap;
-    public static event Action<EditorCommand> OnCommandTriggered;
 
     void Awake()
     {

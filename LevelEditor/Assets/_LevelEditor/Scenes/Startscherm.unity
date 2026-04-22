@@ -2093,6 +2093,10 @@ PrefabInstance:
       propertyPath: m_Enabled
       value: 0
       objectReference: {fileID: 0}
+    - target: {fileID: 2532695061472954397, guid: c06660668d10c7e458ed5bf2b6234af5, type: 3}
+      propertyPath: m_IsActive
+      value: 0
+      objectReference: {fileID: 0}
     - target: {fileID: 2589693814870700884, guid: c06660668d10c7e458ed5bf2b6234af5, type: 3}
       propertyPath: stemScaleMultiplier
       value: 0.11
@@ -3893,6 +3897,10 @@ PrefabInstance:
       propertyPath: m_LocalEulerAnglesHint.z
       value: 0
       objectReference: {fileID: 0}
+    - target: {fileID: 8886008659259607122, guid: abfaf2c910b83344eb35e8f08ee5889d, type: 3}
+      propertyPath: ObjectToSpawnPrefab
+      value: 
+      objectReference: {fileID: 8104007950616682118, guid: 31605b0f92ce23f42b2bb1bae105a082, type: 3}
     m_RemovedComponents: []
     m_RemovedGameObjects: []
     m_AddedGameObjects: []
