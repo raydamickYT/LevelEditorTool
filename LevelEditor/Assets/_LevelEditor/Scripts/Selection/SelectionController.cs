@@ -183,7 +183,6 @@ public class selectionController
 
             if (IsObjectInsideScreenRect(targetobj, screenRect))
             {
-                Debug.Log(targetobj.transform.position);
                 if (targetobj.layer == LayerMask.NameToLayer("Selectable"))
                 {
                     AddToSelection(targetData);

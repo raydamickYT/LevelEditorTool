@@ -1,5 +1,6 @@
 using System.Collections.Generic;
 using System.Linq;
+using System.Runtime.CompilerServices;
 using Unity.Mathematics;
 using UnityEngine;
 
@@ -32,10 +33,10 @@ public class GizmoController
         {
             case 1:
                 var target = data.FirstOrDefault();
-                ShowSingleGizmo(target);
-
                 if (target != null)
                     _currentGizmoTargets.Add(target);
+                
+                ShowSingleGizmo(target);
                 break;
             default:
                 foreach (var t in data)
@@ -64,6 +65,7 @@ public class GizmoController
         gizmoObject.SetTarget(target);
         gizmoObject.gameObject.transform.position = target.BaseObject.transform.position;
         gizmoObject?.OnShow(currentGizmoType);
+        gizmoObject.dragLevelObjects = GetCurrentLevelObjects();
     }
 
     private void ShowGroupGizmo()
@@ -82,6 +84,7 @@ public class GizmoController
         gizmoObject.gizmoTargetData.BaseObject = SetupTempParentObject(center);
         gizmoObject.gameObject.transform.position = center;
         gizmoObject?.OnShow(currentGizmoType);
+        gizmoObject.dragLevelObjects = GetCurrentLevelObjects();
     }
 
     public void HideCurrentGizmos(bool clearTarget = false)
@@ -152,6 +155,34 @@ public class GizmoController
         }
 
         return tempParentObject;
+    }
+
+    public List<LevelObject> GetCurrentLevelObjects()
+    {
+        var result = new List<LevelObject>();
+
+        Debug.Log(_currentGizmoTargets.Count);
+        if (_currentGizmoTargets == null || _currentGizmoTargets.Count == 0)
+            return result;
+
+        foreach (var target in _currentGizmoTargets)
+        {
+            if (target?.BaseObject == null)
+                continue;
+
+            var levelObj = target.BaseObject.transform.GetComponent<LevelObject>();
+            if (levelObj != null)
+            {
+                result.Add(levelObj);
+            }
+            else
+            {
+                Debug.LogWarning("no levelObj Found");
+            }
+        }
+
+        Debug.Log("getting al objects" + result.Count);
+        return result;
     }
 }
 

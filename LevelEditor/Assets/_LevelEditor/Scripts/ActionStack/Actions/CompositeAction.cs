@@ -1,4 +1,5 @@
 using System.Collections.Generic;
+using System.Linq;
 using UnityEngine;
 
 /// <summary>
@@ -10,9 +11,9 @@ public class CompositeAction : IUndoableAction
     private readonly List<IUndoableAction> actions;
     private readonly string debugLabel;
 
-    public CompositeAction(List<IUndoableAction> actions, string debugLabel = "Composite Action")
+    public CompositeAction(IEnumerable<IUndoableAction> actions, string debugLabel = "Composite Action")
     {
-        this.actions = actions;
+        this.actions = actions.ToList();
         this.debugLabel = debugLabel;
     }
 

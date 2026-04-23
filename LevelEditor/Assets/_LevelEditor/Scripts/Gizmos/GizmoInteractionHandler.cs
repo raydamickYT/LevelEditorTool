@@ -1,4 +1,6 @@
+using System;
 using System.Collections;
+using System.Collections.Generic;
 using TransformGizmos;
 using UnityEngine;
 using UnityEngine.InputSystem;
@@ -21,6 +23,7 @@ public class GizmoInteractionHandler : MonoBehaviour
 
     //undo stack
     private TransformAction currentAction;
+    private List<TransformAction> transformActions = new();
 
     // Start is called once before the first execution of Update after the MonoBehaviour is created
     void Start()
@@ -107,6 +110,7 @@ public class GizmoInteractionHandler : MonoBehaviour
 
         activeHandle = handle;
         activeTarget = handle.Owner.TargetTransform;
+        var gizmoObject = handle.Owner;
 
         dragStartWorld = GetMouseWorldPosition();
         targetStartPosition = activeTarget.position;
@@ -114,11 +118,25 @@ public class GizmoInteractionHandler : MonoBehaviour
         targetStartRotationZ = activeTarget.eulerAngles.z;
         startMouseAngle = GetMouseAngleToTarget(activeTarget.position);
 
-        var levelObj = activeHandle.Owner.transform.parent.GetComponent<LevelObject>();
-        if (levelObj != null)
-            currentAction = new TransformAction(levelObj);
+            // Debug.Log("logging action" + gizmoObject.dragLevelObjects.Count);
+        if (gizmoObject.dragLevelObjects.Count == 1)
+        {
+            currentAction = new TransformAction(gizmoObject.dragLevelObjects[0]);
+        }
         else
-            Debug.LogWarning($"Active handle's owner does not have a LevelObject component. Undo/Redo will not work for this interaction. {activeHandle.Owner.transform.parent.name}");
+        {
+            foreach (var levelObj in gizmoObject.dragLevelObjects)
+            {
+                var t = new TransformAction(levelObj);
+                transformActions.Add(t);
+            }
+        }
+
+        // var levelObj = activeHandle.Owner.transform.parent.GetComponent<LevelObject>();
+        // if (levelObj != null)
+        //     currentAction = new TransformAction(levelObj);
+        // else
+        //     Debug.LogWarning($"Active handle's owner does not have a LevelObject component. Undo/Redo will not work for this interaction. {activeHandle.Owner.transform.parent.name}");
 
         isDragging = true;
     }
@@ -134,12 +152,28 @@ public class GizmoInteractionHandler : MonoBehaviour
             if (currentAction.HasChanged())
                 EventManager.Instance.TriggerDelegate(ActionStackEvents.RegisterAction, currentAction);
         }
+        else if (transformActions.Count > 1)
+        {
+            foreach(TransformAction t in transformActions)
+            {
+                t.CaptureAfterState();
+            }
+
+            if (transformActions[0].HasChanged())
+            {
+                var compositeAction = new CompositeAction(transformActions, "TransformActions");
+                EventManager.Instance.TriggerDelegate(ActionStackEvents.RegisterAction, compositeAction);
+            }
+
+        }
 
         currentAction = null;
+        transformActions.Clear();
 
         isDragging = false;
         activeHandle = null;
         activeTarget = null;
+
     }
     private void UpdateDrag()
     {

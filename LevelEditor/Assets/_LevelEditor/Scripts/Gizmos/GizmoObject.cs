@@ -1,4 +1,5 @@
 using System;
+using System.Collections.Generic;
 using UnityEngine;
 using UnityEngine.Rendering;
 
@@ -7,6 +8,9 @@ public class GizmoObject : MonoBehaviour, IGizmoObject
     public GizmoTargetData gizmoTargetData;
     public ISelectable selectableObject;
     [SerializeField] private float gizmoBaseSize = 1f;
+
+    [HideInInspector]
+    public List<LevelObject> dragLevelObjects = new();
 
     public Transform TargetTransform => gizmoTargetData != null && gizmoTargetData.BaseObject != null
         ? gizmoTargetData.BaseObject.transform
@@ -116,6 +120,7 @@ public class GizmoObject : MonoBehaviour, IGizmoObject
             gizmoTargetData.ScaleGizmo.SetActive(false);
 
         gizmoTargetData.type = GizmoType.none;
+
     }
 
     //setup the target to transform
@@ -136,6 +141,7 @@ public class GizmoObject : MonoBehaviour, IGizmoObject
     {
         gizmoTargetData.BaseObject = null;
         selectableObject = null;
+        dragLevelObjects.Clear();
         transform.SetParent(null);
     }
 

@@ -19,6 +19,7 @@ public class TransformAction : IUndoableAction
         this.target = target;
         beforeState = target.Save();
         targetID = target.ObjectID;
+        Debug.Log(beforeState + " Target: " + targetID);
     }
 
     public string DebugLabel => target.name;
