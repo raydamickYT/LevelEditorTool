@@ -41,6 +41,7 @@ public class LevelObject : MonoBehaviour
 
     public void Restore(Memento m)
     {
+        Debug.Log("undo position: " +  transform.position);
         transform.position = m.Position;
         transform.rotation = m.Rotation;
         transform.localScale = m.Scale;

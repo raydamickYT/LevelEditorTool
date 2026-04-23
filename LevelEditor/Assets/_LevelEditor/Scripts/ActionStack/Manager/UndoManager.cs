@@ -23,8 +23,6 @@ public class UndoManager : MonoBehaviour
     void Start()
     {
         EventManager.Instance.AddDelegateListener(ActionStackEvents.RegisterAction, (Action<IUndoableAction>)PushAction);
-        EventManager.Instance.AddUnityEventListener(ActionStackEvents.Undo, Undo);
-        EventManager.Instance.AddUnityEventListener(ActionStackEvents.Redo, Redo);
     }
 
     void Update()
@@ -67,6 +65,8 @@ public class UndoManager : MonoBehaviour
         action.Undo();
 
         redoStack.Push(action);
+
+        EventManager.Instance.TriggerUnityEvent(ActionStackEvents.OnUndoRedoPerformed);
     }
 
     void Redo()
@@ -77,6 +77,7 @@ public class UndoManager : MonoBehaviour
         action.Redo();
 
         undoStack.Push(action);
+        EventManager.Instance.TriggerUnityEvent(ActionStackEvents.OnUndoRedoPerformed);
     }
 
     void PushAction(IUndoableAction action)
@@ -99,4 +100,5 @@ public static class ActionStackEvents
     public const string Undo = "Undo";
     public const string Redo = "Redo";
     public const string Clear = "Clear";
+    public const string OnUndoRedoPerformed = "OnUndoRedoPerformed";
 }

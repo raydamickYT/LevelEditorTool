@@ -52,7 +52,9 @@ public enum EditorCommand
     Delete,
     SwitchMoveTool,
     SwitchRotateTool,
-    SwitchScaleTool
+    SwitchScaleTool,
+    Copy,
+    Paste
 }
 
 [Serializable]

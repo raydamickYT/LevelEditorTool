@@ -26,7 +26,6 @@ public class SelectableObject : MonoBehaviour, ISelectable
     public void OnSelect()
     {
         TargetData.IsSelected = true;
-        EventManager.Instance.TriggerDelegate(SelectionEvents.OnSelectionMade, TargetData);
     }
 
 }

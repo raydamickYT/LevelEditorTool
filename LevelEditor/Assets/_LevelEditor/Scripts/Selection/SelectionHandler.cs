@@ -1,7 +1,12 @@
 using System;
 using System.Collections;
+using System.Collections.Generic;
 using UnityEngine;
 using UnityEngine.InputSystem;
+
+/// <summary>
+/// This class is responsible for handling any events that call on the selection controller. In going and out going.
+/// </summary>
 
 public class SelectionHandler : MonoBehaviour
 {
@@ -16,7 +21,7 @@ public class SelectionHandler : MonoBehaviour
         {
             Debug.LogWarning($"No cam found on {gameObject.name} ");
         }
-        
+
         selectionController = new selectionController(cam);
 
         EventManager.Instance.AddDelegateListener(SelectionEvents.RegisterToSelectionController, (Action<GameObject, SelectableTargetData>)HandleRegister);
@@ -62,7 +67,7 @@ public class SelectionHandler : MonoBehaviour
             selectionController?.OnStartLeftClick();
         }
 
-        if(context.canceled)
+        if (context.canceled)
         {
             selectionController?.OnStopLeftClick();
         }
@@ -87,9 +92,7 @@ public static class SelectionEvents
     public const string HideSelectionBox = "HideSelectionBox";
     public const string OnSelectionChanged = "OnSelectionChanged";
     public const string OnTrySelection = "OnTrySelection";
-    public const string OnSelectionMade = "OnSelectionMade";
-    public const string OnDeleteSelected = "OnDeleteSelected";
-
+    
     //signals
     public static Func<Rect> FinalizeSelectionRect;
 

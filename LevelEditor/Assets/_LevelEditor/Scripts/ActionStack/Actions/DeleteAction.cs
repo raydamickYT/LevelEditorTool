@@ -37,9 +37,12 @@ public class DeleteAction : IUndoableAction
 
     public void Undo()
     {
-        instantiatedGameObject = GameObject.Instantiate(targetPrefabGameObject, beforeState.Position, beforeState.Rotation, beforeState.parent);
+        instantiatedGameObject = GameObject.Instantiate(targetPrefabGameObject, beforeState.Position, beforeState.Rotation);
+        instantiatedGameObject.transform.SetParent(beforeState.parent, true);
+        
         instantiatedGameObject.transform.localScale = beforeState.Scale;
         instantiatedGameObject.GetComponent<LevelObject>().PrefabReference = targetPrefabGameObject;
+        instantiatedGameObject.GetComponent<LevelObject>().ObjectID = targetID;
 
         ObjectRegistry.RegisterObject(instantiatedGameObject, targetID);
     }

@@ -13,11 +13,14 @@ public class GizmoController
     private GizmoType currentGizmoType = GizmoType.move;
     private GizmoObject gizmoObject;
     private HashSet<SelectableTargetData> _currentGizmoTargets = new();
+    private bool groupSelectionIsActive = false;
 
 
     public GizmoController(GizmoObject _gizmoObject)
     {
         gizmoObject = _gizmoObject;
+
+        EventManager.Instance.AddUnityEventListener(ActionStackEvents.OnUndoRedoPerformed, updateGroupCenter);
     }
 
     public void HandleSelectionChanged(HashSet<SelectableTargetData> data)
@@ -36,7 +39,7 @@ public class GizmoController
                 if (target != null)
                     _currentGizmoTargets.Add(target);
                 
-                ShowSingleGizmo(target);
+                ShowSingleGizmo(_currentGizmoTargets);
                 break;
             default:
                 foreach (var t in data)
@@ -48,7 +51,7 @@ public class GizmoController
         }
     }
 
-    private void ShowSingleGizmo(SelectableTargetData target)
+    private void ShowSingleGizmo(HashSet<SelectableTargetData> target)
     {
         if (gizmoObject == null)
         {
@@ -56,16 +59,18 @@ public class GizmoController
             return;
         }
 
-        if (target.BaseObject == null)
+        if (target.FirstOrDefault().BaseObject == null)
         {
-            Debug.LogError("Target baseobject is null for: " + target.BaseObject.name);
+            Debug.LogError("Target baseobject is null for: " + target.FirstOrDefault().BaseObject.name);
             return;
         }
 
         gizmoObject.SetTarget(target);
-        gizmoObject.gameObject.transform.position = target.BaseObject.transform.position;
+
         gizmoObject?.OnShow(currentGizmoType);
-        gizmoObject.dragLevelObjects = GetCurrentLevelObjects();
+        
+        //needed for the actionstack, GizmoInteractionController needs the list of selected levelobjects
+        gizmoObject.selectedDragLevelObjects = GetSelectedLevelObjects();
     }
 
     private void ShowGroupGizmo()
@@ -82,9 +87,24 @@ public class GizmoController
         Vector3 center = SelectionBoundsCalculator.GetSelectionBoundsCenter(_currentGizmoTargets);
 
         gizmoObject.gizmoTargetData.BaseObject = SetupTempParentObject(center);
+        gizmoObject.SetTarget(_currentGizmoTargets);
         gizmoObject.gameObject.transform.position = center;
         gizmoObject?.OnShow(currentGizmoType);
-        gizmoObject.dragLevelObjects = GetCurrentLevelObjects();
+
+        //needed for the actionstack, GizmoInteractionController needs the list of selected levelobjects
+        gizmoObject.selectedDragLevelObjects = GetSelectedLevelObjects();
+
+        groupSelectionIsActive = true;
+    }
+
+    void updateGroupCenter()
+    {
+        if(!groupSelectionIsActive) return;
+        if(_currentGizmoTargets.Count == 0) return;
+
+        Vector3 center = SelectionBoundsCalculator.GetSelectionCenter(_currentGizmoTargets);
+
+        gizmoObject.gameObject.transform.position = center;
     }
 
     public void HideCurrentGizmos(bool clearTarget = false)
@@ -98,6 +118,7 @@ public class GizmoController
             gizmoObject?.ClearTarget();
 
         _currentGizmoTargets.Clear();
+        groupSelectionIsActive = false;
     }
 
     public void SetGizmoType(GizmoType newGizmoType)
@@ -157,7 +178,7 @@ public class GizmoController
         return tempParentObject;
     }
 
-    public List<LevelObject> GetCurrentLevelObjects()
+    public List<LevelObject> GetSelectedLevelObjects()
     {
         var result = new List<LevelObject>();
 

@@ -119,24 +119,18 @@ public class GizmoInteractionHandler : MonoBehaviour
         startMouseAngle = GetMouseAngleToTarget(activeTarget.position);
 
             // Debug.Log("logging action" + gizmoObject.dragLevelObjects.Count);
-        if (gizmoObject.dragLevelObjects.Count == 1)
+        if (gizmoObject.selectedDragLevelObjects.Count == 1)
         {
-            currentAction = new TransformAction(gizmoObject.dragLevelObjects[0]);
+            currentAction = new TransformAction(gizmoObject.selectedDragLevelObjects[0]);
         }
         else
         {
-            foreach (var levelObj in gizmoObject.dragLevelObjects)
+            foreach (var levelObj in gizmoObject.selectedDragLevelObjects)
             {
                 var t = new TransformAction(levelObj);
                 transformActions.Add(t);
             }
         }
-
-        // var levelObj = activeHandle.Owner.transform.parent.GetComponent<LevelObject>();
-        // if (levelObj != null)
-        //     currentAction = new TransformAction(levelObj);
-        // else
-        //     Debug.LogWarning($"Active handle's owner does not have a LevelObject component. Undo/Redo will not work for this interaction. {activeHandle.Owner.transform.parent.name}");
 
         isDragging = true;
     }

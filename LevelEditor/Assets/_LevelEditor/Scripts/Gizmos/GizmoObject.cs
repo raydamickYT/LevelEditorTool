@@ -1,5 +1,7 @@
 using System;
 using System.Collections.Generic;
+using System.Linq;
+using Mono.Cecil.Cil;
 using UnityEngine;
 using UnityEngine.Rendering;
 
@@ -10,7 +12,7 @@ public class GizmoObject : MonoBehaviour, IGizmoObject
     [SerializeField] private float gizmoBaseSize = 1f;
 
     [HideInInspector]
-    public List<LevelObject> dragLevelObjects = new();
+    public List<LevelObject> selectedDragLevelObjects = new();
 
     public Transform TargetTransform => gizmoTargetData != null && gizmoTargetData.BaseObject != null
         ? gizmoTargetData.BaseObject.transform
@@ -25,7 +27,7 @@ public class GizmoObject : MonoBehaviour, IGizmoObject
             return;
         }
 
-        EventManager.Instance.AddDelegateListener(SelectionEvents.OnSelectionMade, (Action<SelectableTargetData>)SetTarget);
+        // EventManager.Instance.AddDelegateListener(SelectionEvents.OnSelectionChanged, (Action<HashSet<SelectableTargetData>>)SetTarget);
     }
     void LateUpdate()
     {
@@ -124,24 +126,41 @@ public class GizmoObject : MonoBehaviour, IGizmoObject
     }
 
     //setup the target to transform
-    public void SetTarget(SelectableTargetData selectable)
+    public void SetTarget(HashSet<SelectableTargetData> selectable)
     {
-        gizmoTargetData.BaseObject = selectable?.BaseObject;
-        selectableObject = selectable.SelectableComponent;
+        switch (selectable.Count)
+        {
+            case 0:
+                break;
+            case 1:
+                var obj = selectable.FirstOrDefault();
+                if (obj == null) //should be impossible to get a null reference here, but just in case
+                    return;
 
-        Transform parent = selectable.BaseObject.transform;
-        transform.SetParent(parent, false);
+                gizmoTargetData.BaseObject = obj.BaseObject;
+                selectableObject = obj.SelectableComponent;
 
-        transform.localPosition = Vector3.zero;
-        transform.localRotation = Quaternion.identity;
-        transform.localScale = Vector3.one;
+                Transform parent = obj.BaseObject.transform;
+                transform.SetParent(parent, false);
+
+                transform.localPosition = Vector3.zero;
+                transform.localRotation = Quaternion.identity;
+                transform.localScale = Vector3.one;
+
+                transform.position = obj.BaseObject.transform.position;
+                break;
+            default: //meaning more than 1, so probably multi selection
+                selectableObject = selectable.FirstOrDefault().SelectableComponent;
+                transform.SetParent(gizmoTargetData.BaseObject.transform);
+                break;
+        }
     }
 
     public void ClearTarget()
     {
         gizmoTargetData.BaseObject = null;
         selectableObject = null;
-        dragLevelObjects.Clear();
+        selectedDragLevelObjects.Clear();
         transform.SetParent(null);
     }
 
