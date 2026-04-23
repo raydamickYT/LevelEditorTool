@@ -108,4 +108,20 @@ public class InputHandler : MonoBehaviour, InputSystem_Actions.IUIActions
         if (context.started)
             triggerCommand(EditorCommand.Redo);
     }
+
+    public void OnCopy(InputAction.CallbackContext context)
+    {
+        if (context.started)
+        {
+            triggerCommand(EditorCommand.Copy);
+        }
+    }
+
+    public void OnPaste(InputAction.CallbackContext context)
+    {
+        if (context.started)
+        {
+            triggerCommand(EditorCommand.Paste);
+        }
+    }
 }

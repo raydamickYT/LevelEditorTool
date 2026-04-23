@@ -50,17 +50,17 @@ public class TransformAction : IUndoableAction
     {
         if (beforeState.Position != afterState.Position)
         {
-            Debug.Log("Position changed");
+            // Debug.Log("Position changed");
             return true;
         }
         if (beforeState.Rotation != afterState.Rotation)
         {
-            Debug.Log("Rotation changed");
+            // Debug.Log("Rotation changed");
             return true;
         }
         if (beforeState.Scale != afterState.Scale)
         {
-            Debug.Log("Scale changed");
+            // Debug.Log("Scale changed");
             return true;
         }
         return false;

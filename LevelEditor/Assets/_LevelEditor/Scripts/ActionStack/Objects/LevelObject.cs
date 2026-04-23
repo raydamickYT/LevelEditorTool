@@ -28,6 +28,7 @@ public class LevelObject : MonoBehaviour
     {
     }
 
+    //NOTE: this is called at the end of a frame. So there's a slight chance this could lead to problems. If so, here's your reminder.
     public void OnDestroy()
     {
         ObjectRegistry.DeregisterObject(this);
@@ -41,7 +42,6 @@ public class LevelObject : MonoBehaviour
 
     public void Restore(Memento m)
     {
-        Debug.Log("undo position: " +  transform.position);
         transform.position = m.Position;
         transform.rotation = m.Rotation;
         transform.localScale = m.Scale;
