@@ -26,17 +26,6 @@ public class selectionController
     public selectionController(Camera cam)
     {
         this.cam = cam;
-
-        EventManager.Instance.AddDelegateListener(SelectionEvents.OnTrySelection, (Action<GameObject>)TrySelect);
-        EventManager.Instance.AddDelegateListener(ShortcutBindingEvents.OnCommandTriggered, (Action<EditorCommand>)OnDeleteTriggered);
-    }
-
-    private void OnDeleteTriggered(EditorCommand editorCommand)
-    {
-        if (editorCommand == EditorCommand.Delete)
-        {
-            TryDeleteSelected();
-        }
     }
 
     //ik heb de selection controller een normale class gemaakt zodat de meeste logica daar uitgevoerd kan worden.
@@ -173,26 +162,26 @@ public class selectionController
 
     public void SelectInRect(Rect screenRect)
     {
-        ClearSelection();
+        List<SelectableTargetData> targetsInRect = new();
 
         foreach (var pair in selectableGameObjectsInSceneDict)
         {
             GameObject targetobj = pair.Key;
             SelectableTargetData targetData = pair.Value;
 
+            if (targetobj == null) continue;
+
+            if (targetobj.layer != LayerMask.NameToLayer("Selectable")) continue;
 
             if (IsObjectInsideScreenRect(targetobj, screenRect))
             {
-                if (targetobj.layer == LayerMask.NameToLayer("Selectable"))
-                {
-                    AddToSelection(targetData);
-                }
+                targetsInRect.Add(targetData);
             }
         }
 
-        RefreshGizmo();
-        //later kijken hoe de gizmo zich gedraagt bij het selecteren van meerdere objecten
+        ReplaceSelection(targetsInRect);
     }
+
     private bool IsObjectInsideScreenRect(GameObject targetObject, Rect screenRect)
     {
         Collider2D collider = targetObject.GetComponent<Collider2D>();
@@ -245,6 +234,39 @@ public class selectionController
         {
             targetData.SelectableComponent.OnSelect();
         }
+    }
+    public void ReplaceSelection(IEnumerable<GameObject> objectsToSelect)
+    {
+        ClearSelection();
+
+        foreach (GameObject obj in objectsToSelect)
+        {
+            if (obj == null)
+                continue;
+
+            if (!selectableGameObjectsInSceneDict.TryGetValue(obj, out SelectableTargetData targetData))
+                continue;
+
+            AddToSelection(targetData);
+        }
+
+        Debug.Log("Selected objects" + _selectedGameObjects.Count);
+        RefreshGizmo();
+    }
+
+    public void ReplaceSelection(IEnumerable<SelectableTargetData> targetsToSelect)
+    {
+        ClearSelection();
+
+        foreach (SelectableTargetData targetData in targetsToSelect)
+        {
+            if (targetData == null)
+                continue;
+
+            AddToSelection(targetData);
+        }
+
+        RefreshGizmo();
     }
 
     private void RefreshGizmo()

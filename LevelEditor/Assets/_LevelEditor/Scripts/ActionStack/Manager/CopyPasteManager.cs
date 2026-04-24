@@ -4,7 +4,7 @@ using UnityEngine;
 
 public class CopyPasteManager : MonoBehaviour
 {
-    private List<LevelObject.Memento> clipBoard;
+    private List<LevelObject.Memento> clipBoard = new();
     private HashSet<LevelObject> selectedObjects = new();
 
     // Start is called once before the first execution of Update after the MonoBehaviour is created
@@ -16,7 +16,6 @@ public class CopyPasteManager : MonoBehaviour
 
     private void HandleCommand(EditorCommand command)
     {
-        Debug.Log("command: " + command.ToString());
         switch (command)
         {
             case EditorCommand.Copy:
@@ -31,7 +30,6 @@ public class CopyPasteManager : MonoBehaviour
 
     private void Copy()
     {
-        Debug.Log("copy");
         clipBoard.Clear();
 
         foreach (var item in selectedObjects)
@@ -46,8 +44,6 @@ public class CopyPasteManager : MonoBehaviour
 
     private void Paste()
     {
-        Debug.Log("paste");
-
         var pasteAction = new PasteAction(clipBoard);
         pasteAction.Execute();
 

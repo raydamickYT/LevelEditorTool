@@ -38,7 +38,7 @@ public class GizmoController
                 var target = data.FirstOrDefault();
                 if (target != null)
                     _currentGizmoTargets.Add(target);
-                
+
                 ShowSingleGizmo(_currentGizmoTargets);
                 break;
             default:
@@ -68,7 +68,7 @@ public class GizmoController
         gizmoObject.SetTarget(target);
 
         gizmoObject?.OnShow(currentGizmoType);
-        
+
         //needed for the actionstack, GizmoInteractionController needs the list of selected levelobjects
         gizmoObject.selectedDragLevelObjects = GetSelectedLevelObjects();
     }
@@ -99,8 +99,8 @@ public class GizmoController
 
     void updateGroupCenter()
     {
-        if(!groupSelectionIsActive) return;
-        if(_currentGizmoTargets.Count == 0) return;
+        if (!groupSelectionIsActive) return;
+        if (_currentGizmoTargets.Count == 0) return;
 
         Vector3 center = SelectionBoundsCalculator.GetSelectionCenter(_currentGizmoTargets);
 
@@ -139,18 +139,21 @@ public class GizmoController
         {
             foreach (var target in _currentGizmoTargets)
             {
-                target.BaseObject.transform.SetParent(null);
+                target.BaseObject.transform.SetParent(OriginalParent);
             }
 
             tempParentObject.SetActive(false);
         }
     }
 
+    Transform OriginalParent;
     public GameObject SetupTempParentObject(Vector3 center)
     {
         switch (tempParentObject)
         {
             case not null:
+                OriginalParent = _currentGizmoTargets.FirstOrDefault().BaseObject.transform.parent;
+                Debug.Log("Parent name: " + OriginalParent.name);
                 tempParentObject.transform.position = center;
                 tempParentObject.SetActive(true);
 
@@ -161,6 +164,9 @@ public class GizmoController
 
                 return tempParentObject;
             default:
+                OriginalParent = _currentGizmoTargets.FirstOrDefault().BaseObject.transform.parent;
+                Debug.Log("Parent name: " + OriginalParent.name);
+
                 GameObject tempParent = new GameObject("GizmoTempParent");
                 tempParent.transform.position = center;
                 tempParent.transform.rotation = Quaternion.identity;

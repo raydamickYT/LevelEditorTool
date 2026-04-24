@@ -26,6 +26,10 @@ public class SelectionHandler : MonoBehaviour
 
         EventManager.Instance.AddDelegateListener(SelectionEvents.RegisterToSelectionController, (Action<GameObject, SelectableTargetData>)HandleRegister);
         EventManager.Instance.AddDelegateListener(SelectionEvents.DeRegisterToSelectionController, (Action<GameObject>)HandleDeregister);
+        EventManager.Instance.AddDelegateListener(SelectionEvents.ReplaceSelectionWithObject, (Action<List<GameObject>>)ReplaceSelection);
+        EventManager.Instance.AddDelegateListener(SelectionEvents.OnTrySelection, (Action<GameObject>)OnTrySelection);
+
+        EventManager.Instance.AddDelegateListener(ShortcutBindingEvents.OnCommandTriggered, (Action<EditorCommand>)OnDeleteTriggered);
     }
 
     void Update()
@@ -72,12 +76,25 @@ public class SelectionHandler : MonoBehaviour
             selectionController?.OnStopLeftClick();
         }
     }
+    private void ReplaceSelection(List<GameObject> gameObjects)
+    => selectionController?.ReplaceSelection(gameObjects);
 
     private void HandleRegister(GameObject obj, SelectableTargetData data)
     => selectionController?.Register(obj, data);
 
     private void HandleDeregister(GameObject obj)
         => selectionController?.Deregister(obj);
+
+    private void OnTrySelection(GameObject gameObject)
+    => selectionController?.TrySelect(gameObject);
+
+    private void OnDeleteTriggered(EditorCommand editorCommand)
+    {
+        if (editorCommand == EditorCommand.Delete)
+        {
+            selectionController?.TryDeleteSelected();
+        }
+    }
 }
 
 /// <summary>
@@ -92,6 +109,7 @@ public static class SelectionEvents
     public const string HideSelectionBox = "HideSelectionBox";
     public const string OnSelectionChanged = "OnSelectionChanged";
     public const string OnTrySelection = "OnTrySelection";
+    public const string ReplaceSelectionWithObject = "ReplaceSelectionWithObject";
     
     //signals
     public static Func<Rect> FinalizeSelectionRect;
