@@ -152,8 +152,11 @@ public class GizmoController
         switch (tempParentObject)
         {
             case not null:
-                OriginalParent = _currentGizmoTargets.FirstOrDefault().BaseObject.transform.parent;
-                Debug.Log("Parent name: " + OriginalParent.name);
+                if (OriginalParent == null)
+                {
+                    OriginalParent = _currentGizmoTargets.FirstOrDefault().BaseObject.transform.parent;
+                    Debug.Log("Parent name: " + OriginalParent.name);
+                }
                 tempParentObject.transform.position = center;
                 tempParentObject.SetActive(true);
 
@@ -164,8 +167,11 @@ public class GizmoController
 
                 return tempParentObject;
             default:
-                OriginalParent = _currentGizmoTargets.FirstOrDefault().BaseObject.transform.parent;
-                Debug.Log("Parent name: " + OriginalParent.name);
+                if (OriginalParent == null)
+                {
+                    OriginalParent = _currentGizmoTargets.FirstOrDefault().BaseObject.transform.parent;
+                    Debug.Log("Parent name: " + OriginalParent.name);
+                }
 
                 GameObject tempParent = new GameObject("GizmoTempParent");
                 tempParent.transform.position = center;
