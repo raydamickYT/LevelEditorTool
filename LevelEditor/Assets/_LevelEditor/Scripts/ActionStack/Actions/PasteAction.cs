@@ -40,7 +40,7 @@ public class PasteAction : IUndoableAction, IEditorCommand
             var itemPos = new Vector3(item.Position.x, item.Position.y, item.Position.z);
             GameObject instantiatedGameObject = GameObject.Instantiate(item.PrefabReference, itemPos, item.Rotation).gameObject;
 
-            instantiatedGameObject.transform.SetParent(item.parent, true);
+            LevelObjectsRoot.Instance.AddLevelObject(instantiatedGameObject);
             instantiatedGameObject.transform.localScale = item.Scale;
 
             var lvlObject = instantiatedGameObject.GetComponent<LevelObject>();

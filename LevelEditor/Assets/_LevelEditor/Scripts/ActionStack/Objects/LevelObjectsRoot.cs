@@ -48,7 +48,7 @@ public class LevelObjectsRoot : MonoBehaviour
         if (child.GetComponent<LevelObject>())
         {
             levelObjects.Add(child.gameObject);
-            child.transform.SetParent(rootTransform);
+            child.transform.SetParent(rootTransform, true);
         }
         else
         {

@@ -9,7 +9,7 @@ using UnityEngine;
 /// </summary>
 public class GizmoController
 {
-    private GameObject tempParentObject;
+    private GizmoTempParent tempParentObject;
     private GizmoType currentGizmoType = GizmoType.move;
     private GizmoObject gizmoObject;
     private HashSet<SelectableTargetData> _currentGizmoTargets = new();
@@ -86,7 +86,7 @@ public class GizmoController
 
         Vector3 center = SelectionBoundsCalculator.GetSelectionBoundsCenter(_currentGizmoTargets);
 
-        gizmoObject.gizmoTargetData.BaseObject = SetupTempParentObject(center);
+        gizmoObject.gizmoTargetData.BaseObject = SetupTempParentObject(center).gameObject;
         gizmoObject.SetTarget(_currentGizmoTargets);
         gizmoObject.gameObject.transform.position = center;
         gizmoObject?.OnShow(currentGizmoType);
@@ -142,44 +142,23 @@ public class GizmoController
                 LevelObjectsRoot.Instance.AddLevelObject(target.BaseObject);
             }
 
-            tempParentObject.SetActive(false);
+            tempParentObject.gameObject.SetActive(false);
         }
     }
 
-    public GameObject SetupTempParentObject(Vector3 center)
+    public GizmoTempParent SetupTempParentObject(Vector3 center)
     {
-        switch (tempParentObject)
+        if (tempParentObject == null)
         {
-            case not null:
-                tempParentObject.transform.position = center;
-                tempParentObject.SetActive(true);
-
-                if(LevelObjectsRoot.Instance == null) break;
-
-                foreach (var target in _currentGizmoTargets)
-                {
-                    LevelObjectsRoot.Instance.RemoveChildFromParent(target.BaseObject);
-                    target.BaseObject.transform.SetParent(tempParentObject.transform);
-                }
-
-                return tempParentObject;
-            default:
-                GameObject tempParent = new GameObject("GizmoTempParent");
-                tempParent.transform.position = center;
-                tempParent.transform.rotation = Quaternion.identity;
-                tempParent.SetActive(true);
-
-                if(LevelObjectsRoot.Instance == null) break;
-
-                foreach (var target in _currentGizmoTargets)
-                {
-                    LevelObjectsRoot.Instance.RemoveChildFromParent(target.BaseObject);
-                    target.BaseObject.transform.SetParent(tempParent.transform);
-                }
-                tempParentObject = tempParent;
-
-                break;
+            GameObject tempParent = new GameObject("GizmoTempParent");
+            tempParentObject = tempParent.AddComponent<GizmoTempParent>();
         }
+
+        tempParentObject.transform.position = center;
+        tempParentObject.transform.rotation = Quaternion.identity;
+        tempParentObject.gameObject.SetActive(true);
+
+        tempParentObject.Attach(_currentGizmoTargets.Select(t => t.BaseObject));
 
         return tempParentObject;
     }
