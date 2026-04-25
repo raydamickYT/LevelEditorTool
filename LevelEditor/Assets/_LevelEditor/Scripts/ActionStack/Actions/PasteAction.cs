@@ -7,14 +7,18 @@ public class PasteAction : IUndoableAction, IEditorCommand
     //before paste
     string label;
     List<LevelObject.Memento> ObjectsToPaste;
+    private List<GameObject> previousSelection = new();
 
     //after paste
     List<GameObject> instantiatedGameObjects = new();
-    public PasteAction(List<LevelObject.Memento> clipBoardObjects, string label = "PasteAction")
+    public PasteAction(List<LevelObject.Memento> clipBoardObjects, List<GameObject> previousSel, string label = "PasteAction")
     {
         this.label = label;
         ObjectsToPaste = clipBoardObjects;
+        previousSelection = previousSel;
+
     }
+
     public string DebugLabel => label;
 
     public void Execute() //pasting
@@ -54,6 +58,8 @@ public class PasteAction : IUndoableAction, IEditorCommand
         {
             GameObject.Destroy(item);
         }
+
+        EventManager.Instance.TriggerDelegate(SelectionEvents.ReplaceSelectionWithObject, previousSelection); //reset the selection to earlier selected Items.
 
         instantiatedGameObjects.Clear();
     }

@@ -235,6 +235,7 @@ public class selectionController
             targetData.SelectableComponent.OnSelect();
         }
     }
+    
     public void ReplaceSelection(IEnumerable<GameObject> objectsToSelect)
     {
         ClearSelection();

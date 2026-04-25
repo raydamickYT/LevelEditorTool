@@ -1,10 +1,12 @@
 using System;
 using System.Collections.Generic;
+using System.Linq;
 using UnityEngine;
 
 public class CopyPasteManager : MonoBehaviour
 {
     private List<LevelObject.Memento> clipBoard = new();
+    private List<GameObject> copiedGameObjects = new();
     private HashSet<LevelObject> selectedObjects = new();
 
     // Start is called once before the first execution of Update after the MonoBehaviour is created
@@ -34,17 +36,18 @@ public class CopyPasteManager : MonoBehaviour
 
         foreach (var item in selectedObjects)
         {
-            var levelObject = item.GetComponent<LevelObject>();
-            if (levelObject == null) continue;
+            if (item == null) continue;
 
-            clipBoard.Add(levelObject.Save());
+            clipBoard.Add(item.Save());
+            copiedGameObjects.Add(item.gameObject);
         }
     }
 
 
     private void Paste()
     {
-        var pasteAction = new PasteAction(clipBoard);
+        var pasteAction = new PasteAction(clipBoard, copiedGameObjects);
+
         pasteAction.Execute();
 
         EventManager.Instance.TriggerDelegate(ActionStackEvents.RegisterAction, pasteAction);
