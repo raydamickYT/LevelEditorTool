@@ -2,6 +2,16 @@ using System.Collections.Generic;
 using System.Linq;
 using UnityEngine;
 
+
+/// <summary>
+/// This action controlls the pasting of objects it's supposed to control:
+/// - a list of what to paste
+/// - a list of what was selected before
+/// - creating the objects it needs to paste
+/// - removing those objects
+/// - telling the selection controller that the selection needs to be updated
+/// 
+/// </summary>
 public class PasteAction : IUndoableAction, IEditorCommand
 {
     //before paste
@@ -27,9 +37,8 @@ public class PasteAction : IUndoableAction, IEditorCommand
 
         foreach (var item in ObjectsToPaste)
         {
-            float offset = 0.5f;
-            var offSetPos = new Vector3(item.Position.x + offset, item.Position.y + offset, item.Position.z); //this is just to give a better visual of whats been pasted
-            GameObject instantiatedGameObject = GameObject.Instantiate(item.PrefabReference, offSetPos, item.Rotation).gameObject;
+            var itemPos = new Vector3(item.Position.x, item.Position.y, item.Position.z);
+            GameObject instantiatedGameObject = GameObject.Instantiate(item.PrefabReference, itemPos, item.Rotation).gameObject;
 
             instantiatedGameObject.transform.SetParent(item.parent, true);
             instantiatedGameObject.transform.localScale = item.Scale;

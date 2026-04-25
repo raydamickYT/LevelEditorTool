@@ -6,7 +6,6 @@ using UnityEngine;
 public class CopyPasteManager : MonoBehaviour
 {
     private List<LevelObject.Memento> clipBoard = new();
-    private List<GameObject> copiedGameObjects = new();
     private HashSet<LevelObject> selectedObjects = new();
 
     // Start is called once before the first execution of Update after the MonoBehaviour is created
@@ -39,14 +38,24 @@ public class CopyPasteManager : MonoBehaviour
             if (item == null) continue;
 
             clipBoard.Add(item.Save());
-            copiedGameObjects.Add(item.gameObject);
         }
     }
 
 
     private void Paste()
     {
-        var pasteAction = new PasteAction(clipBoard, copiedGameObjects);
+        if(clipBoard.Count == 0) return;
+
+        List<GameObject> selectionBeforePaste = new();
+
+        foreach (var item in selectedObjects)
+        {
+            if (item == null) continue;
+
+            selectionBeforePaste.Add(item.gameObject);
+        }
+
+        var pasteAction = new PasteAction(new List<LevelObject.Memento>(clipBoard), selectionBeforePaste);
 
         pasteAction.Execute();
 
