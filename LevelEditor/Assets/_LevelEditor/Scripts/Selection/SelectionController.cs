@@ -103,43 +103,17 @@ public class selectionController
 
         EventManager.Instance.TriggerDelegate(SelectionEvents.OnSelectionChanged, new HashSet<SelectableTargetData>()); //clear the data in gizmo controller to prevent the gizmo object from beeing deleted
 
-        switch (_selectedGameObjects.Count)
-        {
-            case 1:
-                var obj = _selectedGameObjects.FirstOrDefault();
-                var lvlObj = obj.BaseObject.GetComponent<LevelObject>();
-                if (lvlObj != null)
-                {
-                    deleteAction = new DeleteAction(lvlObj);
-                }
-                if (deleteAction != null)
-                {
-                    EventManager.Instance.TriggerDelegate(ActionStackEvents.RegisterAction, deleteAction);
-                }
-                GameObject.Destroy(obj.BaseObject);
-                break;
-            default:
-                var actionList = new List<IUndoableAction>();
+        //really long line but basically: get items form _selectedGameObjects which have the component LevelObject, aren't null then call the save() in that item and add that memento
+        //to the list
+        List<LevelObject.Memento> mementos = _selectedGameObjects.Select(item => item.BaseObject.GetComponent<LevelObject>()).Where(LevelObject => LevelObject != null)
+        .Select(LevelObject => LevelObject.Save()).ToList();
 
-                foreach (var item in _selectedGameObjects)
-                {
-                    var lvlObj2 = item.BaseObject.GetComponent<LevelObject>();
-                    if (lvlObj2 != null)
-                    {
-                        var action = new DeleteAction(lvlObj2);
-                        actionList.Add(action);
-                    }
-                    GameObject.Destroy(item.BaseObject);
-                }
-                if (actionList.Count > 0)
-                {
-                    var composite = new CompositeAction(actionList, "delete Selection");
-                    EventManager.Instance.TriggerDelegate(ActionStackEvents.RegisterAction, composite);
-                }
+        if (mementos.Count == 0) return;
 
-                break;
-        }
+        deleteAction = new DeleteAction(mementos);
+        deleteAction.Execute();
 
+        EventManager.Instance.TriggerDelegate(ActionStackEvents.RegisterAction, deleteAction);
 
         _selectedGameObjects.Clear();
         RefreshGizmo();
@@ -235,11 +209,12 @@ public class selectionController
             targetData.SelectableComponent.OnSelect();
         }
     }
-    
+
     public void ReplaceSelection(IEnumerable<GameObject> objectsToSelect)
     {
         ClearSelection();
 
+        if (!objectsToSelect.Any()) return;
         foreach (GameObject obj in objectsToSelect)
         {
             if (obj == null)

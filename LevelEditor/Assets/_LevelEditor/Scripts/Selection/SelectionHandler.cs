@@ -26,7 +26,7 @@ public class SelectionHandler : MonoBehaviour
 
         EventManager.Instance.AddDelegateListener(SelectionEvents.RegisterToSelectionController, (Action<GameObject, SelectableTargetData>)HandleRegister);
         EventManager.Instance.AddDelegateListener(SelectionEvents.DeRegisterToSelectionController, (Action<GameObject>)HandleDeregister);
-        EventManager.Instance.AddDelegateListener(SelectionEvents.ReplaceSelectionWithObject, (Action<List<GameObject>>)ReplaceSelection);
+        EventManager.Instance.AddDelegateListener(SelectionEvents.ReplaceSelectionWithObject, (Action<IEnumerable<GameObject>>)ReplaceSelection);
         EventManager.Instance.AddDelegateListener(SelectionEvents.OnTrySelection, (Action<GameObject>)OnTrySelection);
 
         EventManager.Instance.AddDelegateListener(ShortcutBindingEvents.OnCommandTriggered, (Action<EditorCommand>)OnDeleteTriggered);
@@ -76,7 +76,7 @@ public class SelectionHandler : MonoBehaviour
             selectionController?.OnStopLeftClick();
         }
     }
-    private void ReplaceSelection(List<GameObject> gameObjects)
+    private void ReplaceSelection(IEnumerable<GameObject> gameObjects)
     => selectionController?.ReplaceSelection(gameObjects);
 
     private void HandleRegister(GameObject obj, SelectableTargetData data)

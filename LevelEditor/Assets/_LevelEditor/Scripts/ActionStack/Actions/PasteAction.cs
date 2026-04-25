@@ -17,10 +17,12 @@ public class PasteAction : IUndoableAction, IEditorCommand
     //before paste
     string label;
     List<LevelObject.Memento> ObjectsToPaste;
+    private readonly List<LevelObject.Memento> pastedStates = new();
     private List<GameObject> previousSelection = new();
 
     //after paste
     List<GameObject> instantiatedGameObjects = new();
+
     public PasteAction(List<LevelObject.Memento> clipBoardObjects, List<GameObject> previousSel, string label = "PasteAction")
     {
         this.label = label;
@@ -35,22 +37,25 @@ public class PasteAction : IUndoableAction, IEditorCommand
     {
         instantiatedGameObjects.Clear();
 
-        foreach (var item in ObjectsToPaste)
+        bool isRedo = pastedStates.Count > 0;
+
+        IEnumerable<LevelObject.Memento> statesToSpawn = isRedo
+    ? pastedStates
+    : ObjectsToPaste;
+
+        foreach (var item in statesToSpawn)
         {
-            var itemPos = new Vector3(item.Position.x, item.Position.y, item.Position.z);
-            GameObject instantiatedGameObject = GameObject.Instantiate(item.PrefabReference, itemPos, item.Rotation).gameObject;
-
-            LevelObjectsRoot.Instance.AddLevelObject(instantiatedGameObject);
-            instantiatedGameObject.transform.localScale = item.Scale;
-
-            var lvlObject = instantiatedGameObject.GetComponent<LevelObject>();
-            if (lvlObject == null) continue;
-
-            lvlObject.PrefabReference = item.PrefabReference;
-
-            ObjectRegistry.OnObjectCreated(lvlObject);
+            GameObject instantiatedGameObject = LevelObjectSpawner.Spawn(item, isRedo); //if this is the first time pasting here, this'll need a new id if not it doesn't
+            if (instantiatedGameObject == null) continue;
 
             instantiatedGameObjects.Add(instantiatedGameObject);
+
+            if (!isRedo)
+            {
+                LevelObject levelObject = instantiatedGameObject.GetComponent<LevelObject>();
+                if (levelObject != null)
+                    pastedStates.Add(levelObject.Save());
+            }
         }
 
         EventManager.Instance.TriggerDelegate(SelectionEvents.ReplaceSelectionWithObject, instantiatedGameObjects);
@@ -65,7 +70,7 @@ public class PasteAction : IUndoableAction, IEditorCommand
     {
         foreach (var item in instantiatedGameObjects)
         {
-            GameObject.Destroy(item);
+            LevelObjectSpawner.Despawn(item);
         }
 
         EventManager.Instance.TriggerDelegate(SelectionEvents.ReplaceSelectionWithObject, previousSelection); //reset the selection to earlier selected Items.

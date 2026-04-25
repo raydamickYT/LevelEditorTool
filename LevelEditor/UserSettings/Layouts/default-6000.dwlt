@@ -19,7 +19,7 @@ MonoBehaviour:
     width: 1920
     height: 997
   m_ShowMode: 4
-  m_Title: Game
+  m_Title: Console
   m_RootView: {fileID: 2}
   m_MinSize: {x: 875, y: 300}
   m_MaxSize: {x: 10000, y: 10000}
@@ -1291,7 +1291,7 @@ MonoBehaviour:
   m_Position:
     m_Target: {x: -7.4807053, y: 1.0362997, z: -0.08990714}
     speed: 2
-    m_Value: {x: -0.14722323, y: -1.9490695, z: -0.0025770713}
+    m_Value: {x: -7.4807053, y: 1.0362997, z: -0.08990714}
   m_RenderMode: 0
   m_CameraMode:
     drawMode: 0
@@ -1343,7 +1343,7 @@ MonoBehaviour:
   m_Size:
     m_Target: 9.867318
     speed: 2
-    m_Value: 0.97184974
+    m_Value: 9.867318
   m_Ortho:
     m_Target: 1
     speed: 2
@@ -1556,25 +1556,8 @@ MonoBehaviour:
       m_LastClickedID:
         m_Data: 0
       m_ExpandedIDs:
-      - m_Data: -98876
-      - m_Data: -94938
-      - m_Data: -68280
-      - m_Data: -57668
-      - m_Data: -53124
-      - m_Data: -53090
-      - m_Data: -52058
-      - m_Data: -52024
-      - m_Data: -45622
-      - m_Data: -33524
-      - m_Data: -31686
-      - m_Data: -20484
-      - m_Data: -19378
-      - m_Data: -12522
-      - m_Data: -1424
-      - m_Data: -1422
-      - m_Data: -1316
-      - m_Data: 49150
-      - m_Data: 49284
+      - m_Data: -12698
+      - m_Data: -1356
       m_RenameOverlay:
         m_UserAcceptedRename: 0
         m_Name: 
@@ -1648,8 +1631,7 @@ MonoBehaviour:
     m_ShowAllHits: 0
     m_SkipHidden: 0
     m_SearchArea: 1
-    m_Folders:
-    - Assets/_LevelEditor/Input
+    m_Folders: []
     m_Globs: []
     m_ProductIds: 
     m_AnyWithAssetOrigin: 0
@@ -1671,48 +1653,51 @@ MonoBehaviour:
       m_Data: 0
     m_ExpandedIDs:
     - m_Data: 0
-    - m_Data: 51430
-    - m_Data: 51432
-    - m_Data: 51434
-    - m_Data: 51436
-    - m_Data: 51438
-    - m_Data: 51440
-    - m_Data: 51442
-    - m_Data: 51444
-    - m_Data: 51446
-    - m_Data: 51448
-    - m_Data: 51450
-    - m_Data: 51452
-    - m_Data: 51454
-    - m_Data: 51456
-    - m_Data: 51458
-    - m_Data: 51460
-    - m_Data: 51462
-    - m_Data: 51464
-    - m_Data: 51466
-    - m_Data: 51468
-    - m_Data: 51470
-    - m_Data: 51472
-    - m_Data: 51474
-    - m_Data: 51476
-    - m_Data: 51478
-    - m_Data: 51480
-    - m_Data: 51482
-    - m_Data: 51484
-    - m_Data: 51486
-    - m_Data: 51488
-    - m_Data: 51490
-    - m_Data: 51492
-    - m_Data: 51494
-    - m_Data: 51496
-    - m_Data: 51498
-    - m_Data: 51500
-    - m_Data: 51502
-    - m_Data: 51504
-    - m_Data: 51506
-    - m_Data: 51508
-    - m_Data: 51510
-    - m_Data: 51512
+    - m_Data: 50160
+    - m_Data: 50162
+    - m_Data: 50164
+    - m_Data: 50166
+    - m_Data: 50168
+    - m_Data: 50170
+    - m_Data: 50172
+    - m_Data: 50174
+    - m_Data: 50176
+    - m_Data: 50178
+    - m_Data: 50180
+    - m_Data: 50182
+    - m_Data: 50184
+    - m_Data: 50186
+    - m_Data: 50188
+    - m_Data: 50190
+    - m_Data: 50192
+    - m_Data: 50194
+    - m_Data: 50196
+    - m_Data: 50198
+    - m_Data: 50200
+    - m_Data: 50202
+    - m_Data: 50204
+    - m_Data: 50206
+    - m_Data: 50208
+    - m_Data: 50210
+    - m_Data: 50212
+    - m_Data: 50214
+    - m_Data: 50216
+    - m_Data: 50218
+    - m_Data: 50220
+    - m_Data: 50222
+    - m_Data: 50224
+    - m_Data: 50226
+    - m_Data: 50228
+    - m_Data: 50230
+    - m_Data: 50232
+    - m_Data: 50234
+    - m_Data: 50236
+    - m_Data: 50238
+    - m_Data: 50240
+    - m_Data: 50242
+    - m_Data: 50244
+    - m_Data: 50246
+    - m_Data: 50248
     m_RenameOverlay:
       m_UserAcceptedRename: 0
       m_Name: 
@@ -1739,55 +1724,57 @@ MonoBehaviour:
       m_Icon: {fileID: 0}
       m_ResourceFile: 
   m_AssetTreeState:
-    scrollPos: {x: 0, y: 0}
-    m_SelectedIDs:
-    - m_Data: 49400
+    scrollPos: {x: 0, y: 459}
+    m_SelectedIDs: []
     m_LastClickedID:
       m_Data: 0
     m_ExpandedIDs:
     - m_Data: 0
-    - m_Data: 51430
-    - m_Data: 51432
-    - m_Data: 51434
-    - m_Data: 51436
-    - m_Data: 51438
-    - m_Data: 51440
-    - m_Data: 51442
-    - m_Data: 51444
-    - m_Data: 51446
-    - m_Data: 51448
-    - m_Data: 51450
-    - m_Data: 51452
-    - m_Data: 51454
-    - m_Data: 51456
-    - m_Data: 51458
-    - m_Data: 51460
-    - m_Data: 51462
-    - m_Data: 51464
-    - m_Data: 51466
-    - m_Data: 51468
-    - m_Data: 51470
-    - m_Data: 51472
-    - m_Data: 51474
-    - m_Data: 51476
-    - m_Data: 51478
-    - m_Data: 51480
-    - m_Data: 51482
-    - m_Data: 51484
-    - m_Data: 51486
-    - m_Data: 51488
-    - m_Data: 51490
-    - m_Data: 51492
-    - m_Data: 51494
-    - m_Data: 51496
-    - m_Data: 51498
-    - m_Data: 51500
-    - m_Data: 51502
-    - m_Data: 51504
-    - m_Data: 51506
-    - m_Data: 51508
-    - m_Data: 51510
-    - m_Data: 51512
+    - m_Data: 50160
+    - m_Data: 50162
+    - m_Data: 50164
+    - m_Data: 50166
+    - m_Data: 50168
+    - m_Data: 50170
+    - m_Data: 50172
+    - m_Data: 50174
+    - m_Data: 50176
+    - m_Data: 50178
+    - m_Data: 50180
+    - m_Data: 50182
+    - m_Data: 50184
+    - m_Data: 50186
+    - m_Data: 50188
+    - m_Data: 50190
+    - m_Data: 50192
+    - m_Data: 50194
+    - m_Data: 50196
+    - m_Data: 50198
+    - m_Data: 50200
+    - m_Data: 50202
+    - m_Data: 50204
+    - m_Data: 50206
+    - m_Data: 50208
+    - m_Data: 50210
+    - m_Data: 50212
+    - m_Data: 50214
+    - m_Data: 50216
+    - m_Data: 50218
+    - m_Data: 50220
+    - m_Data: 50222
+    - m_Data: 50224
+    - m_Data: 50226
+    - m_Data: 50228
+    - m_Data: 50230
+    - m_Data: 50232
+    - m_Data: 50234
+    - m_Data: 50236
+    - m_Data: 50238
+    - m_Data: 50240
+    - m_Data: 50242
+    - m_Data: 50244
+    - m_Data: 50246
+    - m_Data: 50248
     m_RenameOverlay:
       m_UserAcceptedRename: 0
       m_Name: 
@@ -1814,9 +1801,8 @@ MonoBehaviour:
       m_Icon: {fileID: 0}
       m_ResourceFile: 
   m_ListAreaState:
-    m_SelectedInstanceIDs:
-    - m_Data: 49400
-    m_LastClickedInstanceID: 49400
+    m_SelectedInstanceIDs: []
+    m_LastClickedInstanceID: 0
     m_HadKeyboardFocusLastEvent: 0
     m_ExpandedInstanceIDs: []
     m_RenameOverlay:

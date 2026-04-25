@@ -1,3 +1,6 @@
+using System.Collections;
+using System.Collections.Generic;
+using System.Linq;
 using UnityEditor;
 using UnityEngine;
 
@@ -9,41 +12,54 @@ using UnityEngine;
 /// and it will:
 /// - create a copy of that object on undo and regiser it to the <see cref="ObjectRegistry"/>
 /// </summary>
-public class DeleteAction : IUndoableAction
+public class DeleteAction : IUndoableAction, IEditorCommand
 {
-    GameObject targetPrefabGameObject;
-    GameObject instantiatedGameObject;
-    LevelObject.Memento beforeState;
-    int targetID;
+    List<GameObject> instantiatedGameObjects = new();
+    List<LevelObject.Memento> beforeState;
     string debugLabel;
 
-    public DeleteAction(LevelObject target)
+    public DeleteAction(IEnumerable<LevelObject.Memento> target, string debugLabel = "DeleteAction")
     {
-        debugLabel = target.name;
-        targetPrefabGameObject = target.PrefabReference;
-        beforeState = target.Save();
-        targetID = target.ObjectID;
+        this.debugLabel = debugLabel;
+        beforeState = target.ToList();
     }
     public string DebugLabel => debugLabel;
 
+    public void Execute()
+    {
+        EventManager.Instance.TriggerDelegate(SelectionEvents.ReplaceSelectionWithObject, Enumerable.Empty<GameObject>());
+
+        foreach (var state in beforeState)
+        {
+            LevelObject target = ObjectRegistry.GetLevelObject(state.ObjectID);
+
+            if (target == null)
+            {
+                Debug.LogWarning($"DeleteAction: object not found: {state.ObjectID}");
+                continue;
+            }
+
+            LevelObjectSpawner.Despawn(target.gameObject);
+        }
+
+        instantiatedGameObjects.Clear();
+    }
+
     public void Redo()
     {
-        if(instantiatedGameObject != null)
-        {
-            //destroy gameobject
-            GameObject.Destroy(instantiatedGameObject);
-        }
+        Execute();
     }
 
     public void Undo()
     {
-        instantiatedGameObject = GameObject.Instantiate(targetPrefabGameObject, beforeState.Position, beforeState.Rotation);
-        instantiatedGameObject.transform.SetParent(beforeState.parent, true);
-        
-        instantiatedGameObject.transform.localScale = beforeState.Scale;
-        instantiatedGameObject.GetComponent<LevelObject>().PrefabReference = targetPrefabGameObject;
-        instantiatedGameObject.GetComponent<LevelObject>().ObjectID = targetID;
+        if (instantiatedGameObjects.Count == 0)
+        {
+            foreach (var state in beforeState)
+            {
+                instantiatedGameObjects.Add(LevelObjectSpawner.Spawn(state, true));
+            }
+        }
 
-        ObjectRegistry.RegisterObject(instantiatedGameObject, targetID);
+        EventManager.Instance.TriggerDelegate(SelectionEvents.ReplaceSelectionWithObject, new List<GameObject>(instantiatedGameObjects)); //reset the selection to earlier selected Items.
     }
 }

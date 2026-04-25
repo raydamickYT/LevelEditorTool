@@ -31,6 +31,13 @@ public class TransformAction : IUndoableAction
 
     public void Redo()
     {
+        target = ObjectRegistry.GetLevelObject(targetID);
+        if (target == null)
+        {
+            Debug.LogWarning("object not found");
+            return;
+        }
+
         target.Restore(afterState);
     }
 
