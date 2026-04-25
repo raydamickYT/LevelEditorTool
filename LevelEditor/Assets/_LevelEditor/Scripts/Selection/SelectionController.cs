@@ -75,7 +75,7 @@ public class selectionController
         }
         else if (!UIHelper.IsPointerOverUI())
         {
-            ClearSelection();
+            TryClearSelectionWithUndo();
         }
     }
 
@@ -136,12 +136,12 @@ public class selectionController
 
     public void SelectInRect(Rect screenRect)
     {
-        List<SelectableTargetData> targetsInRect = new();
+        List<int> beforeSelection = GetSelectedObjectIDs();
+        List<int> afterSelection = new();
 
         foreach (var pair in selectableGameObjectsInSceneDict)
         {
             GameObject targetobj = pair.Key;
-            SelectableTargetData targetData = pair.Value;
 
             if (targetobj == null) continue;
 
@@ -149,11 +149,19 @@ public class selectionController
 
             if (IsObjectInsideScreenRect(targetobj, screenRect))
             {
-                targetsInRect.Add(targetData);
+                LevelObject lvlObj = targetobj.GetComponent<LevelObject>();
+
+                if (lvlObj != null)
+                    afterSelection.Add(lvlObj.ObjectID);
             }
         }
 
-        ReplaceSelection(targetsInRect);
+        if (beforeSelection.SequenceEqual(afterSelection)) return;
+
+        var selectAction = new SelectAction(beforeSelection, afterSelection, "box Select");
+
+        selectAction.Execute();
+        EventManager.Instance.TriggerDelegate(ActionStackEvents.RegisterAction, selectAction);
     }
 
     private bool IsObjectInsideScreenRect(GameObject targetObject, Rect screenRect)
@@ -187,13 +195,35 @@ public class selectionController
         if (!selectableGameObjectsInSceneDict.TryGetValue(selectedObject, out SelectableTargetData obj))
             return;
 
-        Debug.Log(_selectedGameObjects.Contains(obj));
-        if (_selectedGameObjects.Count >= 1 && _selectedGameObjects.Contains(obj))
+        LevelObject levelObject = selectedObject.GetComponent<LevelObject>();
+        if (levelObject == null)
             return;
 
-        ClearSelection();
-        AddToSelection(obj);
-        RefreshGizmo();
+        List<int> beforeSelection = GetSelectedObjectIDs();
+        List<int> afterSelection = new() { levelObject.ObjectID };
+
+        if (beforeSelection.SequenceEqual(afterSelection))
+            return;
+
+        var selectAction = new SelectAction(beforeSelection, afterSelection, "Select Object");
+        selectAction.Execute();
+
+        EventManager.Instance.TriggerDelegate(ActionStackEvents.RegisterAction, selectAction);
+    }
+
+    public List<int> GetSelectedObjectIDs()
+    {
+        List<int> ObjIDs = new();
+        if (_selectedGameObjects.Count == 0)
+            return ObjIDs;
+
+        foreach (var item in _selectedGameObjects)
+        {
+            var lvlObj = item.BaseObject.GetComponent<LevelObject>();
+            if (lvlObj != null)
+                ObjIDs.Add(lvlObj.ObjectID);
+        }
+        return ObjIDs;
     }
 
     public void AddToSelection(SelectableTargetData targetData)
@@ -212,10 +242,18 @@ public class selectionController
 
     public void ReplaceSelection(IEnumerable<GameObject> objectsToSelect)
     {
-        ClearSelection();
+        ClearSelectionInternal();
 
-        if (!objectsToSelect.Any()) return;
-        foreach (GameObject obj in objectsToSelect)
+
+        List<GameObject> objects = objectsToSelect?.ToList() ?? new List<GameObject>();
+
+
+        if (objects.Count == 0)
+        {
+            RefreshGizmo();
+            return;
+        }
+        foreach (GameObject obj in objects)
         {
             if (obj == null)
                 continue;
@@ -226,15 +264,25 @@ public class selectionController
             AddToSelection(targetData);
         }
 
-        Debug.Log("Selected objects" + _selectedGameObjects.Count);
+        // Debug.Log("Selected objects" + _selectedGameObjects.Count);
         RefreshGizmo();
     }
 
     public void ReplaceSelection(IEnumerable<SelectableTargetData> targetsToSelect)
     {
-        ClearSelection();
+        ClearSelectionInternal();
 
-        foreach (SelectableTargetData targetData in targetsToSelect)
+
+        List<SelectableTargetData> targets = targetsToSelect?.ToList() ?? new List<SelectableTargetData>();
+
+
+        if (targets.Count == 0)
+        {
+            RefreshGizmo();
+            return;
+        }
+
+        foreach (SelectableTargetData targetData in targets)
         {
             if (targetData == null)
                 continue;
@@ -249,8 +297,7 @@ public class selectionController
     {
         EventManager.Instance.TriggerDelegate(SelectionEvents.OnSelectionChanged, _selectedGameObjects);
     }
-
-    public void ClearSelection()
+    private void ClearSelectionInternal()
     {
         if (_selectedGameObjects.Count == 0) return;
 
@@ -260,7 +307,29 @@ public class selectionController
         }
 
         _selectedGameObjects.Clear();
+    }
+    public void ClearSelection()
+    {
+        ClearSelectionInternal();
         RefreshGizmo();
+    }
+
+    public void TryClearSelectionWithUndo()
+    {
+        if (_selectedGameObjects.Count == 0)
+            return;
+
+        List<int> beforeSelection = GetSelectedObjectIDs();
+        List<int> afterSelection = new();
+
+        var selectAction = new SelectAction(beforeSelection, afterSelection, "Clear Selection");
+
+        selectAction.Execute();
+
+        EventManager.Instance.TriggerDelegate(
+            ActionStackEvents.RegisterAction,
+            selectAction
+        );
     }
 }
 
