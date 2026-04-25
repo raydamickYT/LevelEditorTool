@@ -5,7 +5,6 @@ using UnityEngine.EventSystems;
 public class ObjectButtonController : MonoBehaviour, IBeginDragHandler, IEndDragHandler, IDragHandler
 {
     public GameObject ObjectToSpawnPrefab;
-    private GameObject ParentObject;
     private GameObject spawnedObject, spawnedPreviewObject;
     public Canvas parentCanvas;
     private Sprite previewSprite;
@@ -34,13 +33,10 @@ public class ObjectButtonController : MonoBehaviour, IBeginDragHandler, IEndDrag
             Debug.LogWarning($"No sprite was found on {ObjectToSpawnPrefab.name}. Please add a sprite to the object to be able to see a preview when dragging.");
         }
 
-        if (ParentObject == null)
-            ParentObject = new GameObject("LevelObjects");
     }
 
     void OnDestroy()
     {
-        ParentObject = null;
     }
 
     //helper function to spawn the actual object.
@@ -55,12 +51,9 @@ public class ObjectButtonController : MonoBehaviour, IBeginDragHandler, IEndDrag
         pos.z = 0f;
 
         spawnedObject = Instantiate(ObjectToSpawnPrefab, pos, Quaternion.identity);
-        if (ParentObject == null)
-        {
-            ParentObject = new GameObject("LevelObjects");
-        }
-        spawnedObject.transform.SetParent(ParentObject.transform, true);
-        
+
+        LevelObjectsRoot.Instance.AddLevelObject(spawnedObject);
+
         var lvlObj = spawnedObject.GetComponent<LevelObject>();
         if (lvlObj != null)
         {

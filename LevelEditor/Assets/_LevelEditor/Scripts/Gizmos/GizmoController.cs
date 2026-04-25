@@ -139,47 +139,41 @@ public class GizmoController
         {
             foreach (var target in _currentGizmoTargets)
             {
-                target.BaseObject.transform.SetParent(OriginalParent);
+                LevelObjectsRoot.Instance.AddLevelObject(target.BaseObject);
             }
 
             tempParentObject.SetActive(false);
         }
     }
 
-    Transform OriginalParent;
     public GameObject SetupTempParentObject(Vector3 center)
     {
         switch (tempParentObject)
         {
             case not null:
-                if (OriginalParent == null)
-                {
-                    OriginalParent = _currentGizmoTargets.FirstOrDefault().BaseObject.transform.parent;
-                    Debug.Log("Parent name: " + OriginalParent.name);
-                }
                 tempParentObject.transform.position = center;
                 tempParentObject.SetActive(true);
 
+                if(LevelObjectsRoot.Instance == null) break;
+
                 foreach (var target in _currentGizmoTargets)
                 {
+                    LevelObjectsRoot.Instance.RemoveChildFromParent(target.BaseObject);
                     target.BaseObject.transform.SetParent(tempParentObject.transform);
                 }
 
                 return tempParentObject;
             default:
-                if (OriginalParent == null)
-                {
-                    OriginalParent = _currentGizmoTargets.FirstOrDefault().BaseObject.transform.parent;
-                    Debug.Log("Parent name: " + OriginalParent.name);
-                }
-
                 GameObject tempParent = new GameObject("GizmoTempParent");
                 tempParent.transform.position = center;
                 tempParent.transform.rotation = Quaternion.identity;
                 tempParent.SetActive(true);
 
+                if(LevelObjectsRoot.Instance == null) break;
+
                 foreach (var target in _currentGizmoTargets)
                 {
+                    LevelObjectsRoot.Instance.RemoveChildFromParent(target.BaseObject);
                     target.BaseObject.transform.SetParent(tempParent.transform);
                 }
                 tempParentObject = tempParent;
