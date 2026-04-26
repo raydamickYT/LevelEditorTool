@@ -1,19 +1,16 @@
 using System;
 using UnityEngine;
 
-public class ImportedAssetData
-{
-    public class test
-    {
-
-    }
-}
-
 [Serializable]
-public class ImportedSpriteData
+public class ImportedAssetData
 {
     public string AssetID;
     public string FileName;
     public string FilePath;
+}
+
+[Serializable]
+public class ImportedSpriteData : ImportedAssetData
+{
     public Sprite Sprite;
 }

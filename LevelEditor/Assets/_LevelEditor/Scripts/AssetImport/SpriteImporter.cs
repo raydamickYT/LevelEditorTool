@@ -1,66 +1,44 @@
 using UnityEditor;
 using UnityEngine;
 using System.IO;
+using System;
 
-public class SpriteImporter : MonoBehaviour
+public class SpriteImporter : IAssetImporter
 {
-    [FolderPath]
-    public string path;
-    public ImportedSpriteData importedSpriteData;
-    // Start is called once before the first execution of Update after the MonoBehaviour is created
-    void Start()
+    public bool CanImport(string filePath)
     {
-
+        string extension = Path.GetExtension(filePath).ToLower();
+        return extension == ".png" || extension == ".jpg" || extension == ".jpeg";
     }
 
-    // Update is called once per frame
-    void Update()
+    public ImportedSpriteData Import(string filePath)
     {
+        byte[] fileBytes = File.ReadAllBytes(filePath);
 
-    }
+        Texture2D texture = new Texture2D(2, 2);
+        bool loaded = texture.LoadImage(fileBytes);
 
-    private void LoadAsset()
-    {
-        if (string.IsNullOrWhiteSpace(path))
+        if (!loaded)
         {
-            Debug.LogWarning("File path is null. Cannot load sprite.");
-            return;
+            Debug.LogWarning($"Failed to load image: {filePath}");
+            return null;
         }
 
-        if (!Directory.Exists(path))
+        Sprite sprite = Sprite.Create(
+            texture,
+            new Rect(0, 0, texture.width, texture.height),
+            new Vector2(0.5f, 0.5f),
+            100f
+        );
+
+        sprite.name = Path.GetFileNameWithoutExtension(filePath);
+
+        return new ImportedSpriteData
         {
-            Debug.LogError($"Directory does not exist: {path}");
-            return;
-        }
-
-        string[] files = Directory.GetFiles(path);
-
-        foreach (string file in files)
-        {
-            string extension = Path.GetExtension(file).ToLower();
-
-            if (extension != ".png" && extension != ".jpg" && extension != ".jpeg")
-            {
-                Debug.LogWarning($"Unsupported file type: {file}. Skipping.");
-                continue;
-            }
-
-            byte[] fileBytes = File.ReadAllBytes(path);
-
-            Texture2D texture = new Texture2D(2, 2);
-            bool loaded = texture.LoadImage(fileBytes);
-
-            if (!loaded)
-            {
-                Debug.LogWarning($"Failed to load image data from file: {file}. Skipping.");
-                continue;
-            }
-
-            Sprite sprite = Sprite.Create(texture, new Rect(0, 0, texture.width, texture.height), new Vector2(0.5f, 0.5f), 100f);
-            sprite.name = Path.GetFileNameWithoutExtension(path);
-
-            Debug.Log("File loaded: " + sprite.name);
-
-        }
+            AssetID = Guid.NewGuid().ToString(),
+            FileName = Path.GetFileName(filePath),
+            FilePath = filePath,
+            Sprite = sprite
+        };
     }
 }
