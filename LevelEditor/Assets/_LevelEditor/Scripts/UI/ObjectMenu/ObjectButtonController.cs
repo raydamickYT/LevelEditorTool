@@ -2,14 +2,19 @@ using Unity.VisualScripting;
 using UnityEngine;
 using UnityEngine.EventSystems;
 
+/// <summary>
+/// For spawning:
+/// this object will make a new game object when in the scene, and pass it's location through to an action after which the spawning will be finalized.
+/// </summary>
+
 public class ObjectButtonController : MonoBehaviour, IBeginDragHandler, IEndDragHandler, IDragHandler
 {
     public GameObject ObjectToSpawnPrefab;
-    private GameObject spawnedObject, spawnedPreviewObject;
+    private GameObject spawnedObject, spawnedPreviewObject;// actual game object; preview object containing a sprite
     public Canvas parentCanvas;
     private Sprite previewSprite;
     private bool previewExists => spawnedPreviewObject != null;
-    private bool objectExists => spawnedObject != null;
+    private bool gameObjectExists => spawnedObject != null;
     private DragVisualiseState currentVisualiseState = DragVisualiseState.None;
 
     // Start is called once before the first execution of Update after the MonoBehaviour is created
@@ -38,6 +43,62 @@ public class ObjectButtonController : MonoBehaviour, IBeginDragHandler, IEndDrag
     void OnDestroy()
     {
     }
+    //Interface implementations for the drag and drop functionality of the buttons.
+    public void OnBeginDrag(PointerEventData eventData)
+    {
+        SpawnSpritePreview(eventData);
+    }
+
+    public void OnEndDrag(PointerEventData eventData)
+    {
+        //cleanup preview and remove spawned object reference if they exist
+        if (gameObjectExists)
+        {
+            var spawnObjectAction = new SpawnObjectAction(spawnedObject, ObjectToSpawnPrefab);
+            spawnObjectAction.Execute();
+            EventManager.Instance.TriggerDelegate(ActionStackEvents.RegisterAction, spawnObjectAction);
+
+            EventManager.Instance.TriggerDelegate(SelectionEvents.OnTrySelection, spawnedObject);
+
+            spawnedObject = null;
+        }
+
+        if (previewExists) //this check also makes sure that there is no objects spawned behind the menu.
+            RemoveSpawnedPreview();
+
+        currentVisualiseState = DragVisualiseState.None;
+    }
+
+    public void OnDrag(PointerEventData eventData)
+    {
+        //get the mouse position in world space, this'll be used to move the spawned objects around with the mouse
+        Vector3 mouseWorldPos = Camera.main.ScreenToWorldPoint(eventData.position);
+        mouseWorldPos.z = 0f; // Assuming a 2D game, set z to 0
+
+        //check if there's an object spawned and if the mouse is hovering over a preview. if so we'd like to switch to the preview
+        if (UIHelper.IsPointerOverUI() && currentVisualiseState == DragVisualiseState.SpawnedObject)
+        {
+            if (previewExists)
+            {
+                EnableSpawnedPreviewIfActive(eventData);//if the preview is already spawned, toggle it on, 
+                return;
+            }
+
+            SpawnSpritePreview(eventData); //if not spawn it. this way we can make sure that the preview is always active when hovering over the UI.
+            return;
+        }
+
+        if (UIHelper.IsPointerOverUI() && currentVisualiseState == DragVisualiseState.Preview)
+        {
+            spawnedPreviewObject.transform.position = eventData.position;
+            return;
+        }
+
+        if (currentVisualiseState != DragVisualiseState.SpawnedObject)
+            SpawnObjectOnDrag(eventData);
+
+        spawnedObject.transform.position = mouseWorldPos;
+    }
 
     //helper function to spawn the actual object.
     void SpawnObjectOnDrag(PointerEventData eventData)
@@ -52,14 +113,7 @@ public class ObjectButtonController : MonoBehaviour, IBeginDragHandler, IEndDrag
 
         spawnedObject = Instantiate(ObjectToSpawnPrefab, pos, Quaternion.identity);
 
-        LevelObjectsRoot.Instance.AddLevelObject(spawnedObject);
-
-        var lvlObj = spawnedObject.GetComponent<LevelObject>();
-        if (lvlObj != null)
-        {
-            lvlObj.PrefabReference = ObjectToSpawnPrefab;
-            ObjectRegistry.OnObjectCreated(lvlObj); //register it
-        }
+        // LevelObjectsRoot.Instance.AddLevelObject(spawnedObject);
     }
 
     //helper function to remove the spawned object.
@@ -128,57 +182,6 @@ public class ObjectButtonController : MonoBehaviour, IBeginDragHandler, IEndDrag
         currentVisualiseState = DragVisualiseState.Preview;
     }
 
-    //Interface implementations for the drag and drop functionality of the buttons.
-    public void OnBeginDrag(PointerEventData eventData)
-    {
-        SpawnSpritePreview(eventData);
-    }
-
-    public void OnEndDrag(PointerEventData eventData)
-    {
-        //cleanup preview and remove spawned object reference if they exist
-        if (objectExists)
-        {
-            EventManager.Instance.TriggerDelegate(SelectionEvents.OnTrySelection, spawnedObject);
-            spawnedObject = null;
-        }
-
-        if (previewExists) //this check also makes sure that there is no objects spawned behind the menu.
-            RemoveSpawnedPreview();
-
-        currentVisualiseState = DragVisualiseState.None;
-    }
-
-    public void OnDrag(PointerEventData eventData)
-    {
-        //get the mouse position in world space, this'll be used to move the spawned objects around with the mouse
-        Vector3 mouseWorldPos = Camera.main.ScreenToWorldPoint(eventData.position);
-        mouseWorldPos.z = 0f; // Assuming a 2D game, set z to 0
-
-        //check if there's an object spawned and if the mouse is hovering over a preview. if so we'd like to switch to the preview
-        if (UIHelper.IsPointerOverUI() && currentVisualiseState == DragVisualiseState.SpawnedObject)
-        {
-            if (previewExists)
-            {
-                EnableSpawnedPreviewIfActive(eventData);//if the preview is already spawned, toggle it on, 
-                return;
-            }
-
-            SpawnSpritePreview(eventData); //if not spawn it. this way we can make sure that the preview is always active when hovering over the UI.
-            return;
-        }
-
-        if (UIHelper.IsPointerOverUI() && currentVisualiseState == DragVisualiseState.Preview)
-        {
-            spawnedPreviewObject.transform.position = eventData.position;
-            return;
-        }
-
-        if (currentVisualiseState != DragVisualiseState.SpawnedObject)
-            SpawnObjectOnDrag(eventData);
-
-        spawnedObject.transform.position = mouseWorldPos;
-    }
 }
 
 enum DragVisualiseState

@@ -39,9 +39,7 @@ public class PasteAction : IUndoableAction, IEditorCommand
 
         bool isRedo = pastedStates.Count > 0;
 
-        IEnumerable<LevelObject.Memento> statesToSpawn = isRedo
-    ? pastedStates
-    : ObjectsToPaste;
+        IEnumerable<LevelObject.Memento> statesToSpawn = isRedo ? pastedStates : ObjectsToPaste; //if redo true: assign pasted states, if redo false: assign objectsToPaste
 
         foreach (var item in statesToSpawn)
         {

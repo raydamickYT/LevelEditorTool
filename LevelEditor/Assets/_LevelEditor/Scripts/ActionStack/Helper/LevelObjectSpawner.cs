@@ -1,8 +1,9 @@
+using System.Runtime.InteropServices;
 using UnityEngine;
 
 public static class LevelObjectSpawner
 {
-    public static GameObject Spawn(LevelObject.Memento memento, bool preserveObjectID)
+    public static GameObject Spawn(LevelObject.Memento memento, bool preserveObjectID = false)
     {
         if (memento == null || memento.PrefabReference == null)
         {
@@ -41,7 +42,7 @@ public static class LevelObjectSpawner
         return spawnedObject;
     }
 
-        public static void Despawn(GameObject obj)
+    public static void Despawn(GameObject obj)
     {
         if (obj == null)
             return;
