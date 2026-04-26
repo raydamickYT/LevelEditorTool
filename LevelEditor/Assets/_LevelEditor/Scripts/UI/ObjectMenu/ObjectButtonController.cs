@@ -1,6 +1,6 @@
-using Unity.VisualScripting;
 using UnityEngine;
 using UnityEngine.EventSystems;
+using UnityEngine.UI;
 
 /// <summary>
 /// For spawning:
@@ -12,10 +12,12 @@ public class ObjectButtonController : MonoBehaviour, IBeginDragHandler, IEndDrag
     public GameObject ObjectToSpawnPrefab;
     private GameObject spawnedObject, spawnedPreviewObject;// actual game object; preview object containing a sprite
     public Canvas parentCanvas;
-    private Sprite previewSprite;
+    public Sprite previewSprite;
     private bool previewExists => spawnedPreviewObject != null;
     private bool gameObjectExists => spawnedObject != null;
     private DragVisualiseState currentVisualiseState = DragVisualiseState.None;
+    [SerializeField] private float minSpriteSize = 0.5f;
+    [SerializeField] private float maxSpriteSize = 4f;
 
     // Start is called once before the first execution of Update after the MonoBehaviour is created
     void Start()
@@ -32,10 +34,11 @@ public class ObjectButtonController : MonoBehaviour, IBeginDragHandler, IEndDrag
             return;
         }
 
-        previewSprite = ObjectToSpawnPrefab.GetComponent<SpriteRenderer>().sprite;
         if (previewSprite == null)
         {
-            Debug.LogWarning($"No sprite was found on {ObjectToSpawnPrefab.name}. Please add a sprite to the object to be able to see a preview when dragging.");
+            previewSprite = ObjectToSpawnPrefab.GetComponent<SpriteRenderer>().sprite;
+            if (previewSprite == null)
+                Debug.LogWarning($"No sprite was found on {ObjectToSpawnPrefab.name}. Please add a sprite to the object to be able to see a preview when dragging.");
         }
 
     }
@@ -112,8 +115,39 @@ public class ObjectButtonController : MonoBehaviour, IBeginDragHandler, IEndDrag
         pos.z = 0f;
 
         spawnedObject = Instantiate(ObjectToSpawnPrefab, pos, Quaternion.identity);
+        spawnedObject.SetActive(true);
+        spawnedObject.hideFlags = HideFlags.None;
 
-        // LevelObjectsRoot.Instance.AddLevelObject(spawnedObject);
+        SpriteRenderer spriteRenderer = spawnedObject.GetComponent<SpriteRenderer>();
+        spriteRenderer.sprite = previewSprite;
+
+        ClampSpawnedObjectSize(spriteRenderer);
+
+        BoxCollider2D boxCollider = spawnedObject.GetComponent<BoxCollider2D>();
+
+        if (boxCollider != null && spriteRenderer.sprite != null)
+        {
+            boxCollider.size = spriteRenderer.sprite.bounds.size;
+            boxCollider.offset = spriteRenderer.sprite.bounds.center;
+        }
+    }
+
+    private void ClampSpawnedObjectSize(SpriteRenderer spriteRenderer)
+    {
+        if (spriteRenderer == null || spriteRenderer.sprite == null)
+            return;
+
+        Vector2 spriteSize = spriteRenderer.sprite.bounds.size;
+
+        float largestSide = Mathf.Max(spriteSize.x, spriteSize.y);
+
+        if (largestSide <= 0f)
+            return;
+
+        float targetSize = Mathf.Clamp(largestSide, minSpriteSize, maxSpriteSize);
+        float scaleMultiplier = targetSize / largestSide;
+
+        spriteRenderer.transform.localScale *= scaleMultiplier;
     }
 
     //helper function to remove the spawned object.

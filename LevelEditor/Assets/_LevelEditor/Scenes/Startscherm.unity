@@ -1887,6 +1887,7 @@ Transform:
   - {fileID: 136635268}
   - {fileID: 1891404353}
   - {fileID: 1290933648}
+  - {fileID: 1861936955}
   m_Father: {fileID: 0}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
 --- !u!1001 &1179319185
@@ -2552,6 +2553,7 @@ GameObject:
   - component: {fileID: 1476075460}
   - component: {fileID: 1476075462}
   - component: {fileID: 1476075461}
+  - component: {fileID: 1476075463}
   m_Layer: 5
   m_Name: ObjectLibrary
   m_TagString: Untagged
@@ -2617,6 +2619,20 @@ CanvasRenderer:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 1476075459}
   m_CullTransparentMesh: 1
+--- !u!114 &1476075463
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1476075459}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 85fe869b31457a349be43c21c921589a, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::ObjectLibraryManager
+  DefaultSprite: {fileID: 0}
+  ContentObject: {fileID: 0}
 --- !u!1001 &1479731382
 PrefabInstance:
   m_ObjectHideFlags: 0
@@ -2993,56 +3009,6 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::SelectionBoxVisual
   rectTransform: {fileID: 1291077056}
   parentRectTransform: {fileID: 1626930756}
---- !u!1 &1721777974
-GameObject:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  serializedVersion: 6
-  m_Component:
-  - component: {fileID: 1721777976}
-  - component: {fileID: 1721777975}
-  m_Layer: 0
-  m_Name: AssetImporter
-  m_TagString: Untagged
-  m_Icon: {fileID: 0}
-  m_NavMeshLayer: 0
-  m_StaticEditorFlags: 0
-  m_IsActive: 1
---- !u!114 &1721777975
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 1721777974}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 223a079d0851663419646c8553c0e654, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: Assembly-CSharp::SpriteImporter
-  path: 
-  importedSpriteData:
-    AssetID: 
-    FileName: 
-    FilePath: 
-    Sprite: {fileID: 0}
---- !u!4 &1721777976
-Transform:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 1721777974}
-  serializedVersion: 2
-  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
-  m_LocalPosition: {x: -17.40101, y: -1.97999, z: 0}
-  m_LocalScale: {x: 1, y: 1, z: 1}
-  m_ConstrainProportionsScale: 0
-  m_Children: []
-  m_Father: {fileID: 0}
-  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
 --- !u!1 &1827878470
 GameObject:
   m_ObjectHideFlags: 0
@@ -3145,6 +3111,52 @@ Canvas:
   m_SortingLayerID: 0
   m_SortingOrder: 0
   m_TargetDisplay: 0
+--- !u!1 &1861936954
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 1861936955}
+  - component: {fileID: 1861936956}
+  m_Layer: 0
+  m_Name: AssetRegistry
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!4 &1861936955
+Transform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1861936954}
+  serializedVersion: 2
+  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
+  m_LocalPosition: {x: 0, y: 0, z: 0}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_ConstrainProportionsScale: 0
+  m_Children: []
+  m_Father: {fileID: 1166710610}
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!114 &1861936956
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1861936954}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 601b65bec09253b479024face3ee453f, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::AssetRegistry
+  filePath: C:/Users/Adam/Pictures/StoryGame
+  canImportOnStart: 1
 --- !u!1 &1891404352
 GameObject:
   m_ObjectHideFlags: 0
@@ -3864,6 +3876,10 @@ PrefabInstance:
       propertyPath: m_Name
       value: TestBtn
       objectReference: {fileID: 0}
+    - target: {fileID: 4992491887359812719, guid: abfaf2c910b83344eb35e8f08ee5889d, type: 3}
+      propertyPath: m_Enabled
+      value: 1
+      objectReference: {fileID: 0}
     - target: {fileID: 6103897695728146083, guid: abfaf2c910b83344eb35e8f08ee5889d, type: 3}
       propertyPath: m_Pivot.x
       value: 0.5
@@ -3943,6 +3959,10 @@ PrefabInstance:
     - target: {fileID: 6103897695728146083, guid: abfaf2c910b83344eb35e8f08ee5889d, type: 3}
       propertyPath: m_LocalEulerAnglesHint.z
       value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 8422431236709727675, guid: abfaf2c910b83344eb35e8f08ee5889d, type: 3}
+      propertyPath: m_Enabled
+      value: 1
       objectReference: {fileID: 0}
     - target: {fileID: 8886008659259607122, guid: abfaf2c910b83344eb35e8f08ee5889d, type: 3}
       propertyPath: ObjectToSpawnPrefab
@@ -4249,4 +4269,3 @@ SceneRoots:
   - {fileID: 857296927}
   - {fileID: 1179319185}
   - {fileID: 217311667}
-  - {fileID: 1721777976}
