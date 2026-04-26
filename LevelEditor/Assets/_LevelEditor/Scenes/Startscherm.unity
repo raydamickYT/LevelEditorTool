@@ -2433,6 +2433,7 @@ GameObject:
   - component: {fileID: 1468307775}
   - component: {fileID: 1468307774}
   - component: {fileID: 1468307773}
+  - component: {fileID: 1468307776}
   m_Layer: 5
   m_Name: Import
   m_TagString: Untagged
@@ -2503,7 +2504,19 @@ MonoBehaviour:
   m_TargetGraphic: {fileID: 1468307774}
   m_OnClick:
     m_PersistentCalls:
-      m_Calls: []
+      m_Calls:
+      - m_Target: {fileID: 1468307776}
+        m_TargetAssemblyTypeName: ImportButton, Assembly-CSharp
+        m_MethodName: ImportFiles
+        m_Mode: 1
+        m_Arguments:
+          m_ObjectArgument: {fileID: 0}
+          m_ObjectArgumentAssemblyTypeName: UnityEngine.Object, UnityEngine
+          m_IntArgument: 0
+          m_FloatArgument: 0
+          m_StringArgument: 
+          m_BoolArgument: 0
+        m_CallState: 2
 --- !u!114 &1468307774
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -2542,6 +2555,18 @@ CanvasRenderer:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 1468307771}
   m_CullTransparentMesh: 1
+--- !u!114 &1468307776
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1468307771}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 8f0eb7b3a5541204c8b541815d8545f7, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::ImportButton
 --- !u!1 &1476075459
 GameObject:
   m_ObjectHideFlags: 0
@@ -3156,7 +3181,7 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::AssetRegistry
   filePath: C:/Users/Adam/Pictures/StoryGame
-  canImportOnStart: 1
+  canImportOnStart: 0
 --- !u!1 &1891404352
 GameObject:
   m_ObjectHideFlags: 0
