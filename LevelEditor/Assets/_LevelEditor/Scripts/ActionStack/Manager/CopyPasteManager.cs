@@ -1,6 +1,5 @@
 using System;
 using System.Collections.Generic;
-using System.Linq;
 using UnityEngine;
 
 public class CopyPasteManager : MonoBehaviour
@@ -26,6 +25,12 @@ public class CopyPasteManager : MonoBehaviour
             case EditorCommand.Paste:
                 Paste();
                 break;
+            case EditorCommand.Duplicate:
+                Duplicate();
+                break;
+            case EditorCommand.Cut:
+                Cut();
+                break;
         }
     }
 
@@ -44,7 +49,7 @@ public class CopyPasteManager : MonoBehaviour
 
     private void Paste()
     {
-        if(clipBoard.Count == 0) return;
+        if (clipBoard.Count == 0) return;
 
         List<GameObject> selectionBeforePaste = new();
 
@@ -60,6 +65,17 @@ public class CopyPasteManager : MonoBehaviour
         pasteAction.Execute();
 
         EventManager.Instance.TriggerDelegate(ActionStackEvents.RegisterAction, pasteAction);
+    }
+
+    void Cut()
+    {
+        Copy();
+        EventManager.Instance.TriggerDelegate(ShortcutBindingEvents.OnCommandTriggered, EditorCommand.Delete);
+    }
+    void Duplicate()
+    {
+        Copy();
+        Paste();
     }
 
     void UpdateCache(HashSet<SelectableTargetData> data)

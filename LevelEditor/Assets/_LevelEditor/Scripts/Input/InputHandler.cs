@@ -124,4 +124,20 @@ public class InputHandler : MonoBehaviour, InputSystem_Actions.IUIActions
             triggerCommand(EditorCommand.Paste);
         }
     }
+
+    public void OnDuplicate(InputAction.CallbackContext context)
+    {
+        if (context.started)
+        {
+            triggerCommand(EditorCommand.Duplicate);
+        }
+    }
+
+    public void OnCut(InputAction.CallbackContext context)
+    {
+        if (context.started)
+        {
+            triggerCommand(EditorCommand.Cut);
+        }
+    }
 }

@@ -253,6 +253,24 @@ public partial class @InputSystem_Actions: IInputActionCollection2, IDisposable
                     ""processors"": """",
                     ""interactions"": """",
                     ""initialStateCheck"": false
+                },
+                {
+                    ""name"": ""Duplicate"",
+                    ""type"": ""Button"",
+                    ""id"": ""5fe28878-af97-453a-b793-c28dacbab520"",
+                    ""expectedControlType"": """",
+                    ""processors"": """",
+                    ""interactions"": """",
+                    ""initialStateCheck"": false
+                },
+                {
+                    ""name"": ""Cut"",
+                    ""type"": ""Button"",
+                    ""id"": ""426d6096-b16a-45ca-aae8-2b63efa373d5"",
+                    ""expectedControlType"": """",
+                    ""processors"": """",
+                    ""interactions"": """",
+                    ""initialStateCheck"": false
                 }
             ],
             ""bindings"": [
@@ -739,6 +757,72 @@ public partial class @InputSystem_Actions: IInputActionCollection2, IDisposable
                     ""action"": ""Paste"",
                     ""isComposite"": false,
                     ""isPartOfComposite"": true
+                },
+                {
+                    ""name"": ""One Modifier"",
+                    ""id"": ""9e282d9e-167c-4944-a869-a0d033bd1064"",
+                    ""path"": ""OneModifier"",
+                    ""interactions"": """",
+                    ""processors"": """",
+                    ""groups"": """",
+                    ""action"": ""Duplicate"",
+                    ""isComposite"": true,
+                    ""isPartOfComposite"": false
+                },
+                {
+                    ""name"": ""modifier"",
+                    ""id"": ""60b12297-31f1-4ec4-83d0-5573a1a6ca78"",
+                    ""path"": ""<Keyboard>/shift"",
+                    ""interactions"": """",
+                    ""processors"": """",
+                    ""groups"": """",
+                    ""action"": ""Duplicate"",
+                    ""isComposite"": false,
+                    ""isPartOfComposite"": true
+                },
+                {
+                    ""name"": ""binding"",
+                    ""id"": ""08a8bde6-166f-4b58-a8d4-5c8a509c72c6"",
+                    ""path"": ""<Keyboard>/d"",
+                    ""interactions"": """",
+                    ""processors"": """",
+                    ""groups"": """",
+                    ""action"": ""Duplicate"",
+                    ""isComposite"": false,
+                    ""isPartOfComposite"": true
+                },
+                {
+                    ""name"": ""One Modifier"",
+                    ""id"": ""600f1790-0966-4626-9e5f-93c40d17673e"",
+                    ""path"": ""OneModifier"",
+                    ""interactions"": """",
+                    ""processors"": """",
+                    ""groups"": """",
+                    ""action"": ""Cut"",
+                    ""isComposite"": true,
+                    ""isPartOfComposite"": false
+                },
+                {
+                    ""name"": ""modifier"",
+                    ""id"": ""e5f40b2e-1610-48d5-98a0-a0f719aa3c2e"",
+                    ""path"": ""<Keyboard>/shift"",
+                    ""interactions"": """",
+                    ""processors"": """",
+                    ""groups"": """",
+                    ""action"": ""Cut"",
+                    ""isComposite"": false,
+                    ""isPartOfComposite"": true
+                },
+                {
+                    ""name"": ""binding"",
+                    ""id"": ""181ad045-611c-427f-9204-192c61b29c3a"",
+                    ""path"": ""<Keyboard>/x"",
+                    ""interactions"": """",
+                    ""processors"": """",
+                    ""groups"": """",
+                    ""action"": ""Cut"",
+                    ""isComposite"": false,
+                    ""isPartOfComposite"": true
                 }
             ]
         }
@@ -826,6 +910,8 @@ public partial class @InputSystem_Actions: IInputActionCollection2, IDisposable
         m_UI_Redo = m_UI.FindAction("Redo", throwIfNotFound: true);
         m_UI_Copy = m_UI.FindAction("Copy", throwIfNotFound: true);
         m_UI_Paste = m_UI.FindAction("Paste", throwIfNotFound: true);
+        m_UI_Duplicate = m_UI.FindAction("Duplicate", throwIfNotFound: true);
+        m_UI_Cut = m_UI.FindAction("Cut", throwIfNotFound: true);
     }
 
     ~@InputSystem_Actions()
@@ -924,6 +1010,8 @@ public partial class @InputSystem_Actions: IInputActionCollection2, IDisposable
     private readonly InputAction m_UI_Redo;
     private readonly InputAction m_UI_Copy;
     private readonly InputAction m_UI_Paste;
+    private readonly InputAction m_UI_Duplicate;
+    private readonly InputAction m_UI_Cut;
     /// <summary>
     /// Provides access to input actions defined in input action map "UI".
     /// </summary>
@@ -1008,6 +1096,14 @@ public partial class @InputSystem_Actions: IInputActionCollection2, IDisposable
         /// </summary>
         public InputAction @Paste => m_Wrapper.m_UI_Paste;
         /// <summary>
+        /// Provides access to the underlying input action "UI/Duplicate".
+        /// </summary>
+        public InputAction @Duplicate => m_Wrapper.m_UI_Duplicate;
+        /// <summary>
+        /// Provides access to the underlying input action "UI/Cut".
+        /// </summary>
+        public InputAction @Cut => m_Wrapper.m_UI_Cut;
+        /// <summary>
         /// Provides access to the underlying input action map instance.
         /// </summary>
         public InputActionMap Get() { return m_Wrapper.m_UI; }
@@ -1087,6 +1183,12 @@ public partial class @InputSystem_Actions: IInputActionCollection2, IDisposable
             @Paste.started += instance.OnPaste;
             @Paste.performed += instance.OnPaste;
             @Paste.canceled += instance.OnPaste;
+            @Duplicate.started += instance.OnDuplicate;
+            @Duplicate.performed += instance.OnDuplicate;
+            @Duplicate.canceled += instance.OnDuplicate;
+            @Cut.started += instance.OnCut;
+            @Cut.performed += instance.OnCut;
+            @Cut.canceled += instance.OnCut;
         }
 
         /// <summary>
@@ -1152,6 +1254,12 @@ public partial class @InputSystem_Actions: IInputActionCollection2, IDisposable
             @Paste.started -= instance.OnPaste;
             @Paste.performed -= instance.OnPaste;
             @Paste.canceled -= instance.OnPaste;
+            @Duplicate.started -= instance.OnDuplicate;
+            @Duplicate.performed -= instance.OnDuplicate;
+            @Duplicate.canceled -= instance.OnDuplicate;
+            @Cut.started -= instance.OnCut;
+            @Cut.performed -= instance.OnCut;
+            @Cut.canceled -= instance.OnCut;
         }
 
         /// <summary>
@@ -1383,5 +1491,19 @@ public partial class @InputSystem_Actions: IInputActionCollection2, IDisposable
         /// <seealso cref="UnityEngine.InputSystem.InputAction.performed" />
         /// <seealso cref="UnityEngine.InputSystem.InputAction.canceled" />
         void OnPaste(InputAction.CallbackContext context);
+        /// <summary>
+        /// Method invoked when associated input action "Duplicate" is either <see cref="UnityEngine.InputSystem.InputAction.started" />, <see cref="UnityEngine.InputSystem.InputAction.performed" /> or <see cref="UnityEngine.InputSystem.InputAction.canceled" />.
+        /// </summary>
+        /// <seealso cref="UnityEngine.InputSystem.InputAction.started" />
+        /// <seealso cref="UnityEngine.InputSystem.InputAction.performed" />
+        /// <seealso cref="UnityEngine.InputSystem.InputAction.canceled" />
+        void OnDuplicate(InputAction.CallbackContext context);
+        /// <summary>
+        /// Method invoked when associated input action "Cut" is either <see cref="UnityEngine.InputSystem.InputAction.started" />, <see cref="UnityEngine.InputSystem.InputAction.performed" /> or <see cref="UnityEngine.InputSystem.InputAction.canceled" />.
+        /// </summary>
+        /// <seealso cref="UnityEngine.InputSystem.InputAction.started" />
+        /// <seealso cref="UnityEngine.InputSystem.InputAction.performed" />
+        /// <seealso cref="UnityEngine.InputSystem.InputAction.canceled" />
+        void OnCut(InputAction.CallbackContext context);
     }
 }

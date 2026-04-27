@@ -54,7 +54,9 @@ public enum EditorCommand
     SwitchRotateTool,
     SwitchScaleTool,
     Copy,
-    Paste
+    Paste,
+    Duplicate,
+    Cut,
 }
 
 [Serializable]
