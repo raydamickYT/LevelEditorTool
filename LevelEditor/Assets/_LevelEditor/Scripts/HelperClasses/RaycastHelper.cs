@@ -1,6 +1,4 @@
-using System.Collections.Generic;
 using UnityEngine;
-using UnityEngine.EventSystems;
 using UnityEngine.InputSystem;
 
 public static class RaycastHelper
@@ -14,7 +12,7 @@ public static class RaycastHelper
 
 
         Vector2 mousePosition = Mouse.current.position.ReadValue();
-        Vector3 worldPosition = camera.ScreenToWorldPoint(mousePosition);
+        Vector2 worldPosition = camera.ScreenToWorldPoint(mousePosition);
 
         hitInfo = Physics2D.Raycast(worldPosition, Vector2.zero, maxDistance, layerMask);
         return hitInfo.collider != null;
@@ -23,5 +21,21 @@ public static class RaycastHelper
     public static bool IsClickingOnLayer(Camera camera, LayerMask layerMask, float maxDistance = Mathf.Infinity)
     {
         return TryGetPointerHit2D(camera, layerMask, out _, maxDistance);
+    }
+
+    //for gizmo handles
+    public static bool TryGetHandleUnderPointer(out GizmoHandle handle, Camera cam, string gizmoHandleLayerName)
+    {
+        handle = null;
+
+        if (!TryGetPointerHit2D(cam, LayerMask.GetMask(gizmoHandleLayerName), out RaycastHit2D hit))
+            return false;
+
+        handle = hit.collider.GetComponent<GizmoHandle>();
+        if (handle == null)
+            handle = hit.collider.GetComponentInParent<GizmoHandle>();
+
+
+        return handle != null;
     }
 }

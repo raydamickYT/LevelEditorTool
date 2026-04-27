@@ -1,11 +1,19 @@
 using System;
 using System.Collections;
 using System.Collections.Generic;
-using TransformGizmos;
+using UnityEditor;
 using UnityEngine;
 using UnityEngine.InputSystem;
+
+
 public class GizmoInteractionHandler : MonoBehaviour
 {
+    //snapping
+    [Header("Snapping")]
+    [SerializeField] private SnappingSettings snappingSettings;
+    public bool SnappingEnabled => snappingSettings.snappingEnabled;
+
+    [Header("Camer & Gizmo LayerMaskName")]
     [SerializeField] private Camera cam;
     [SerializeField] private string gizmoHandleLayerName = "GizmoHandle";
 
@@ -13,7 +21,6 @@ public class GizmoInteractionHandler : MonoBehaviour
 
     private GizmoHandle activeHandle;
     private Transform activeTarget;
-
     private Vector3 dragStartWorld;
     private Vector3 targetStartPosition;
     private Vector3 targetStartScale;
@@ -24,6 +31,16 @@ public class GizmoInteractionHandler : MonoBehaviour
     //undo stack
     private TransformAction currentAction;
     private List<TransformAction> transformActions = new();
+
+    //operations
+    GizmoMoveOperation gizmoMoveOperation = new();
+    GizmoRotationOperation gizmoRotationOperation = new();
+    GizmoScaleOperation gizmoScaleOperation = new();
+
+    void Awake()
+    {
+        EventManager.Instance.AddDelegateListener(SnappingEvent.OnToggleSnapping, (Action<bool>)(isEnabled => snappingSettings.snappingEnabled = isEnabled));
+    }
 
     // Start is called once before the first execution of Update after the MonoBehaviour is created
     void Start()
@@ -93,7 +110,7 @@ public class GizmoInteractionHandler : MonoBehaviour
 
     private void TryBeginDrag()
     {
-        if (!TryGetHandleUnderPointer(out GizmoHandle handle))
+        if (!RaycastHelper.TryGetHandleUnderPointer(out GizmoHandle handle, cam, gizmoHandleLayerName))
             return;
 
         if (handle.Owner.selectableObject == null)
@@ -118,7 +135,7 @@ public class GizmoInteractionHandler : MonoBehaviour
         targetStartRotationZ = activeTarget.eulerAngles.z;
         startMouseAngle = GetMouseAngleToTarget(activeTarget.position);
 
-            // Debug.Log("logging action" + gizmoObject.dragLevelObjects.Count);
+        // Debug.Log("logging action" + gizmoObject.dragLevelObjects.Count);
         if (gizmoObject.selectedDragLevelObjects.Count == 1)
         {
             currentAction = new TransformAction(gizmoObject.selectedDragLevelObjects[0]);
@@ -137,6 +154,8 @@ public class GizmoInteractionHandler : MonoBehaviour
 
     private void StopDragging()
     {
+        if (!isDragging) return;
+
         if (activeHandle is GizmoScaleHandle scaleHandle)
             scaleHandle.ResetScaleVisual();
 
@@ -148,7 +167,7 @@ public class GizmoInteractionHandler : MonoBehaviour
         }
         else if (transformActions.Count > 1)
         {
-            foreach(TransformAction t in transformActions)
+            foreach (TransformAction t in transformActions)
             {
                 t.CaptureAfterState();
             }
@@ -172,98 +191,31 @@ public class GizmoInteractionHandler : MonoBehaviour
     private void UpdateDrag()
     {
         Vector3 currentMouseWorld = GetMouseWorldPosition();
+        GizmoDragContext context = CreateDragContext();
 
         switch (activeHandle.Mode)
         {
             case GizmoHandleMode.Move:
-                ApplyMove(currentMouseWorld);
+                // ApplyMove(currentMouseWorld);
+                gizmoMoveOperation.Apply(context, currentMouseWorld);
                 break;
 
             case GizmoHandleMode.Rotate:
-                ApplyRotate();
+                gizmoRotationOperation.Apply(context, currentMouseWorld);
                 break;
 
             case GizmoHandleMode.Scale:
-                ApplyScale(currentMouseWorld);
+                // ApplyScale(currentMouseWorld);
+                gizmoScaleOperation.Apply(context, currentMouseWorld);
                 break;
         }
     }
 
-    private void ApplyMove(Vector3 currentMouseWorld)
+    GizmoDragContext CreateDragContext()
     {
-        Vector3 delta = currentMouseWorld - dragStartWorld;
-
-        if (activeHandle.Axis == GizmoAxis.All)
-        {
-            activeTarget.position = targetStartPosition + delta;
-            return;
-        }
-
-        Vector3 axis = activeHandle.GetAxisVectorWorld().normalized;
-        float projectedDistance = Vector3.Dot(delta, axis);
-        activeTarget.position = targetStartPosition + axis * projectedDistance;
-    }
-
-    private void ApplyRotate()
-    {
-        float currentAngle = GetMouseAngleToTarget(activeTarget.position);
-        float deltaAngle = Mathf.DeltaAngle(startMouseAngle, currentAngle);
-        float finalAngle = targetStartRotationZ + (deltaAngle * activeHandle.RotationSensitivity);
-
-        activeTarget.rotation = Quaternion.Euler(0f, 0f, finalAngle);
-    }
-
-    private void ApplyScale(Vector3 currentMouseWorld)
-    {
-        Vector3 delta = currentMouseWorld - dragStartWorld;
-
-        if (activeHandle.Axis == GizmoAxis.All)
-        {
-            float uniformDelta = (delta.x + delta.y) * activeHandle.ScaleSensitivity;
-            Vector3 result = targetStartScale + Vector3.one * uniformDelta;
-            activeTarget.localScale = ClampScale(result);
-            return;
-        }
-
-        Vector3 axis = activeHandle.GetAxisVectorWorld().normalized;
-        float projectedDistance = Vector3.Dot(delta, axis);
-        Vector3 scaleDelta = activeHandle.Axis switch
-        {
-            GizmoAxis.X => new Vector3(projectedDistance, 0f, 0f),
-            GizmoAxis.Y => new Vector3(0f, projectedDistance, 0f),
-            GizmoAxis.Z => new Vector3(0f, 0f, projectedDistance),
-            _ => Vector3.zero
-        };
-
-        Vector3 resultScale = targetStartScale + (scaleDelta * activeHandle.ScaleSensitivity);
-        activeTarget.localScale = ClampScale(resultScale);
-
-        UpdateActiveScaleHandleVisual(projectedDistance); //nice visual feedback for the user to see how much they're scaling along the axis.
-    }
-
-    private Vector3 ClampScale(Vector3 scale)
-    {
-        const float minScale = 0.05f;
-        return new Vector3(
-            Mathf.Max(minScale, scale.x),
-            Mathf.Max(minScale, scale.y),
-            Mathf.Max(minScale, scale.z));
-    }
-
-
-    private bool TryGetHandleUnderPointer(out GizmoHandle handle)
-    {
-        handle = null;
-
-        if (!RaycastHelper.TryGetPointerHit2D(cam, LayerMask.GetMask(gizmoHandleLayerName), out RaycastHit2D hit))
-            return false;
-
-        handle = hit.collider.GetComponent<GizmoHandle>();
-        if (handle == null)
-            handle = hit.collider.GetComponentInParent<GizmoHandle>();
-
-
-        return handle != null;
+        GizmoDragContext dragCtx = new GizmoDragContext(activeHandle, activeTarget, dragStartWorld,
+        targetStartPosition, targetStartScale, targetStartRotationZ, startMouseAngle, snappingSettings);
+        return dragCtx;
     }
 
     private Vector3 GetMouseWorldPosition()
@@ -279,13 +231,5 @@ public class GizmoInteractionHandler : MonoBehaviour
         Vector3 mouseWorld = GetMouseWorldPosition();
         Vector2 dir = mouseWorld - targetPosition;
         return Mathf.Atan2(dir.y, dir.x) * Mathf.Rad2Deg;
-    }
-
-    private void UpdateActiveScaleHandleVisual(float dragAmount)
-    {
-        if (activeHandle is not GizmoScaleHandle scaleHandle)
-            return;
-
-        scaleHandle.UpdateScaleVisual(dragAmount);
     }
 }
