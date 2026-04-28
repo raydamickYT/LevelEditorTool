@@ -101,7 +101,7 @@ public class ObjectLibraryManager : MonoBehaviour
         SpriteRenderer renderer = obj.AddComponent<SpriteRenderer>();
         renderer.sprite = DefaultSprite; //no need to fully assign this since the ObjectButtonController also manages this
 
-        obj.AddComponent<BoxCollider2D>(); //TODO: might want to adjust the collider size according to the sprite size, but that might be something for ObjectButtonController
+        obj.AddComponent<BoxCollider2D>(); 
         obj.AddComponent<SelectableObject>();
         obj.AddComponent<LevelObject>();
 

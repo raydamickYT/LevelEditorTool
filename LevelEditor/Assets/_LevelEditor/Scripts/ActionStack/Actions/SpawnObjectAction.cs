@@ -1,3 +1,4 @@
+using System.Collections.Generic;
 using TMPro;
 using UnityEngine;
 /// <summary>
@@ -23,7 +24,7 @@ public class SpawnObjectAction : IUndoableAction, IEditorCommand
 
     public void Execute()
     {
-        if(hasExecuted) return;
+        if (hasExecuted) return;
 
         if (spawnedObject == null) { Debug.LogWarning("No Spawned object found"); return; }
 
@@ -31,13 +32,15 @@ public class SpawnObjectAction : IUndoableAction, IEditorCommand
         {
             levelObject = spawnedObject.AddComponent<LevelObject>();
         }
-        
+
         levelObject.PrefabReference = prefabGameObject;
 
         spawnedState = levelObject?.Save();
 
         LevelObjectsRoot.Instance.AddLevelObject(spawnedObject);
-        ObjectRegistry.OnObjectCreated(levelObject); 
+        ObjectRegistry.OnObjectCreated(levelObject);
+
+        EventManager.Instance.TriggerDelegate(ObjectHierarchyEvents.RefreshMenu, new List<LevelObject> { levelObject });
 
         hasExecuted = true;
     }
