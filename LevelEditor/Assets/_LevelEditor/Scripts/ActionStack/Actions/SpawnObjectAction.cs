@@ -40,7 +40,9 @@ public class SpawnObjectAction : IUndoableAction, IEditorCommand
         LevelObjectsRoot.Instance.AddLevelObject(spawnedObject);
         ObjectRegistry.OnObjectCreated(levelObject);
 
-        EventManager.Instance.TriggerDelegate(ObjectHierarchyEvents.RefreshMenu, new List<LevelObject> { levelObject });
+        //object hierarchy menu
+        var change = new HierarchyChange(levelObject, HierarchyChangeType.Added);
+        EventManager.Instance.TriggerDelegate(ObjectHierarchyEvents.RefreshMenu, new List<HierarchyChange> { change });
 
         hasExecuted = true;
     }

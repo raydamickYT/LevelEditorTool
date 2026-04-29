@@ -1,4 +1,4 @@
-using System.Runtime.InteropServices;
+using System.Collections.Generic;
 using UnityEngine;
 
 public static class LevelObjectSpawner
@@ -39,6 +39,10 @@ public static class LevelObjectSpawner
             ObjectRegistry.OnObjectCreated(levelObject);
         }
 
+        //object hierarchy menu
+        var change = new HierarchyChange(levelObject, HierarchyChangeType.Added);
+        EventManager.Instance.TriggerDelegate(ObjectHierarchyEvents.RefreshMenu, new List<HierarchyChange> { change });
+
         return spawnedObject;
     }
 
@@ -53,6 +57,10 @@ public static class LevelObjectSpawner
         {
             ObjectRegistry.DeregisterObject(levelObject);
         }
+
+        //object hierarchy menu
+        var change = new HierarchyChange(levelObject, HierarchyChangeType.Removed);
+        EventManager.Instance.TriggerDelegate(ObjectHierarchyEvents.RefreshMenu, new List<HierarchyChange> { change });
 
         LevelObjectsRoot.Instance.RemoveChildFromParent(obj);
 

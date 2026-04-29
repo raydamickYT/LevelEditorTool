@@ -22,11 +22,7 @@ public class HierarchyObjectItem : MonoBehaviour
         if (levelObject == null)
             return;
 
-        // Hier jouw bestaande selection event/function gebruiken.
-        // Bijvoorbeeld:
-        // EventManager.InvokeSelectionRequest(levelObject);
-        // of:
-        // SelectionController.Select(levelObject);
+        EventManager.Instance.TriggerDelegate(SelectionEvents.OnTrySelection, levelObject.gameObject);
     }
 
     private void OnDestroy()

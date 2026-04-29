@@ -1,55 +1,122 @@
 using System;
 using System.Collections.Generic;
-using System.Windows.Forms;
 using UnityEngine;
+using System.Linq;
 
 public class ObjectHierarchyManager : MonoBehaviour
 {
+    private HashSet<string> existingNames = new();
     [SerializeField] private Transform contentParent;
     [SerializeField] private HierarchyObjectItem itemPrefab;
     private readonly Dictionary<LevelObject, HierarchyObjectItem> items = new();
 
     private void Awake()
     {
-        EventManager.Instance.AddDelegateListener(ObjectHierarchyEvents.RefreshMenu, (Action<IEnumerable<LevelObject>>)Refresh);
+        EventManager.Instance.AddDelegateListener(ObjectHierarchyEvents.RefreshMenu, (Action<IEnumerable<HierarchyChange>>)Refresh);
     }
     private void OnEnable()
     {
-        LevelObject[] sceneObjects = FindObjectsByType<LevelObject>(FindObjectsSortMode.None);
+        // HierarchyChange[] sceneObjects = FindObjectsByType<LevelObject>(FindObjectsSortMode.None);
 
-        Refresh(sceneObjects);
+        // Refresh(sceneObjects);
     }
 
-    public void Refresh(IEnumerable<LevelObject> sceneObjects)
+    public void Refresh(IEnumerable<HierarchyChange> hierarchyChangeObjects)
     {
-        Clear();
-
-        foreach (LevelObject levelObject in sceneObjects)
+        // Clear();
+        switch (hierarchyChangeObjects.FirstOrDefault().ChangeType)
         {
-            AddItem(levelObject);
+            case HierarchyChangeType.Added:
+
+                foreach (HierarchyChange objects in hierarchyChangeObjects)
+                {
+                    AddItem(objects.LevelObject);
+                }
+                break;
+            default: //removed
+                foreach (var item in hierarchyChangeObjects)
+                {
+                    foreach (HierarchyChange objects in hierarchyChangeObjects)
+                    {
+                        Clear(objects.LevelObject);
+                    }
+                }
+                break;
         }
+
+
     }
 
     private void AddItem(LevelObject levelObject)
     {
+        if (levelObject == null) return;
+
+        if (items.ContainsKey(levelObject)) return;
+
+        levelObject.name = GetUniqueHierarchyName(levelObject.name);
+
         HierarchyObjectItem item = Instantiate(itemPrefab, contentParent);
+
         item.Initialize(levelObject);
 
         items.Add(levelObject, item);
+        existingNames.Add(levelObject.name);
     }
 
-    private void Clear()
+    private void Clear(LevelObject levelObject)
     {
-        foreach (Transform child in contentParent)
+        if(existingNames.Contains(levelObject.name))
         {
-            Destroy(child.gameObject);
+            existingNames.Remove(levelObject.name);
+        }
+        // var item = items.TryGetValue(levelObject, out var objectItem);
+        if (items.TryGetValue(levelObject, out var objectItem))
+        {
+            Destroy(objectItem.gameObject);
+            items.Remove(levelObject);
         }
 
-        items.Clear();
+    }
+
+
+    private string GetUniqueHierarchyName(string baseName)
+    {
+        if (!existingNames.Contains(baseName))
+            return baseName;
+
+        int index = 1;
+        string candidateName;
+
+        do
+        {
+            candidateName = $"{baseName} ({index})";
+            index++;
+        }
+        while (existingNames.Contains(candidateName));
+
+        return candidateName;
     }
 }
 
 public static class ObjectHierarchyEvents
 {
     public const string RefreshMenu = "RefreshMenu";
+}
+
+
+public enum HierarchyChangeType
+{
+    Added,
+    Removed
+}
+
+public struct HierarchyChange
+{
+    public readonly LevelObject LevelObject;
+    public readonly HierarchyChangeType ChangeType;
+    public HierarchyChange(LevelObject levelObject, HierarchyChangeType changeType)
+    {
+        LevelObject = levelObject;
+        ChangeType = changeType;
+    }
 }
