@@ -92,14 +92,14 @@ MonoBehaviour:
   m_faceColor:
     serializedVersion: 2
     rgba: 4294967295
-  m_fontSize: 62.65
+  m_fontSize: 18
   m_fontSizeBase: 50
   m_fontWeight: 400
   m_enableAutoSizing: 1
   m_fontSizeMin: 18
   m_fontSizeMax: 72
   m_fontStyle: 0
-  m_HorizontalAlignment: 2
+  m_HorizontalAlignment: 1
   m_VerticalAlignment: 512
   m_textAlignment: 65535
   m_characterSpacing: 0
@@ -273,3 +273,6 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::HierarchyObjectItem
   nameText: {fileID: 129120754617688296}
   button: {fileID: 411285448535427726}
+  background: {fileID: 5416266051008278296}
+  normalColor: {r: 0, g: 0, b: 0, a: 0}
+  selectedColor: {r: 0.25, g: 0.45, b: 1, a: 0.45}

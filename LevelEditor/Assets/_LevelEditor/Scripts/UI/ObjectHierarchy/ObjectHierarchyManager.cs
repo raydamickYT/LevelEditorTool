@@ -3,6 +3,13 @@ using System.Collections.Generic;
 using UnityEngine;
 using System.Linq;
 
+/// <summary>
+/// this class controls the visual object hierarchy menu. 
+/// It'll:
+/// - create new buttons for new objects that are created.
+/// - remove buttons for objects that are removed
+/// - create unique names for new objects.
+/// </summary>
 public class ObjectHierarchyManager : MonoBehaviour
 {
     private HashSet<string> existingNames = new();
@@ -14,16 +21,9 @@ public class ObjectHierarchyManager : MonoBehaviour
     {
         EventManager.Instance.AddDelegateListener(ObjectHierarchyEvents.RefreshMenu, (Action<IEnumerable<HierarchyChange>>)Refresh);
     }
-    private void OnEnable()
-    {
-        // HierarchyChange[] sceneObjects = FindObjectsByType<LevelObject>(FindObjectsSortMode.None);
-
-        // Refresh(sceneObjects);
-    }
-
+   
     public void Refresh(IEnumerable<HierarchyChange> hierarchyChangeObjects)
     {
-        // Clear();
         switch (hierarchyChangeObjects.FirstOrDefault().ChangeType)
         {
             case HierarchyChangeType.Added:
@@ -69,7 +69,6 @@ public class ObjectHierarchyManager : MonoBehaviour
         {
             existingNames.Remove(levelObject.name);
         }
-        // var item = items.TryGetValue(levelObject, out var objectItem);
         if (items.TryGetValue(levelObject, out var objectItem))
         {
             Destroy(objectItem.gameObject);
