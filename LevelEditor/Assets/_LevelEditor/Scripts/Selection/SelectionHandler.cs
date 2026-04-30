@@ -1,6 +1,7 @@
 using System;
 using System.Collections;
 using System.Collections.Generic;
+using UnityEditor;
 using UnityEngine;
 using UnityEngine.InputSystem;
 
@@ -29,7 +30,9 @@ public class SelectionHandler : MonoBehaviour
         EventManager.Instance.AddDelegateListener(SelectionEvents.ReplaceSelectionWithObject, (Action<IEnumerable<GameObject>>)ReplaceSelection);
         EventManager.Instance.AddDelegateListener(SelectionEvents.OnTrySelection, (Action<GameObject>)OnTrySelection);
 
-        EventManager.Instance.AddDelegateListener(ShortcutBindingEvents.OnCommandTriggered, (Action<EditorCommand>)OnDeleteTriggered);
+        //shortcuts
+        EventManager.Instance.AddDelegateListener(ShortcutBindingEvents.OnCommandTriggered, (Action<EditorCommand>)OnDelete);
+
     }
 
     void Update()
@@ -52,7 +55,7 @@ public class SelectionHandler : MonoBehaviour
         }
 
         if (InputHandler.Instance != null)
-            InputHandler.Instance.OnLeftMouseButtonEvent -= OnLeftMouseButtonEvent;
+            InputHandler.Instance.TriggerSelectionCommand -= OnLeftMouseButtonEvent;
 
         selectionController?.ClearDict();
     }
@@ -60,20 +63,20 @@ public class SelectionHandler : MonoBehaviour
     private IEnumerator waitForInputHandler()
     {
         yield return new WaitUntil(() => InputHandler.Instance != null);
-        InputHandler.Instance.OnLeftMouseButtonEvent += OnLeftMouseButtonEvent;
+        InputHandler.Instance.TriggerSelectionCommand += OnLeftMouseButtonEvent;
     }
 
 
-    void OnLeftMouseButtonEvent(InputAction.CallbackContext context)
+    void OnLeftMouseButtonEvent(SelectionCommand command, InputAction.CallbackContext context)
     {
         if (context.started)
         {
-            selectionController?.OnStartLeftClick();
+            selectionController?.OnStartLeftClick(command);
         }
 
         if (context.canceled)
         {
-            selectionController?.OnStopLeftClick();
+            selectionController?.OnStopLeftClick(command);
         }
     }
     private void ReplaceSelection(IEnumerable<GameObject> gameObjects)
@@ -88,15 +91,19 @@ public class SelectionHandler : MonoBehaviour
     private void OnTrySelection(GameObject gameObject)
     => selectionController?.TrySelect(gameObject);
 
-    private void OnDeleteTriggered(EditorCommand editorCommand)
+    private void OnDelete(EditorCommand editorCommand)
     {
         if (editorCommand == EditorCommand.Delete)
-        {
             selectionController?.TryDeleteSelected();
-        }
     }
+
 }
 
+public enum SelectionCommand
+{
+    Select,
+    ToggleSelect
+}
 /// <summary>
 /// All the events we use for selection in a class with strings to prevent typos and make it easier to find where they're used. If an event needs to pass data, we can add a new one with the appropriate parameters, but for now these are the ones we need.
 /// </summary>
@@ -110,7 +117,7 @@ public static class SelectionEvents
     public const string OnSelectionChanged = "OnSelectionChanged";
     public const string OnTrySelection = "OnTrySelection";
     public const string ReplaceSelectionWithObject = "ReplaceSelectionWithObject";
-    
+
     //signals
     public static Func<Rect> FinalizeSelectionRect;
 

@@ -32,6 +32,7 @@ public class SelectAction : IUndoableAction, IEditorCommand
         ApplySelection(beforeSelectionIDs);
     }
 
+    //this function actually finalizes the selection and tells the selection controller to select the given object(s)
     private void ApplySelection(IEnumerable<int> selectionIDs)
     {
         List<GameObject> objectsToSelect = new();

@@ -1,6 +1,6 @@
 using System;
+using System.Collections;
 using System.Collections.Generic;
-using Unity.VisualScripting;
 using UnityEngine;
 using UnityEngine.InputSystem;
 
@@ -8,6 +8,8 @@ public class EditorShortcutHandler : MonoBehaviour
 {
     [SerializeField] private List<ShortCutBinding> shortcutBindings = new();
     private Dictionary<EditorCommand, EditorCommand> commandMap;
+    private Coroutine subscribeRoutine;
+
 
     void Awake()
     {
@@ -19,14 +21,10 @@ public class EditorShortcutHandler : MonoBehaviour
                 commandMap.Add(binding.command, binding.command);
         }
     }
-    void Start()
+
+    void OnEnable()
     {
-        if (InputHandler.Instance == null)
-        {
-            Debug.LogWarning("Input handler not found");
-            return;
-        }
-        InputHandler.Instance.TriggerCMD += HandleInputAction;
+        subscribeRoutine = StartCoroutine(waitForInputHandler());
     }
 
     void OnDisable()
@@ -43,6 +41,13 @@ public class EditorShortcutHandler : MonoBehaviour
             EventManager.Instance.TriggerDelegate(ShortcutBindingEvents.OnCommandTriggered, command); // has to be of type EditorCommand
         }
     }
+
+    private IEnumerator waitForInputHandler()
+    {
+        yield return new WaitUntil(() => InputHandler.Instance != null);
+        InputHandler.Instance.TriggerCMD += HandleInputAction;
+    }
+
 }
 
 public enum EditorCommand
@@ -57,6 +62,7 @@ public enum EditorCommand
     Paste,
     Duplicate,
     Cut,
+    ToggleSelect
 }
 
 [Serializable]

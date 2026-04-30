@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using UnityEditor;
 using UnityEngine;
 using UnityEngine.InputSystem;
 
@@ -19,6 +20,8 @@ public class selectionController
     private Vector2 _pressStartScreenPosition;
     private bool startedOnGizmo, isPointerDown, isBoxDragging;
     private float _dragThreshold = 10f;
+    private SelectionCommand currentSelectionCommand = SelectionCommand.Select;
+
 
     //undo
     private DeleteAction deleteAction;
@@ -29,9 +32,11 @@ public class selectionController
     }
 
     //ik heb de selection controller een normale class gemaakt zodat de meeste logica daar uitgevoerd kan worden.
-    public void OnStartLeftClick()
+    public void OnStartLeftClick(SelectionCommand command)
     {
         if (UIHelper.IsPointerOverUI()) return;
+
+        currentSelectionCommand = command;
 
         startedOnGizmo = false;
 
@@ -45,7 +50,7 @@ public class selectionController
         isPointerDown = true;
     }
 
-    public void OnStopLeftClick()
+    public void OnStopLeftClick(SelectionCommand command)
     {
         if (startedOnGizmo)
         {
@@ -70,13 +75,18 @@ public class selectionController
 
         if (RaycastHelper.TryGetPointerHit2D(cam, LayerMask.GetMask("Selectable"), out RaycastHit2D hit)) //then we get to the selection logic, if we hit something with the selectable layer, we try to select it
         {
-            TrySelect(hit.collider.gameObject);
+            if (currentSelectionCommand == SelectionCommand.ToggleSelect)
+                ToggleSelection(hit.collider.gameObject);
+            else
+                TrySelect(hit.collider.gameObject);
             return;
         }
         else if (!UIHelper.IsPointerOverUI())
         {
             TryClearSelectionWithUndo();
         }
+
+        currentSelectionCommand = SelectionCommand.Select;
     }
 
     public void TickSelectionInput()
@@ -132,6 +142,29 @@ public class selectionController
     public void ClearDict()
     {
         selectableGameObjectsInSceneDict.Clear();
+    }
+
+    public void ToggleSelection(GameObject clickedObject)
+    {
+        List<int> beforeSelection = GetSelectedObjectIDs();
+        HashSet<int> afterSelection = beforeSelection.ToHashSet();
+
+        LevelObject levelObject = clickedObject.GetComponent<LevelObject>();
+
+        int clickedID = levelObject.ObjectID;
+
+        if (afterSelection.Contains(clickedID))
+            afterSelection.Remove(clickedID);
+        else
+            afterSelection.Add(clickedID);
+
+        if (beforeSelection.Count == afterSelection.Count && beforeSelection.All(afterSelection.Contains))
+            return;
+
+        SelectAction action = new SelectAction(beforeSelection, afterSelection, "toggle Select");
+
+        action.Execute(); //apply selection
+        EventManager.Instance.TriggerDelegate(ActionStackEvents.RegisterAction, action); //make sure it's undoable
     }
 
     public void SelectInRect(Rect screenRect)

@@ -70,7 +70,7 @@ public class GizmoInteractionHandler : MonoBehaviour
 
         if (InputHandler.Instance != null)
         {
-            InputHandler.Instance.OnLeftMouseButtonEvent -= OnLeftMouseButton;
+            InputHandler.Instance.TriggerSelectionCommand -= OnLeftMouseButton;
             InputHandler.Instance.onPointEvent -= OnPoint;
         }
 
@@ -81,14 +81,15 @@ public class GizmoInteractionHandler : MonoBehaviour
     {
         yield return new WaitUntil(() => InputHandler.Instance != null);
 
-        InputHandler.Instance.OnLeftMouseButtonEvent += OnLeftMouseButton;
+        InputHandler.Instance.TriggerSelectionCommand += OnLeftMouseButton;
         InputHandler.Instance.onPointEvent += OnPoint;
     }
 
-    private void OnLeftMouseButton(InputAction.CallbackContext context)
+    private void OnLeftMouseButton(SelectionCommand selectionCommand, InputAction.CallbackContext context)
     {
         if (cam == null)
             return;
+        if (selectionCommand != SelectionCommand.Select) return;
 
         if (context.started)
         {

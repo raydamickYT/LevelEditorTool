@@ -37,14 +37,23 @@ public class InputHandler : MonoBehaviour, InputSystem_Actions.IUIActions
         TriggerCMD?.Invoke(editorCommand);
     }
 
+    public event Action<SelectionCommand, InputAction.CallbackContext> TriggerSelectionCommand;
+    void triggerSelection(InputAction.CallbackContext context)
+    {
+        SelectionCommand command =
+    Keyboard.current.leftCtrlKey.isPressed || Keyboard.current.rightCtrlKey.isPressed
+        ? SelectionCommand.ToggleSelect
+        : SelectionCommand.Select;
+        TriggerSelectionCommand?.Invoke(command, context);
+    }
+
     public event Action<InputAction.CallbackContext> OnCancelEvent;
     public void OnCancel(InputAction.CallbackContext context)
         => OnCancelEvent?.Invoke(context);
 
-    public event Action<InputAction.CallbackContext> OnLeftMouseButtonEvent;
     public void OnClick(InputAction.CallbackContext context)
     {
-        OnLeftMouseButtonEvent?.Invoke(context);
+        triggerSelection(context);
     }
 
     public event Action<InputAction.CallbackContext> onMiddleMouseButtonEvent;
