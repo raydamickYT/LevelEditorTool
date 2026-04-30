@@ -142,7 +142,7 @@ public class GizmoController
                 LevelObjectsRoot.Instance.AddLevelObject(target.BaseObject);
             }
 
-            tempParentObject.gameObject.SetActive(false);
+            tempParentObject.DisableAndDetach();
         }
     }
 

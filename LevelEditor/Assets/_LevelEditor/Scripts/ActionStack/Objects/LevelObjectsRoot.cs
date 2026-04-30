@@ -7,7 +7,7 @@ public class LevelObjectsRoot : MonoBehaviour
     private static LevelObjectsRoot instance;
     [SerializeField] private Transform rootTransform;
     public Transform RootTransform => rootTransform != null ? rootTransform : transform; //if rootTransform is null, get the transform of this object.
-    public static LevelObjectsRoot Instance => instance != null ? instance : instance = FindAnyObjectByType<LevelObjectsRoot>() 
+    public static LevelObjectsRoot Instance => instance != null ? instance : instance = FindAnyObjectByType<LevelObjectsRoot>()
     ?? new GameObject("LevelObjectsRoot").AddComponent<LevelObjectsRoot>(); //technically it should be impossible for there to never be a levelobjectsroot, but just in case
 
     //libraries
@@ -45,6 +45,19 @@ public class LevelObjectsRoot : MonoBehaviour
 
     public void AddLevelObject(GameObject child)
     {
+        if (child == null) return;
+        if (rootTransform == null)
+        {
+            Debug.LogWarning("Cannot add level object because rootTransform is null.");
+            return;
+        }
+
+        if (levelObjects == null)
+        {
+            Debug.LogWarning("Cannot add level object because levelObjects list is null.");
+            return;
+        }
+
         if (child.GetComponent<LevelObject>())
         {
             levelObjects.Add(child.gameObject);

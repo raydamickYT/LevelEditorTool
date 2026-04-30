@@ -61,7 +61,7 @@ public class ObjectButtonController : MonoBehaviour, IBeginDragHandler, IEndDrag
             spawnObjectAction.Execute();
             EventManager.Instance.TriggerDelegate(ActionStackEvents.RegisterAction, spawnObjectAction);
 
-            EventManager.Instance.TriggerDelegate(SelectionEvents.OnTrySelection, spawnedObject);
+            EventManager.Instance.TriggerDelegate(SelectionEvents.OnTrySelection, spawnedObject, SelectionCommand.Select);
 
             spawnedObject = null;
         }

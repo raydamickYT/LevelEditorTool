@@ -3,7 +3,7 @@ using UnityEngine;
 
 public class GizmoTempParent : MonoBehaviour
 {
-    private List<Transform> children  = new();
+    private List<Transform> children = new();
 
 
     public void Attach(IEnumerable<GameObject> objects)
@@ -15,7 +15,7 @@ public class GizmoTempParent : MonoBehaviour
             if (obj == null) continue;
 
             LevelObjectsRoot.Instance.RemoveChildFromParent(obj);
-            
+
             if (!obj.TryGetComponent(out LevelObject _)) continue;
 
             children.Add(obj.transform);
@@ -34,8 +34,11 @@ public class GizmoTempParent : MonoBehaviour
 
         children.Clear();
     }
-    void OnDisable()
+
+    public void DisableAndDetach()
     {
         DetachAllToRoot();
+        gameObject.SetActive(false);
     }
+
 }

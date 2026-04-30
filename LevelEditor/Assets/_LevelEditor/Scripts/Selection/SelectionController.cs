@@ -76,7 +76,7 @@ public class selectionController
         if (RaycastHelper.TryGetPointerHit2D(cam, LayerMask.GetMask("Selectable"), out RaycastHit2D hit)) //then we get to the selection logic, if we hit something with the selectable layer, we try to select it
         {
             if (currentSelectionCommand == SelectionCommand.ToggleSelect)
-                ToggleSelection(hit.collider.gameObject);
+                TryToggleSelection(hit.collider.gameObject);
             else
                 TrySelect(hit.collider.gameObject);
             return;
@@ -144,7 +144,7 @@ public class selectionController
         selectableGameObjectsInSceneDict.Clear();
     }
 
-    public void ToggleSelection(GameObject clickedObject)
+    public void TryToggleSelection(GameObject clickedObject)
     {
         List<int> beforeSelection = GetSelectedObjectIDs();
         HashSet<int> afterSelection = beforeSelection.ToHashSet();

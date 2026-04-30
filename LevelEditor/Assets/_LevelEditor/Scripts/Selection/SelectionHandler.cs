@@ -28,7 +28,7 @@ public class SelectionHandler : MonoBehaviour
         EventManager.Instance.AddDelegateListener(SelectionEvents.RegisterToSelectionController, (Action<GameObject, SelectableTargetData>)HandleRegister);
         EventManager.Instance.AddDelegateListener(SelectionEvents.DeRegisterToSelectionController, (Action<GameObject>)HandleDeregister);
         EventManager.Instance.AddDelegateListener(SelectionEvents.ReplaceSelectionWithObject, (Action<IEnumerable<GameObject>>)ReplaceSelection);
-        EventManager.Instance.AddDelegateListener(SelectionEvents.OnTrySelection, (Action<GameObject>)OnTrySelection);
+        EventManager.Instance.AddDelegateListener(SelectionEvents.OnTrySelection, (Action<GameObject, SelectionCommand>)OnTrySelection);
 
         //shortcuts
         EventManager.Instance.AddDelegateListener(ShortcutBindingEvents.OnCommandTriggered, (Action<EditorCommand>)OnDelete);
@@ -88,8 +88,20 @@ public class SelectionHandler : MonoBehaviour
     private void HandleDeregister(GameObject obj)
         => selectionController?.Deregister(obj);
 
-    private void OnTrySelection(GameObject gameObject)
-    => selectionController?.TrySelect(gameObject);
+    private void OnTrySelection(GameObject gameObject, SelectionCommand command)
+    {
+        switch (command)
+        {
+            case SelectionCommand.Select:
+                selectionController?.TrySelect(gameObject);
+                break;
+            case SelectionCommand.ToggleSelect:
+             selectionController?.TryToggleSelection(gameObject);
+             break;
+
+        }
+    }
+
 
     private void OnDelete(EditorCommand editorCommand)
     {

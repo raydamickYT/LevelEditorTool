@@ -1,5 +1,7 @@
+using System.Runtime.InteropServices;
 using TMPro;
 using UnityEngine;
+using UnityEngine.InputSystem;
 using UnityEngine.UI;
 
 /// <summary>
@@ -29,6 +31,11 @@ public class HierarchyObjectItem : MonoBehaviour
 
         button.onClick.AddListener(SetSelected);
     }
+    private void OnDestroy()
+    {
+        button.onClick.RemoveListener(SetSelected);
+        selectableObject.OnSelectionChanged -= UpdateSelectionVisuals;
+    }
 
     //responsible for selecting the object whenever the button is pressed
     private void SetSelected()
@@ -36,7 +43,11 @@ public class HierarchyObjectItem : MonoBehaviour
         if (levelObject == null)
             return;
 
-        EventManager.Instance.TriggerDelegate(SelectionEvents.OnTrySelection, levelObject.gameObject);
+        SelectionCommand command = IsCtrlHeld()
+            ? SelectionCommand.ToggleSelect
+            : SelectionCommand.Select;
+
+        EventManager.Instance.TriggerDelegate(SelectionEvents.OnTrySelection, levelObject.gameObject, command);
     }
 
     private void UpdateSelectionVisuals()
@@ -46,9 +57,12 @@ public class HierarchyObjectItem : MonoBehaviour
         background.color = selectableObject.IsSelected ? selectedColor : normalColor;
     }
 
-    private void OnDestroy()
+
+
+    private bool IsCtrlHeld()
     {
-        button.onClick.RemoveListener(SetSelected);
-        selectableObject.OnSelectionChanged -= UpdateSelectionVisuals;
+        return Keyboard.current != null &&
+               (Keyboard.current.leftCtrlKey.isPressed ||
+                Keyboard.current.rightCtrlKey.isPressed);
     }
 }
