@@ -4,7 +4,7 @@ using UnityEngine;
 public class SelectableObject : MonoBehaviour, ISelectable
 {
     public bool IsSelected => TargetData.IsSelected;
-    [SerializeField] private SelectableTargetData TargetData;
+    [SerializeField] private SelectableTargetData TargetData = new();
     public Action OnSelectionChanged;
 
     // Start is called once before the first execution of Update after the MonoBehaviour is created

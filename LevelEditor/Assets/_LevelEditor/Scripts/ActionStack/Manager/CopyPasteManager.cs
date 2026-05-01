@@ -1,17 +1,16 @@
 using System;
 using System.Collections.Generic;
+using System.Linq;
 using UnityEngine;
 
 public class CopyPasteManager : MonoBehaviour
 {
     private List<LevelObject.Memento> clipBoard = new();
-    private HashSet<LevelObject> selectedObjects = new();
 
     // Start is called once before the first execution of Update after the MonoBehaviour is created
     void Start()
     {
         EventManager.Instance.AddDelegateListener(ShortcutBindingEvents.OnCommandTriggered, (Action<EditorCommand>)HandleCommand);
-        EventManager.Instance.AddDelegateListener(SelectionEvents.OnSelectionChanged, (Action<HashSet<SelectableTargetData>>)UpdateCache);
     }
 
     private void HandleCommand(EditorCommand command)
@@ -36,9 +35,14 @@ public class CopyPasteManager : MonoBehaviour
 
     private void Copy()
     {
+        //if nothing is selected dont copy
+        if (!EditorBlackBoard.HasSelection && !EditorBlackBoard.HasMultiSelection) return;
+        
         clipBoard.Clear();
 
-        foreach (var item in selectedObjects)
+
+
+        foreach (var item in EditorBlackBoard.CurrentSelectedLevelObjects)
         {
             if (item == null) continue;
 
@@ -53,7 +57,7 @@ public class CopyPasteManager : MonoBehaviour
 
         List<GameObject> selectionBeforePaste = new();
 
-        foreach (var item in selectedObjects)
+        foreach (var item in EditorBlackBoard.CurrentSelectedLevelObjects)
         {
             if (item == null) continue;
 
@@ -76,30 +80,6 @@ public class CopyPasteManager : MonoBehaviour
     {
         Copy();
         Paste();
-    }
-
-    void UpdateCache(HashSet<SelectableTargetData> data)
-    {
-        selectedObjects.Clear();
-
-        if (data == null || data.Count == 0) //this is necessary since this function will also be called if the selection is emptied.
-        {
-            return;
-        }
-
-        foreach (var item in data)
-        {
-            if (item.BaseObject == null)
-            {
-                Debug.Log("BaseObject is null");
-                continue;
-            }
-
-            var LvlObj = item.BaseObject.GetComponent<LevelObject>();
-            if (LvlObj == null) continue;
-
-            selectedObjects.Add(LvlObj);
-        }
     }
 }
 

@@ -111,7 +111,10 @@ public class selectionController
     {
         if (_selectedGameObjects.Count == 0) return;
 
+        //todo: gebruik hier de blackboard
         EventManager.Instance.TriggerDelegate(SelectionEvents.OnSelectionChanged, new HashSet<SelectableTargetData>()); //clear the data in gizmo controller to prevent the gizmo object from beeing deleted
+        EditorBlackBoard.ClearSelection();
+
 
         //really long line but basically: get items form _selectedGameObjects which have the component LevelObject, aren't null then call the save() in that item and add that memento
         //to the list
@@ -328,7 +331,9 @@ public class selectionController
 
     private void RefreshGizmo()
     {
+        //todo gebruik hier de blackboard
         EventManager.Instance.TriggerDelegate(SelectionEvents.OnSelectionChanged, _selectedGameObjects);
+        EditorBlackBoard.SetSelection(_selectedGameObjects);
     }
     private void ClearSelectionInternal()
     {
@@ -340,11 +345,6 @@ public class selectionController
         }
 
         _selectedGameObjects.Clear();
-    }
-    public void ClearSelection()
-    {
-        ClearSelectionInternal();
-        RefreshGizmo();
     }
 
     public void TryClearSelectionWithUndo()

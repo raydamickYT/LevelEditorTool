@@ -1,16 +1,19 @@
-using System.Runtime.InteropServices;
 using TMPro;
+using Unity.Mathematics;
 using UnityEngine;
 using UnityEngine.InputSystem;
 using UnityEngine.UI;
 
 /// <summary>
-/// this class is responsible for keeping a connection between the button in the objectHierarchy and the object in the scene.
-/// it'll:
-/// - select a levelObject when pressed.
+/// this class controlls the button of the parent of a group of objects
 /// </summary>
-public class HierarchyObjectItem : MonoBehaviour
+public class HierarchyParentObjectItem : MonoBehaviour
 {
+    [Header("PrefabToSpawn")]
+    public GameObject parent;
+    private GameObject parentObject;
+
+    [Header("Button Settings")]
     [SerializeField] private TMP_Text nameText;
     [SerializeField] private Button button;
 
@@ -18,39 +21,21 @@ public class HierarchyObjectItem : MonoBehaviour
     [SerializeField] private Color normalColor = Color.clear;
     [SerializeField] private Color selectedColor = new Color(0.25f, 0.45f, 1f, 0.45f);
 
-    private LevelObject levelObject;
+    private LevelObject[] levelObject;
     private SelectableObject selectableObject;
     [HideInInspector]
-    public bool IsSelected => selectableObject.IsSelected;
+    public bool isSelected => selectableObject.IsSelected;
 
 
-    public void Initialize(LevelObject target)
+    public void Initialize(LevelObject[] target)
     {
         levelObject = target;
-        nameText.text = target.name;
+        nameText.text = target[0].name;
 
-        selectableObject = levelObject.gameObject.GetComponent<SelectableObject>();
+        // selectableObject = levelObject.gameObject.GetComponent<SelectableObject>();
         selectableObject.OnSelectionChanged += UpdateSelectionVisuals;
 
         button.onClick.AddListener(SetSelected);
-    }
-    private void OnDestroy()
-    {
-        button.onClick.RemoveListener(SetSelected);
-        selectableObject.OnSelectionChanged -= UpdateSelectionVisuals;
-    }
-
-    //responsible for selecting the object whenever the button is pressed
-    private void SetSelected()
-    {
-        if (levelObject == null)
-            return;
-
-        SelectionCommand command = IsCtrlHeld()
-            ? SelectionCommand.ToggleSelect
-            : SelectionCommand.Select;
-
-        EventManager.Instance.TriggerDelegate(SelectionEvents.OnTrySelection, levelObject.gameObject, command);
     }
 
     private void UpdateSelectionVisuals()
@@ -60,10 +45,29 @@ public class HierarchyObjectItem : MonoBehaviour
         background.color = selectableObject.IsSelected ? selectedColor : normalColor;
     }
 
+    private void SetSelected()
+    {
+        if (levelObject == null)
+            return;
+
+        SelectionCommand command = IsCtrlHeld()
+            ? SelectionCommand.ToggleSelect
+            : SelectionCommand.Select;
+
+        // EventManager.Instance.TriggerDelegate(SelectionEvents.OnTrySelection, parent, command); //TODO: finish this class first
+    }
+
     private bool IsCtrlHeld()
     {
         return Keyboard.current != null &&
                (Keyboard.current.leftCtrlKey.isPressed ||
                 Keyboard.current.rightCtrlKey.isPressed);
+    }
+
+    void InitializeParent()
+    {
+        if(parent != null)
+        parentObject = Instantiate(parent, new Vector3(0, 0, 0), quaternion.identity);
+        
     }
 }

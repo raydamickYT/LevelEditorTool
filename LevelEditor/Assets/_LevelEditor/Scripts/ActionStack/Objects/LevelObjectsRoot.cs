@@ -1,14 +1,17 @@
 using System.Collections.Generic;
+using System.Linq;
 using UnityEngine;
 
 public class LevelObjectsRoot : MonoBehaviour
 {
     //static setup
     private static LevelObjectsRoot instance;
-    [SerializeField] private Transform rootTransform;
-    public Transform RootTransform => rootTransform != null ? rootTransform : transform; //if rootTransform is null, get the transform of this object.
     public static LevelObjectsRoot Instance => instance != null ? instance : instance = FindAnyObjectByType<LevelObjectsRoot>()
     ?? new GameObject("LevelObjectsRoot").AddComponent<LevelObjectsRoot>(); //technically it should be impossible for there to never be a levelobjectsroot, but just in case
+
+
+    [SerializeField] private Transform rootTransform;
+    public Transform RootTransform => rootTransform != null ? rootTransform : transform; //if rootTransform is null, get the transform of this object.
 
     //libraries
     private List<GameObject> levelObjects = new();
@@ -24,6 +27,11 @@ public class LevelObjectsRoot : MonoBehaviour
 
         if (rootTransform == null)
             rootTransform = transform;
+    }
+
+    void Start()
+    {
+        EventManager.Instance.AddUnityEventListener(ObjectHierarchyEvents.OnCreateGroupParentObject, CreateParentObject);
     }
 
     void OnEnable()
@@ -75,5 +83,31 @@ public class LevelObjectsRoot : MonoBehaviour
         {
             levelObjects.Remove(child);
         }
+    }
+
+    //for creating an empty gameobject as a parent in the scene
+    private void CreateParentObject()
+    {
+        List<LevelObject> objects = EditorBlackBoard.CurrentSelectedLevelObjects.ToList(); //cache the selection
+
+        GameObject itemObject = new GameObject("EmptyParent");
+        itemObject.transform.position = SelectionBoundsCalculator.GetSelectionBoundsCenter(EditorBlackBoard.CurrentSelection.ToHashSet());
+
+        itemObject.transform.SetParent(this.transform, true);
+
+        var levelObjectGroup = itemObject.AddComponent<LevelObjectGroup>();
+        itemObject.AddComponent<SelectableObject>();
+
+        //update the selection
+        EventManager.Instance.TriggerDelegate(SelectionEvents.ReplaceSelectionWithObject, new List<GameObject> {itemObject});
+
+        foreach (LevelObject levelObject in objects)
+        {
+            levelObject.transform.SetParent(itemObject.transform, true);
+            levelObjectGroup.AddChild(levelObject);
+        }
+
+        var HierarchyChange = new HierarchyChange(levelObjectGroup, HierarchyChangeType.AddedParent);
+        EventManager.Instance.TriggerDelegate(ObjectHierarchyEvents.RefreshMenu, new List<HierarchyChange> { HierarchyChange });
     }
 }
