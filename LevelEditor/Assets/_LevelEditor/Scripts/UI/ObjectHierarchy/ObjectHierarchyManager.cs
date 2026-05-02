@@ -17,8 +17,8 @@ public class ObjectHierarchyManager : MonoBehaviour
     [SerializeField] private HierarchyObjectItem itemPrefab;
     [SerializeField] private HierarchyParentObjectItem parentPrefab;
     private readonly Dictionary<LevelObject, HierarchyObjectItem> items = new();
+    private readonly Dictionary<LevelObject, HierarchyParentObjectItem> parentItems = new();
 
-    private List<HierarchyObjectItem> selectedObjects;
 
     private void Awake()
     {
@@ -27,37 +27,48 @@ public class ObjectHierarchyManager : MonoBehaviour
 
     public void Refresh(IEnumerable<HierarchyChange> hierarchyChangeObjects)
     {
-        switch (hierarchyChangeObjects.FirstOrDefault().ChangeType)
+        if (hierarchyChangeObjects == null)
+            return;
+
+        List<HierarchyChange> changes = hierarchyChangeObjects.ToList();
+
+        if (changes.Count == 0)
+            return;
+
+        switch (changes.First().ChangeType)
         {
             case HierarchyChangeType.Added:
-
-                foreach (HierarchyChange objects in hierarchyChangeObjects)
+                foreach (HierarchyChange change in changes)
                 {
-                    AddItem(objects.LevelObject);
+                    AddItem(change.LevelObject);
                 }
                 break;
+
             case HierarchyChangeType.AddedParent:
-                AddParent(hierarchyChangeObjects.FirstOrDefault().LevelObject);
-                break;
-            default: //removed
-                foreach (var item in hierarchyChangeObjects)
+                foreach (HierarchyChange change in changes)
                 {
-                    foreach (HierarchyChange objects in hierarchyChangeObjects)
-                    {
-                        Clear(objects.LevelObject);
-                    }
+                    AddParent(change.LevelObject);
+                }
+                break;
+
+            case HierarchyChangeType.Removed:
+                foreach (HierarchyChange change in changes)
+                {
+                    Clear(change.LevelObject);
                 }
                 break;
         }
-
-
     }
 
     //for creating the parent button in the menu
-    //todo: dit moet een event call krijgen met het juiste parent script erin, zodat er een parent button gemaakt kan worden.
+    //**this is called by a UIbutton!**
     public void CreateGroupParentObject()
     {
-        EventManager.Instance.TriggerUnityEvent(ObjectHierarchyEvents.OnCreateGroupParentObject);
+        CreateParentGroupAction action = new CreateParentGroupAction();
+
+        action.Execute();
+
+        EventManager.Instance.TriggerDelegate(ActionStackEvents.RegisterAction, action);
     }
 
     private void AddItem(LevelObject levelObject)
@@ -76,34 +87,47 @@ public class ObjectHierarchyManager : MonoBehaviour
         existingNames.Add(levelObject.name);
     }
 
-    private void AddParent(LevelObject ParentLevelObject)
+    private void AddParent(LevelObject levelObject)
     {
-        if (ParentLevelObject == null) return;
+        if (levelObject == null) return;
 
-        if (items.ContainsKey(ParentLevelObject)) return;
-        ParentLevelObject.name = GetUniqueHierarchyName(ParentLevelObject.name);
+        if (items.ContainsKey(levelObject)) return;
 
-        HierarchyParentObjectItem item = Instantiate(parentPrefab, contentParent);
+        levelObject.name = GetUniqueHierarchyName(levelObject.name);
 
-        item.Initialize(ParentLevelObject);
-        // items.Add(levelObject, parentPrefab);
-        existingNames.Add(ParentLevelObject.name);
-        Debug.Log("parent will be added here in the future");
+        HierarchyParentObjectItem parentItem = Instantiate(parentPrefab, contentParent);
+        parentItem.Initialize(levelObject);
 
+        parentItems.Add(levelObject, parentItem);
+        existingNames.Add(levelObject.name);
     }
 
     private void Clear(LevelObject levelObject)
     {
+        if (levelObject == null) return;
+
         if (existingNames.Contains(levelObject.name))
         {
             existingNames.Remove(levelObject.name);
         }
+
+        //normal objects
         if (items.TryGetValue(levelObject, out var objectItem))
         {
             Destroy(objectItem.gameObject);
             items.Remove(levelObject);
+            return;
         }
 
+        //parent objects
+        if (parentItems.TryGetValue(levelObject, out HierarchyParentObjectItem parentItem))
+        {
+            parentItem.ReleaseChildren(contentParent);
+
+            Destroy(parentItem.gameObject);
+            parentItems.Remove(levelObject);
+            return;
+        }
     }
 
 
@@ -129,7 +153,6 @@ public class ObjectHierarchyManager : MonoBehaviour
 public static class ObjectHierarchyEvents
 {
     public const string RefreshMenu = "RefreshMenu";
-    public const string OnCreateGroupParentObject = "CreateParentObject";
 }
 
 

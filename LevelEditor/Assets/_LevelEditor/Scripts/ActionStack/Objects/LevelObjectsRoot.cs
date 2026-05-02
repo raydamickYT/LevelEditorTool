@@ -29,10 +29,6 @@ public class LevelObjectsRoot : MonoBehaviour
             rootTransform = transform;
     }
 
-    void Start()
-    {
-        EventManager.Instance.AddUnityEventListener(ObjectHierarchyEvents.OnCreateGroupParentObject, CreateParentObject);
-    }
 
     void OnEnable()
     {
@@ -83,40 +79,5 @@ public class LevelObjectsRoot : MonoBehaviour
         {
             levelObjects.Remove(child);
         }
-    }
-
-    //for creating an empty gameobject as a parent in the scene
-    private void CreateParentObject()
-    {
-        List<LevelObject> selectedObjects = EditorBlackBoard.CurrentSelectedLevelObjects.Where(x => x != null).ToList(); //cache the selection
-
-        if (selectedObjects.Count < 2)
-        {
-            Debug.Log("Select atleast 2 objects to create a parent");
-        }
-
-        GameObject itemObject = new GameObject("EmptyParent");
-        itemObject.transform.position = SelectionBoundsCalculator.GetSelectionBoundsCenter(EditorBlackBoard.CurrentSelection.ToHashSet());
-
-        itemObject.transform.SetParent(this.transform, true);
-
-        var levelObjectGroup = itemObject.AddComponent<LevelObjectGroup>();
-        itemObject.AddComponent<SelectableObject>();
-        ObjectRegistry.OnObjectCreated(levelObjectGroup);
-
-
-        //update the selection
-        EventManager.Instance.TriggerDelegate(SelectionEvents.ReplaceSelectionWithObject, new List<GameObject> { itemObject });
-
-        //add the objects to the parent transform
-        foreach (LevelObject levelObject in selectedObjects)
-        {
-            levelObject.transform.SetParent(itemObject.transform, true);
-            levelObjectGroup.AddChild(levelObject);
-        }
-
-        //refresh the objectHierarchy menu
-        var HierarchyChange = new HierarchyChange(levelObjectGroup, HierarchyChangeType.AddedParent);
-        EventManager.Instance.TriggerDelegate(ObjectHierarchyEvents.RefreshMenu, new List<HierarchyChange> { HierarchyChange });
     }
 }

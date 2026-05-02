@@ -6,6 +6,7 @@ public class LevelObject : MonoBehaviour
     public int ObjectID;
     public GameObject PrefabReference;
     public HierarchyObjectItem hierarchyObjectItem;
+    public virtual bool IsGroup => false;
     public class Memento
     {
         public Transform parent;
@@ -36,12 +37,12 @@ public class LevelObject : MonoBehaviour
     }
 
     // has to be called from the action classes
-    public Memento Save()
+    public virtual Memento Save()
     {
         return new Memento(transform, PrefabReference, ObjectID);
     }
 
-    public void Restore(Memento m)
+    public virtual void Restore(Memento m)
     {
         transform.position = m.Position;
         transform.rotation = m.Rotation;

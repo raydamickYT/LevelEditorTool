@@ -25,7 +25,7 @@ public class HierarchyParentObjectItem : MonoBehaviour
     [SerializeField] private Color hoverColor = Color.grey;
     private SelectableObject selectableObject;
     private LevelObject levelObject; //used for linking to the levelObject
-    [SerializeField]private List<HierarchyObjectItem> hierarchyObjectItems = new(); //childbuttons under this parent
+    [SerializeField] private List<HierarchyObjectItem> hierarchyObjectItems = new(); //childbuttons under this parent
     private LevelObjectGroup levelObjectGroup; //levelobject group, contains the children in the level.
 
 
@@ -55,13 +55,29 @@ public class HierarchyParentObjectItem : MonoBehaviour
 
         foreach (LevelObject child in levelObjectGroup.LevelObjects.ToList())
         {
-            if(child.hierarchyObjectItem == null) continue;
+            if (child.hierarchyObjectItem == null) continue;
 
             HierarchyObjectItem childItem = child.hierarchyObjectItem;
 
             hierarchyObjectItems.Add(childItem);
             childItem.transform.SetParent(ChildrenContainer, false);
         }
+    }
+
+    public void ReleaseChildren(Transform newParent)
+    {
+        if (newParent == null)
+            return;
+
+        foreach (HierarchyObjectItem childItem in hierarchyObjectItems.ToList())
+        {
+            if (childItem == null)
+                continue;
+
+            childItem.transform.SetParent(newParent, false);
+        }
+
+        hierarchyObjectItems.Clear();
     }
 
     private void UpdateSelectionVisuals()
