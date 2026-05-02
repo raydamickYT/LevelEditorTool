@@ -19,7 +19,7 @@ public class HierarchyObjectItem : MonoBehaviour
     [SerializeField] private Color selectedColor = new Color(0.25f, 0.45f, 1f, 0.45f);
 
     private LevelObject levelObject;
-    private SelectableObject selectableObject;
+    private SelectableObject selectableObject; //levelobject selectable component
     [HideInInspector]
     public bool IsSelected => selectableObject.IsSelected;
 
@@ -28,8 +28,13 @@ public class HierarchyObjectItem : MonoBehaviour
     {
         levelObject = target;
         nameText.text = target.name;
+        levelObject.hierarchyObjectItem = this;
 
-        selectableObject = levelObject.gameObject.GetComponent<SelectableObject>();
+        if (!levelObject.gameObject.TryGetComponent(out selectableObject))
+        {
+            Debug.LogWarning("Parent object does not contain SelectableObject");
+            return;
+        }
         selectableObject.OnSelectionChanged += UpdateSelectionVisuals;
 
         button.onClick.AddListener(SetSelected);

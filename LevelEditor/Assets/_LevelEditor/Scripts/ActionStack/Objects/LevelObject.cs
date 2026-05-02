@@ -5,6 +5,7 @@ public class LevelObject : MonoBehaviour
 {
     public int ObjectID;
     public GameObject PrefabReference;
+    public HierarchyObjectItem hierarchyObjectItem;
     public class Memento
     {
         public Transform parent;

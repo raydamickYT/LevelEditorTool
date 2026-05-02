@@ -37,8 +37,8 @@ public class ObjectHierarchyManager : MonoBehaviour
                 }
                 break;
             case HierarchyChangeType.AddedParent:
-            AddParent();
-            break;
+                AddParent(hierarchyChangeObjects.FirstOrDefault().LevelObject);
+                break;
             default: //removed
                 foreach (var item in hierarchyChangeObjects)
                 {
@@ -52,7 +52,7 @@ public class ObjectHierarchyManager : MonoBehaviour
 
 
     }
-    
+
     //for creating the parent button in the menu
     //todo: dit moet een event call krijgen met het juiste parent script erin, zodat er een parent button gemaakt kan worden.
     public void CreateGroupParentObject()
@@ -75,9 +75,21 @@ public class ObjectHierarchyManager : MonoBehaviour
         items.Add(levelObject, item);
         existingNames.Add(levelObject.name);
     }
-    private void AddParent()
+
+    private void AddParent(LevelObject ParentLevelObject)
     {
+        if (ParentLevelObject == null) return;
+
+        if (items.ContainsKey(ParentLevelObject)) return;
+        ParentLevelObject.name = GetUniqueHierarchyName(ParentLevelObject.name);
+
+        HierarchyParentObjectItem item = Instantiate(parentPrefab, contentParent);
+
+        item.Initialize(ParentLevelObject);
+        // items.Add(levelObject, parentPrefab);
+        existingNames.Add(ParentLevelObject.name);
         Debug.Log("parent will be added here in the future");
+
     }
 
     private void Clear(LevelObject levelObject)

@@ -231,6 +231,7 @@ public class selectionController
         if (!selectableGameObjectsInSceneDict.TryGetValue(selectedObject, out SelectableTargetData obj))
             return;
 
+
         LevelObject levelObject = selectedObject.GetComponent<LevelObject>();
         if (levelObject == null)
             return;

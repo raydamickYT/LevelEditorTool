@@ -96,8 +96,8 @@ public class SelectionHandler : MonoBehaviour
                 selectionController?.TrySelect(gameObject);
                 break;
             case SelectionCommand.ToggleSelect:
-             selectionController?.TryToggleSelection(gameObject);
-             break;
+                selectionController?.TryToggleSelection(gameObject);
+                break;
 
         }
     }

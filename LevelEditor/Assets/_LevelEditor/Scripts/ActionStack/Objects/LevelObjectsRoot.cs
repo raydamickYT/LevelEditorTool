@@ -102,6 +102,8 @@ public class LevelObjectsRoot : MonoBehaviour
 
         var levelObjectGroup = itemObject.AddComponent<LevelObjectGroup>();
         itemObject.AddComponent<SelectableObject>();
+        ObjectRegistry.OnObjectCreated(levelObjectGroup);
+
 
         //update the selection
         EventManager.Instance.TriggerDelegate(SelectionEvents.ReplaceSelectionWithObject, new List<GameObject> { itemObject });

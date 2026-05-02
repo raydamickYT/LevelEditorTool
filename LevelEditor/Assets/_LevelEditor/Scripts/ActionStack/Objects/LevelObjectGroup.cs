@@ -4,7 +4,8 @@ using UnityEngine;
 public class LevelObjectGroup : LevelObject
 {
     public bool IsGroup => true;
-    List<LevelObject> levelObjects = new();
+    private List<LevelObject> levelObjects = new();
+    public IEnumerable<LevelObject> LevelObjects => levelObjects;
 
 
     public void AddChild(LevelObject child)

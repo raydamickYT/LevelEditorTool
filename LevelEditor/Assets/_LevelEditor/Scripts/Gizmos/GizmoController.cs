@@ -167,7 +167,7 @@ public class GizmoController
     {
         var result = new List<LevelObject>();
 
-        Debug.Log(_currentGizmoTargets.Count);
+        // Debug.Log(_currentGizmoTargets.Count);
         if (_currentGizmoTargets == null || _currentGizmoTargets.Count == 0)
             return result;
 

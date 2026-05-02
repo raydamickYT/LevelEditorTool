@@ -30,6 +30,7 @@ public static class EditorBlackBoard
         }
     }
 
+
     public static void ClearSelection()
     {
         currentSelection.Clear();
