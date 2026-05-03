@@ -16,6 +16,17 @@ public static class LevelObjectSpawner
             memento.Position,
             memento.Rotation
         );
+        
+        if (memento.sprite != null)
+        {
+            if (spawnedObject.TryGetComponent(out SpriteRenderer spriteRenderer))
+            {
+                spriteRenderer.sprite = memento.sprite;
+            }
+        }
+
+        spawnedObject.SetActive(true);
+        spawnedObject.hideFlags = HideFlags.None;
 
         LevelObjectsRoot.Instance.AddLevelObject(spawnedObject);
         spawnedObject.transform.localScale = memento.Scale;

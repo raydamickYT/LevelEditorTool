@@ -6,6 +6,7 @@ public class LevelObject : MonoBehaviour
     public int ObjectID;
     public GameObject PrefabReference;
     public HierarchyObjectItem hierarchyObjectItem;
+    public Sprite sprite1;
     public virtual bool IsGroup => false;
     public class Memento
     {
@@ -15,8 +16,9 @@ public class LevelObject : MonoBehaviour
         public Quaternion Rotation;
         public Vector3 Scale;
         public int ObjectID;
+        public Sprite sprite;
 
-        public Memento(Transform t, GameObject obj, int id)
+        public Memento(Transform t, GameObject obj, int id, Sprite _sprite)
         {
             Position = t.position;
             Rotation = t.rotation;
@@ -24,10 +26,12 @@ public class LevelObject : MonoBehaviour
             PrefabReference = obj;
             parent = t.transform.parent;
             ObjectID = id;
+            sprite = _sprite;
         }
     }
     void OnEnable()
     {
+        sprite1 = getSprite();
     }
 
     //NOTE: this is called at the end of a frame. So there's a slight chance this could lead to problems. If so, here's your reminder.
@@ -39,7 +43,18 @@ public class LevelObject : MonoBehaviour
     // has to be called from the action classes
     public virtual Memento Save()
     {
-        return new Memento(transform, PrefabReference, ObjectID);
+        if (sprite1 == null)
+            Debug.LogWarning("Sprite could not be found");
+
+        return new Memento(transform, PrefabReference, ObjectID, sprite1);
+    }
+
+    private Sprite getSprite()
+    {
+        if (transform.TryGetComponent(out SpriteRenderer renderer))
+            return renderer.sprite;
+
+        return null;
     }
 
     public virtual void Restore(Memento m)
@@ -47,5 +62,13 @@ public class LevelObject : MonoBehaviour
         transform.position = m.Position;
         transform.rotation = m.Rotation;
         transform.localScale = m.Scale;
+
+        if (m.sprite != null)
+        {
+            if (transform.TryGetComponent(out SpriteRenderer spriteRenderer))
+            {
+                spriteRenderer.sprite = m.sprite;
+            }
+        }
     }
 }

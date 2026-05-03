@@ -35,6 +35,11 @@ public class PasteAction : IUndoableAction, IEditorCommand
 
     public void Execute() //pasting
     {
+        if (ObjectsToPaste.Count == 0)
+            Debug.LogWarning("no objects to paste");
+
+        Debug.LogWarning("objects to paste" + ObjectsToPaste.Count);
+
         instantiatedGameObjects.Clear();
 
         bool isRedo = pastedStates.Count > 0;
