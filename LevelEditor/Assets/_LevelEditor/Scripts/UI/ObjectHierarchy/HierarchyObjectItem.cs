@@ -42,7 +42,8 @@ public class HierarchyObjectItem : MonoBehaviour
     private void OnDestroy()
     {
         button.onClick.RemoveListener(SetSelected);
-        selectableObject.OnSelectionChanged -= UpdateSelectionVisuals;
+        if (selectableObject != null)
+            selectableObject.OnSelectionChanged -= UpdateSelectionVisuals;
     }
 
     //responsible for selecting the object whenever the button is pressed

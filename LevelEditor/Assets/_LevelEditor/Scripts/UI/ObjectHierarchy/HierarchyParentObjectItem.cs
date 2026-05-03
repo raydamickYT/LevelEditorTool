@@ -7,7 +7,6 @@ using UnityEngine.UI;
 
 /// <summary>
 /// this class controlls the button of the parent of a group of objects
-/// todo: this should also be an action, since it should be undoable
 /// </summary>
 public class HierarchyParentObjectItem : MonoBehaviour
 {
@@ -29,6 +28,17 @@ public class HierarchyParentObjectItem : MonoBehaviour
     private LevelObjectGroup levelObjectGroup; //levelobject group, contains the children in the level.
 
 
+    //layout element
+    [Header("Layout")]
+    [SerializeField] private LayoutElement layoutElement;
+    [SerializeField] private float headerHeight = 60f;
+    [SerializeField] private float childHeight = 60f;
+    [SerializeField] private float spacing = 2f;
+
+    void Awake()
+    {
+        layoutElement = GetComponent<LayoutElement>();
+    }
     public void Initialize(LevelObject target)
     {
         levelObject = target;
@@ -62,6 +72,30 @@ public class HierarchyParentObjectItem : MonoBehaviour
             hierarchyObjectItems.Add(childItem);
             childItem.transform.SetParent(ChildrenContainer, false);
         }
+        
+        UpdatePreferredHeight();
+        RebuildHierarchyLayout();
+    }
+    private void UpdatePreferredHeight()
+    {
+        if (layoutElement == null)
+            layoutElement = GetComponent<LayoutElement>();
+
+        int childCount = hierarchyObjectItems.Count;
+
+        float childrenHeight = childCount * childHeight;
+
+        if (childCount > 1)
+            childrenHeight += (childCount - 1) * spacing;
+
+        layoutElement.preferredHeight = headerHeight + childrenHeight;
+    }
+
+    private void RebuildHierarchyLayout()
+    {
+        LayoutRebuilder.ForceRebuildLayoutImmediate((RectTransform)ChildrenContainer);
+        LayoutRebuilder.ForceRebuildLayoutImmediate((RectTransform)transform);
+        LayoutRebuilder.ForceRebuildLayoutImmediate((RectTransform)transform.parent);
     }
 
     public void ReleaseChildren(Transform newParent)
