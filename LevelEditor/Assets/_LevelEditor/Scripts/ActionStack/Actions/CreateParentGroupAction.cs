@@ -24,7 +24,7 @@ public class CreateParentGroupAction : IUndoableAction, IEditorCommand
     private readonly List<LevelObject> children = new();
     private readonly List<Transform> oldParents = new();
     private readonly List<int> oldSiblingIndexes = new();
-
+    private HashSet<SelectableTargetData> selectedTargetData = new();
     private bool hasCachedInitialState;
 
     public string DebugLabel => label;
@@ -79,6 +79,10 @@ public class CreateParentGroupAction : IUndoableAction, IEditorCommand
         oldParents.Clear();
         oldSiblingIndexes.Clear();
 
+        selectedTargetData = EditorBlackBoard.CurrentSelection
+        .Where(x => x != null)
+        .ToHashSet();
+
         List<LevelObject> selectedObjects = EditorBlackBoard.CurrentSelectedLevelObjects
             .Where(x => x != null)
             .ToList();
@@ -97,7 +101,7 @@ public class CreateParentGroupAction : IUndoableAction, IEditorCommand
     {
         parentItemObject = new GameObject("EmptyParent");
 
-        parentItemObject.transform.position = SelectionBoundsCalculator.GetSelectionBoundsCenter(EditorBlackBoard.CurrentSelection.ToHashSet());
+        parentItemObject.transform.position = SelectionBoundsCalculator.GetSelectionBoundsCenter(selectedTargetData);
 
         parentLevelObject = parentItemObject.AddComponent<LevelObjectGroup>();
         parentItemObject.AddComponent<SelectableObject>();
@@ -115,13 +119,16 @@ public class CreateParentGroupAction : IUndoableAction, IEditorCommand
         {
             if (child == null)
                 continue;
-                Debug.Log("adding child to new parent" + parentLevelObject.name);
+            // Debug.Log("adding child to new parent" + parentLevelObject.name);
 
             LevelObjectsRoot.Instance.RemoveChildFromParent(child.gameObject);
 
             child.transform.SetParent(parentItemObject.transform, true);
             parentLevelObject.AddChild(child);
         }
+        
+        if (selectedTargetData.Count > 0)
+            parentLevelObject.SaveSelectableTargetData(selectedTargetData);
     }
 
     private void MoveChildrenBackToOldParents()

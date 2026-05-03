@@ -23,7 +23,6 @@ public class HierarchyParentObjectItem : MonoBehaviour
 
     [SerializeField] private Color hoverColor = Color.grey;
     private SelectableObject selectableObject;
-    private LevelObject levelObject; //used for linking to the levelObject
     [SerializeField] private List<HierarchyObjectItem> hierarchyObjectItems = new(); //childbuttons under this parent
     private LevelObjectGroup levelObjectGroup; //levelobject group, contains the children in the level.
 
@@ -39,12 +38,12 @@ public class HierarchyParentObjectItem : MonoBehaviour
     {
         layoutElement = GetComponent<LayoutElement>();
     }
-    public void Initialize(LevelObject target)
+    public void Initialize(LevelObjectGroup target)
     {
-        levelObject = target;
+        levelObjectGroup = target;
         nameText.text = target.name;
 
-        if (!levelObject.gameObject.TryGetComponent(out selectableObject))
+        if (!levelObjectGroup.gameObject.TryGetComponent(out selectableObject))
         {
             Debug.LogWarning("Parent object does not contain SelectableObject");
             return;
@@ -54,7 +53,7 @@ public class HierarchyParentObjectItem : MonoBehaviour
         button.onClick.AddListener(SetSelected);
 
         //get group objects
-        if (!levelObject.gameObject.TryGetComponent(out levelObjectGroup))
+        if (!levelObjectGroup.gameObject.TryGetComponent(out levelObjectGroup))
         {
             Debug.LogWarning("object does not contain LevelObjectGroup");
             return;
@@ -72,7 +71,7 @@ public class HierarchyParentObjectItem : MonoBehaviour
             hierarchyObjectItems.Add(childItem);
             childItem.transform.SetParent(ChildrenContainer, false);
         }
-        
+
         UpdatePreferredHeight();
         RebuildHierarchyLayout();
     }
@@ -123,7 +122,7 @@ public class HierarchyParentObjectItem : MonoBehaviour
 
     private void SetSelected()
     {
-        if (levelObject == null)
+        if (levelObjectGroup == null)
             return;
 
 
@@ -131,7 +130,11 @@ public class HierarchyParentObjectItem : MonoBehaviour
             ? SelectionCommand.ToggleSelect
             : SelectionCommand.Select;
 
-        EventManager.Instance.TriggerDelegate(SelectionEvents.OnTrySelection, levelObject.gameObject, command); //TODO: finish this class first
+
+        //reset the centre of the object according to the new position
+        levelObjectGroup.UpdateCenterWithoutMovingChildren();
+
+        EventManager.Instance.TriggerDelegate(SelectionEvents.OnTrySelection, levelObjectGroup.gameObject, command);
     }
 
     private bool IsCtrlHeld()

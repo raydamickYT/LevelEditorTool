@@ -47,7 +47,10 @@ public class ObjectHierarchyManager : MonoBehaviour
             case HierarchyChangeType.AddedParent:
                 foreach (HierarchyChange change in changes)
                 {
-                    AddParent(change.LevelObject);
+                    if (change.LevelObject is LevelObjectGroup group)
+                        AddParent(group);
+                    else
+                        Debug.LogWarning($"{change.LevelObject.name} is not a levelObjectGroup");
                 }
                 break;
 
@@ -87,7 +90,7 @@ public class ObjectHierarchyManager : MonoBehaviour
         existingNames.Add(levelObject.name);
     }
 
-    private void AddParent(LevelObject levelObject)
+    private void AddParent(LevelObjectGroup levelObject)
     {
         if (levelObject == null) return;
 
