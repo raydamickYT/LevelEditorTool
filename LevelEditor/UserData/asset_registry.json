@@ -39,6 +39,16 @@
             "Width": 5472,
             "Height": 3080,
             "PixelsPerUnit": 100.0
+        },
+        {
+            "AssetID": "a13c1193-9111-477d-8edd-7650969dd2fa",
+            "FileName": "DSCF6983.JPG",
+            "OriginalFilePath": "C:\\Users\\Adam\\Pictures\\StoryGame\\DSCF6983.JPG",
+            "LocalFilePath": "D:/Gihub/LevelEditorTool/LevelEditor/Assets\\..\\UserData\\Assets\\Sprites\\a13c1193-9111-477d-8edd-7650969dd2fa.JPG",
+            "AssetType": "Sprite",
+            "Width": 5472,
+            "Height": 3080,
+            "PixelsPerUnit": 100.0
         }
     ]
 }

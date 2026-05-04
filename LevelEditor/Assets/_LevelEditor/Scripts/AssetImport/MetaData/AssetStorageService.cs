@@ -1,8 +1,6 @@
-using System;
+using System.Collections.Generic;
 using System.IO;
-using Unity.VisualScripting;
 using UnityEngine;
-using UnityEngine.U2D;
 
 /// <summary>
 /// this class is responsible for storing all imported assets in local folders and creating links to meta data files. 
@@ -26,6 +24,10 @@ public static class AssetStorageService
 
     private static readonly string MetaDataPath = Path.Combine(RootFolder, "asset_registry.json");
 
+    //caching meta data
+    private static AssetMetaDataCollection cachedMetaData;
+    private static readonly Dictionary<string, ImportedAssetMetaData> assetLookup = new();
+    private static bool metaDataLoaded;
 
     //this function fills the ImportedSpriteData completely and sends it to the metaData Function
     public static void SaveLocalCopy(string originalPath, ImportedSpriteData data, string type)
@@ -45,8 +47,8 @@ public static class AssetStorageService
 
         //save all the paths and names in the data class
         data.OriginalFilePath = originalPath;
+        data.FileName = Path.GetFileName(originalPath);
         data.LocalFilePath = destinationPath;
-        data.FileName = safeFileName;
         data.AssetType = type;
 
         if (type == ImportedAssetTypes.Sprite) //todo this can become a switch case when there's different types of assets we import.
@@ -65,12 +67,12 @@ public static class AssetStorageService
         Directory.CreateDirectory(RootFolder);
 
         //check if there's already metadata stored
-        AssetMetaDataCollection collection = LoadMetaData();
+        AssetMetaDataCollection collection = GetCachedMetaData();
 
         int existingIndex = collection.Assets.FindIndex(asset => asset.AssetID == data.AssetID);
 
         //if not
-        if (existingIndex == 0)
+        if (existingIndex >= 0)
         {
             //create a new one
             collection.Assets[existingIndex] = data;
@@ -81,13 +83,15 @@ public static class AssetStorageService
             collection.Assets.Add(data);
         }
 
+        assetLookup[data.AssetID] = data;
+
         //create a json string
         string json = JsonUtility.ToJson(collection, prettyPrint: true);
         File.WriteAllText(MetaDataPath, json); //and store it in an actual location.
     }
 
     //loading the meta data from the created path
-    private static AssetMetaDataCollection LoadMetaData()
+    private static AssetMetaDataCollection LoadMetaDataFromDisk()
     {
         //check if the file exists if not return a new collection
         if (!File.Exists(MetaDataPath))
@@ -98,7 +102,7 @@ public static class AssetStorageService
         string json = File.ReadAllText(MetaDataPath);
 
         //check if the existing file containts data, if not return a new collection
-        if (string.IsNullOrEmpty(json))
+        if (string.IsNullOrWhiteSpace(json))
         {
             return new AssetMetaDataCollection();
         }
@@ -108,6 +112,40 @@ public static class AssetStorageService
 
         //return that but if the collection happens to be null for some reason return a new collection.
         return collection ?? new AssetMetaDataCollection();
+    }
+
+    private static AssetMetaDataCollection GetCachedMetaData()
+    {
+        if (metaDataLoaded && cachedMetaData != null)
+        {
+            return cachedMetaData;
+        }
+
+        cachedMetaData = LoadMetaDataFromDisk();
+        RebuildAssetLookup();
+
+        metaDataLoaded = true;
+
+        return cachedMetaData;
+    }
+    private static void RebuildAssetLookup()
+    {
+        assetLookup.Clear();
+
+        if (cachedMetaData == null || cachedMetaData.Assets == null)
+        {
+            return;
+        }
+
+        foreach (ImportedAssetMetaData asset in cachedMetaData.Assets)
+        {
+            if (asset == null || string.IsNullOrWhiteSpace(asset.AssetID))
+            {
+                continue;
+            }
+
+            assetLookup[asset.AssetID] = asset;
+        }
     }
 
     private static void SaveSprite(ImportedSpriteData data)
@@ -120,26 +158,33 @@ public static class AssetStorageService
         }
     }
 
-    private static ImportedSpriteData GetSpriteData(string assetID)
+    public static ImportedAssetMetaData GetAssetByID(string assetID)
     {
-        AssetMetaDataCollection collection = LoadMetaData();
-
-        foreach (ImportedAssetMetaData asset in collection.Assets)
+        if (string.IsNullOrWhiteSpace(assetID))
         {
-            if (asset.AssetID == assetID && asset is ImportedSpriteData spriteData)
-                return spriteData;
+            return null;
+        }
+
+        GetCachedMetaData();
+
+        if (assetLookup.TryGetValue(assetID, out ImportedAssetMetaData asset))
+        {
+            return asset;
         }
 
         return null;
     }
-    public static ImportedAssetMetaData GetAssetByID(string assetID)
+
+    public static void ClearMetaDataCache()
     {
-        if (string.IsNullOrWhiteSpace(assetID))
-            return null;
-
-        AssetMetaDataCollection collection = LoadMetaData();
-
-        return collection.Assets.Find(asset => asset.AssetID == assetID);
+        cachedMetaData = null;
+        assetLookup.Clear();
+        metaDataLoaded = false;
+    }
+    public static void ReloadMetaDataCache()
+    {
+        ClearMetaDataCache();
+        GetCachedMetaData();
     }
 
 }
