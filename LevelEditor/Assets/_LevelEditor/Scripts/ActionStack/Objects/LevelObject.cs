@@ -4,6 +4,7 @@ using UnityEngine;
 public class LevelObject : MonoBehaviour
 {
     public int ObjectID;
+    public string AssetID;
     public GameObject PrefabReference;
     public HierarchyObjectItem hierarchyObjectItem;
     public Sprite sprite1;
@@ -16,9 +17,10 @@ public class LevelObject : MonoBehaviour
         public Quaternion Rotation;
         public Vector3 Scale;
         public int ObjectID;
+        public string AssetID;
         public Sprite sprite;
 
-        public Memento(Transform t, GameObject obj, int id, Sprite _sprite)
+        public Memento(Transform t, GameObject obj, int id, Sprite _sprite, string _assetID)
         {
             Position = t.position;
             Rotation = t.rotation;
@@ -27,6 +29,7 @@ public class LevelObject : MonoBehaviour
             parent = t.transform.parent;
             ObjectID = id;
             sprite = _sprite;
+            AssetID = _assetID;
         }
     }
     void OnEnable()
@@ -46,7 +49,12 @@ public class LevelObject : MonoBehaviour
         if (sprite1 == null)
             Debug.LogWarning("Sprite could not be found");
 
-        return new Memento(transform, PrefabReference, ObjectID, sprite1);
+        if (string.IsNullOrEmpty(AssetID))
+            Debug.LogWarning("No asset ID assigned to this object");
+        else
+            Debug.Log("AssetID: " + AssetID);
+
+        return new Memento(transform, PrefabReference, ObjectID, sprite1, AssetID);
     }
 
     private Sprite getSprite()

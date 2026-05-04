@@ -15,7 +15,7 @@ public class LevelObjectGroup : LevelObject
         public List<LevelObject> Children { get; }
 
         public GroupMemento(LevelObjectGroup group)
-            : base(group.transform, group.PrefabReference, group.ObjectID, null) //last one is null because this object does not need a sprite.
+            : base(group.transform, group.PrefabReference, group.ObjectID, null, null) //last one is null because this object does not need a sprite nor an assetID
         {
             Children = group.levelObjects.ToList();
         }

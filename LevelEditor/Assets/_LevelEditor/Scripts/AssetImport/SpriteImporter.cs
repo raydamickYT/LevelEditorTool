@@ -33,12 +33,17 @@ public class SpriteImporter : IAssetImporter
 
         sprite.name = Path.GetFileNameWithoutExtension(filePath);
 
-        return new ImportedSpriteData
+        var collection = new ImportedSpriteData
         {
             AssetID = Guid.NewGuid().ToString(),
             FileName = Path.GetFileName(filePath),
-            FilePath = filePath,
+            OriginalFilePath = filePath,
             Sprite = sprite
         };
+        
+        //store the imported sprite in a local folder.
+        AssetStorageService.SaveLocalCopy(filePath, collection, ImportedAssetTypes.Sprite);
+
+        return collection;
     }
 }

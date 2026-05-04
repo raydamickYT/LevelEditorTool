@@ -1,0 +1,44 @@
+{
+    "Assets": [
+        {
+            "AssetID": "abb73627-1909-402a-989e-bdd9e6243939",
+            "FileName": "abb73627-1909-402a-989e-bdd9e6243939.JPG",
+            "OriginalFilePath": "C:\\Users\\Adam\\Pictures\\StoryGame\\DSCF6985.JPG",
+            "LocalFilePath": "D:/Gihub/LevelEditorTool/LevelEditor/Assets\\..\\UserData\\Assets\\Sprites\\abb73627-1909-402a-989e-bdd9e6243939.JPG",
+            "AssetType": "Sprite",
+            "Width": 0,
+            "Height": 0,
+            "PixelsPerUnit": 100.0
+        },
+        {
+            "AssetID": "d63e9d05-cbbb-49e4-aa2a-d017c520c830",
+            "FileName": "d63e9d05-cbbb-49e4-aa2a-d017c520c830.JPG",
+            "OriginalFilePath": "C:\\Users\\Adam\\Pictures\\StoryGame\\DSCF6985.JPG",
+            "LocalFilePath": "D:/Gihub/LevelEditorTool/LevelEditor/Assets\\..\\UserData\\Assets\\Sprites\\d63e9d05-cbbb-49e4-aa2a-d017c520c830.JPG",
+            "AssetType": "Sprite",
+            "Width": 5472,
+            "Height": 3080,
+            "PixelsPerUnit": 100.0
+        },
+        {
+            "AssetID": "883e5984-e6e2-4b90-943c-02637bfc5f0a",
+            "FileName": "883e5984-e6e2-4b90-943c-02637bfc5f0a.JPG",
+            "OriginalFilePath": "C:\\Users\\Adam\\Pictures\\StoryGame\\DSCF6982.JPG",
+            "LocalFilePath": "D:/Gihub/LevelEditorTool/LevelEditor/Assets\\..\\UserData\\Assets\\Sprites\\883e5984-e6e2-4b90-943c-02637bfc5f0a.JPG",
+            "AssetType": "Sprite",
+            "Width": 5472,
+            "Height": 3080,
+            "PixelsPerUnit": 100.0
+        },
+        {
+            "AssetID": "53fc466a-7442-4815-a9a6-a4832a05e699",
+            "FileName": "53fc466a-7442-4815-a9a6-a4832a05e699.JPG",
+            "OriginalFilePath": "C:\\Users\\Adam\\Pictures\\StoryGame\\DSCF6983.JPG",
+            "LocalFilePath": "D:/Gihub/LevelEditorTool/LevelEditor/Assets\\..\\UserData\\Assets\\Sprites\\53fc466a-7442-4815-a9a6-a4832a05e699.JPG",
+            "AssetType": "Sprite",
+            "Width": 5472,
+            "Height": 3080,
+            "PixelsPerUnit": 100.0
+        }
+    ]
+}

@@ -9,7 +9,7 @@ public class AssetImportService
         new SpriteImporter()
     };
 
-    public ImportedAssetData ImportFile(string filePath)
+    public ImportedAssetMetaData ImportFile(string filePath)
     {
         foreach (IAssetImporter importer in importers)
         {
@@ -23,9 +23,9 @@ public class AssetImportService
         return null;
     }
 
-    public List<ImportedAssetData> ImportFolder(string folderPath)
+    public List<ImportedAssetMetaData> ImportFolder(string folderPath)
     {
-        List<ImportedAssetData> importedAssets = new List<ImportedAssetData>();
+        List<ImportedAssetMetaData> importedAssets = new List<ImportedAssetMetaData>();
 
         if (string.IsNullOrEmpty(folderPath))
         {
@@ -43,7 +43,7 @@ public class AssetImportService
 
         foreach (string file in files)
         {
-            ImportedAssetData importedAsset = ImportFile(file);
+            ImportedAssetMetaData importedAsset = ImportFile(file);
 
             if (importedAsset != null)
             {

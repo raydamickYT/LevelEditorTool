@@ -45,12 +45,12 @@ public class ObjectLibraryManager : MonoBehaviour
                 Debug.LogWarning("ContentObject not assigned: " + name);
         }
 
-        EventManager.Instance.AddDelegateListener(ObjectLibraryManagerEvents.UpdateObjectLibrary, (Action<IEnumerable<ImportedAssetData>>)updateContentObject);
+        EventManager.Instance.AddDelegateListener(ObjectLibraryManagerEvents.UpdateObjectLibrary, (Action<IEnumerable<ImportedAssetMetaData>>)updateContentObject);
     }
 
-    void updateContentObject(IEnumerable<ImportedAssetData> data)
+    void updateContentObject(IEnumerable<ImportedAssetMetaData> data)
     {
-        foreach (ImportedAssetData asset in data)
+        foreach (ImportedAssetMetaData asset in data)
         {
             if (asset is ImportedSpriteData item) //for now we need this, because there's a sprite needed to setup the preview
             {
@@ -63,7 +63,10 @@ public class ObjectLibraryManager : MonoBehaviour
                     image.sprite = item.Sprite != null ? item.Sprite : DefaultSprite;
 
                 if (obj.TryGetComponent(out ObjectButtonController controller))
+                {
                     controller.previewSprite = item.Sprite != null ? item.Sprite : DefaultSprite;
+                    controller.AssetID = asset.AssetID; 
+                }
             }
         }
     }

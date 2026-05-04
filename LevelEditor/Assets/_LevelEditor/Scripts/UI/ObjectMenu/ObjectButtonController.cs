@@ -10,6 +10,8 @@ using UnityEngine.UI;
 public class ObjectButtonController : MonoBehaviour, IBeginDragHandler, IEndDragHandler, IDragHandler
 {
     public GameObject ObjectToSpawnPrefab;
+    public string AssetID;
+
     private GameObject spawnedObject, spawnedPreviewObject;// actual game object; preview object containing a sprite
     public Canvas parentCanvas;
     public Sprite previewSprite;
@@ -43,9 +45,6 @@ public class ObjectButtonController : MonoBehaviour, IBeginDragHandler, IEndDrag
 
     }
 
-    void OnDestroy()
-    {
-    }
     //Interface implementations for the drag and drop functionality of the buttons.
     public void OnBeginDrag(PointerEventData eventData)
     {
@@ -57,7 +56,7 @@ public class ObjectButtonController : MonoBehaviour, IBeginDragHandler, IEndDrag
         //cleanup preview and remove spawned object reference if they exist
         if (gameObjectExists)
         {
-            var spawnObjectAction = new SpawnObjectAction(spawnedObject, ObjectToSpawnPrefab);
+            var spawnObjectAction = new SpawnObjectAction(spawnedObject, ObjectToSpawnPrefab, AssetID);
             spawnObjectAction.Execute();
             EventManager.Instance.TriggerDelegate(ActionStackEvents.RegisterAction, spawnObjectAction);
 

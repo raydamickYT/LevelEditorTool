@@ -16,13 +16,27 @@ public static class LevelObjectSpawner
             memento.Position,
             memento.Rotation
         );
-        
-        if (memento.sprite != null)
+
+        Sprite spriteToUse = null;
+
+        if (!string.IsNullOrEmpty(memento.AssetID))
         {
-            if (spawnedObject.TryGetComponent(out SpriteRenderer spriteRenderer))
-            {
-                spriteRenderer.sprite = memento.sprite;
-            }
+            spriteToUse = AssetRuntimeLoader.LoadSpriteByAssetID(memento.AssetID);
+
+        }
+
+        if (spriteToUse == null)
+        {
+            spriteToUse = memento.sprite;
+        }
+
+        if (spriteToUse != null && spawnedObject.TryGetComponent(out SpriteRenderer spriteRenderer))
+        {
+            spriteRenderer.sprite = spriteToUse;
+        }
+        else
+        {
+            Debug.LogWarning($"No sprite found for spawned object. AssetID: {memento.AssetID}");
         }
 
         spawnedObject.SetActive(true);
@@ -39,6 +53,9 @@ public static class LevelObjectSpawner
         }
 
         levelObject.PrefabReference = memento.PrefabReference;
+
+        if (!string.IsNullOrEmpty(memento.AssetID))
+            levelObject.AssetID = memento.AssetID;
 
         if (preserveObjectID)
         {

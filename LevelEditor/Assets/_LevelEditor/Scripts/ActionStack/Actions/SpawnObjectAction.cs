@@ -10,15 +10,17 @@ using UnityEngine;
 public class SpawnObjectAction : IUndoableAction, IEditorCommand
 {
     string label;
+    string assetID;
     GameObject spawnedObject;
     GameObject prefabGameObject;
     LevelObject.Memento spawnedState;
     bool hasExecuted = false;
-    public SpawnObjectAction(GameObject gameObject, GameObject prefab, string label = "SpawnObject")
+    public SpawnObjectAction(GameObject gameObject, GameObject prefab, string assetID, string label = "SpawnObject")
     {
         prefabGameObject = prefab;
         spawnedObject = gameObject;
         this.label = label;
+        this.assetID = assetID;
     }
     public string DebugLabel => label;
 
@@ -34,6 +36,9 @@ public class SpawnObjectAction : IUndoableAction, IEditorCommand
         }
 
         levelObject.PrefabReference = prefabGameObject;
+
+        if (!string.IsNullOrEmpty(assetID))
+            levelObject.AssetID = assetID;
 
         spawnedState = levelObject?.Save();
 

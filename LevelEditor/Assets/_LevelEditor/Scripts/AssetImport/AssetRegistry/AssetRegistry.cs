@@ -8,7 +8,7 @@ public class AssetRegistry : MonoBehaviour
 {
     [FolderPath]
     public string filePath = "";
-    public Dictionary<string, ImportedAssetData> importedSprites = new Dictionary<string, ImportedAssetData>();
+    public Dictionary<string, ImportedAssetMetaData> importedSprites = new Dictionary<string, ImportedAssetMetaData>();
 
     private AssetImportService assetImportService;
 
@@ -44,24 +44,29 @@ public class AssetRegistry : MonoBehaviour
 
     void singleFileImport(string path)
     {
-        string filename = Path.GetFileName(path);
+        ImportedAssetMetaData importedAssetData = assetImportService.ImportFile(path);
+        if (importedAssetData == null) return;
 
-        ImportedAssetData importedAssetData = assetImportService.ImportFile(path);
-        importedSprites.Add(filename, importedAssetData);
+        importedSprites[importedAssetData.AssetID] = importedAssetData;
 
-        EventManager.Instance.TriggerDelegate(ObjectLibraryManagerEvents.UpdateObjectLibrary, new List<ImportedAssetData>() { importedAssetData });
+        EventManager.Instance.TriggerDelegate(ObjectLibraryManagerEvents.UpdateObjectLibrary, new List<ImportedAssetMetaData>() { importedAssetData });
     }
 
     void ImportSprites(string path)
     {
-        List<ImportedAssetData> importedAssets = assetImportService.ImportFolder(path);
+        List<ImportedAssetMetaData> importedAssets = assetImportService.ImportFolder(path);
 
-        foreach (ImportedAssetData asset in importedAssets)
+        foreach (ImportedAssetMetaData asset in importedAssets)
         {
             importedSprites[asset.AssetID] = asset;
         }
 
         EventManager.Instance.TriggerDelegate(ObjectLibraryManagerEvents.UpdateObjectLibrary, importedAssets);
+    }
+
+    public bool TryGetAsset(string assetID, out ImportedAssetMetaData assetData)
+    {
+        return importedSprites.TryGetValue(assetID, out assetData);
     }
 }
 
