@@ -15,18 +15,28 @@ public class LevelObjectGroup : LevelObject
         public List<LevelObject> Children { get; }
 
         public GroupMemento(LevelObjectGroup group)
-            : base(group.transform, group.PrefabReference, group.ObjectID, null, null) //last one is null because this object does not need a sprite nor an assetID
+            : base(group.transform, group.PrefabReference, group.ObjectID, null, null, group.levelObjectGroup) //last one is null because this object does not need a sprite nor an assetID
         {
             Children = group.levelObjects.ToList();
+        }
+    }
+
+    void Start()
+    {
+        if(this.PrefabReference == null)
+        {
+            PrefabReference = this.gameObject;
         }
     }
 
     public void AddChild(LevelObject child)
     {
         if (child == null) return;
+        if (child.HasParent) return;
         if (levelObjects.Contains(child)) return;
 
         levelObjects.Add(child);
+        child.UpdateParent(this);
     }
 
     public void SaveSelectableTargetData(IEnumerable<SelectableTargetData> data)
@@ -44,10 +54,15 @@ public class LevelObjectGroup : LevelObject
         if (child == null) return;
 
         levelObjects.Remove(child);
+        child.ClearParent();
     }
 
     public void ClearChildren()
     {
+        foreach (LevelObject child in levelObjects)
+        {
+            child.ClearParent();
+        }
         levelObjects.Clear();
         selectableTargetDatas.Clear();
     }
@@ -56,6 +71,8 @@ public class LevelObjectGroup : LevelObject
     {
         return new GroupMemento(this);
     }
+
+    //only used when reassigning selection of the group and the pivot has been changed
     public void UpdateCenterWithoutMovingChildren()
     {
         if (selectableTargetDatas == null || selectableTargetDatas.Count == 0) return;

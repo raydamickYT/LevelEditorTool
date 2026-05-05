@@ -14,7 +14,7 @@ public class LevelObjectsRoot : MonoBehaviour
     public Transform RootTransform => rootTransform != null ? rootTransform : transform; //if rootTransform is null, get the transform of this object.
 
     //libraries
-    private List<GameObject> levelObjects = new();
+    private List<GameObject> levelObjectsInRoot = new();
 
     void Awake()
     {
@@ -37,17 +37,17 @@ public class LevelObjectsRoot : MonoBehaviour
             Transform child = transform.GetChild(i);
             if (child.GetComponent<LevelObject>())
             {
-                levelObjects.Add(child.gameObject);
+                levelObjectsInRoot.Add(child.gameObject);
             }
         }
     }
 
     void OnDestroy()
     {
-        levelObjects.Clear();
+        levelObjectsInRoot.Clear();
     }
 
-    public void AddLevelObject(GameObject child)
+    public void AddObjectToLevelObjectRoot(GameObject child)
     {
         if (child == null) return;
         if (rootTransform == null)
@@ -56,7 +56,7 @@ public class LevelObjectsRoot : MonoBehaviour
             return;
         }
 
-        if (levelObjects == null)
+        if (levelObjectsInRoot == null)
         {
             Debug.LogWarning("Cannot add level object because levelObjects list is null.");
             return;
@@ -64,7 +64,7 @@ public class LevelObjectsRoot : MonoBehaviour
 
         if (child.GetComponent<LevelObject>())
         {
-            levelObjects.Add(child.gameObject);
+            levelObjectsInRoot.Add(child.gameObject);
             child.transform.SetParent(rootTransform, true);
         }
         else
@@ -75,9 +75,9 @@ public class LevelObjectsRoot : MonoBehaviour
 
     public void RemoveChildFromParent(GameObject child)
     {
-        if (levelObjects.Contains(child.gameObject))
+        if (levelObjectsInRoot.Contains(child.gameObject))
         {
-            levelObjects.Remove(child);
+            levelObjectsInRoot.Remove(child);
         }
     }
 }

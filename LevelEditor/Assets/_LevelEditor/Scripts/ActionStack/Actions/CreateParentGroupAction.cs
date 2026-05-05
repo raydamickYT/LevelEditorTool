@@ -36,12 +36,20 @@ public class CreateParentGroupAction : IUndoableAction, IEditorCommand
 
     public void Execute()
     {
+        //this is where all the lists get filled. It'll save all the current selection in a list.
         if (!hasCachedInitialState)
             CacheInitialStateFromCurrentSelection();
 
         if (children.Count < 2)
         {
             Debug.Log("Select at least 2 objects to create a parent");
+            return;
+        }
+
+        List<LevelObject> AvailableChildren = children.Where(x => !x.HasParent).ToList();
+        if(AvailableChildren.Count == 0)
+        {
+            Debug.Log("No available children in selection");
             return;
         }
 
@@ -99,7 +107,7 @@ public class CreateParentGroupAction : IUndoableAction, IEditorCommand
 
     private void CreateParentGameObject()
     {
-        parentItemObject = new GameObject("EmptyParent");
+        parentItemObject = new GameObject("EmptyParent"); //todo: should get a dynamic name
 
         parentItemObject.transform.position = SelectionBoundsCalculator.GetSelectionBoundsCenter(selectedTargetData);
 
@@ -108,7 +116,7 @@ public class CreateParentGroupAction : IUndoableAction, IEditorCommand
 
         ObjectRegistry.OnObjectCreated(parentLevelObject);
 
-        LevelObjectsRoot.Instance.AddLevelObject(parentItemObject);
+        LevelObjectsRoot.Instance.AddObjectToLevelObjectRoot(parentItemObject);
     }
 
     private void MoveChildrenUnderParent()
@@ -117,8 +125,8 @@ public class CreateParentGroupAction : IUndoableAction, IEditorCommand
 
         foreach (LevelObject child in children)
         {
-            if (child == null)
-                continue;
+            if (child == null) continue;
+            if (child.HasParent) continue; //todo: this can be updated in the future, if the children are in the group, it should put the group under the new parent
             // Debug.Log("adding child to new parent" + parentLevelObject.name);
 
             LevelObjectsRoot.Instance.RemoveChildFromParent(child.gameObject);
@@ -126,7 +134,7 @@ public class CreateParentGroupAction : IUndoableAction, IEditorCommand
             child.transform.SetParent(parentItemObject.transform, true);
             parentLevelObject.AddChild(child);
         }
-        
+
         if (selectedTargetData.Count > 0)
             parentLevelObject.SaveSelectableTargetData(selectedTargetData);
     }
@@ -144,8 +152,9 @@ public class CreateParentGroupAction : IUndoableAction, IEditorCommand
 
             child.transform.SetParent(oldParents[i], true);
             child.transform.SetSiblingIndex(oldSiblingIndexes[i]);
+            child.UpdateParent(null); // todo: thisll work if it hasn't moved between parents but if it did, it'll fall through...
 
-            LevelObjectsRoot.Instance.AddLevelObject(child.gameObject);
+            LevelObjectsRoot.Instance.AddObjectToLevelObjectRoot(child.gameObject);
         }
     }
 

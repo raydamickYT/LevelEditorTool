@@ -27,7 +27,7 @@ public static class LevelObjectSpawner
 
         if (spriteToUse == null)
         {
-            spriteToUse = memento.sprite;
+            spriteToUse = memento.Sprite;
         }
 
         if (spriteToUse != null && spawnedObject.TryGetComponent(out SpriteRenderer spriteRenderer))
@@ -42,7 +42,7 @@ public static class LevelObjectSpawner
         spawnedObject.SetActive(true);
         spawnedObject.hideFlags = HideFlags.None;
 
-        LevelObjectsRoot.Instance.AddLevelObject(spawnedObject);
+        LevelObjectsRoot.Instance.AddObjectToLevelObjectRoot(spawnedObject);
         spawnedObject.transform.localScale = memento.Scale;
 
         LevelObject levelObject = spawnedObject.GetComponent<LevelObject>();

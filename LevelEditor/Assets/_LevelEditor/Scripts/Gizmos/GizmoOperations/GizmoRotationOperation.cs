@@ -1,4 +1,3 @@
-using System.Net.Mime;
 using UnityEngine;
 
 public class GizmoRotationOperation : IGizmoTransformOperation

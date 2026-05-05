@@ -29,7 +29,7 @@ public class GizmoTempParent : MonoBehaviour
         {
             if (child == null) continue;
 
-            LevelObjectsRoot.Instance.AddLevelObject(child.gameObject);
+            LevelObjectsRoot.Instance.AddObjectToLevelObjectRoot(child.gameObject);
         }
 
         children.Clear();

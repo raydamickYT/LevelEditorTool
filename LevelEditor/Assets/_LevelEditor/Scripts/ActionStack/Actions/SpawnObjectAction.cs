@@ -42,7 +42,7 @@ public class SpawnObjectAction : IUndoableAction, IEditorCommand
 
         spawnedState = levelObject?.Save();
 
-        LevelObjectsRoot.Instance.AddLevelObject(spawnedObject);
+        LevelObjectsRoot.Instance.AddObjectToLevelObjectRoot(spawnedObject);
         ObjectRegistry.OnObjectCreated(levelObject);
 
         //object hierarchy menu

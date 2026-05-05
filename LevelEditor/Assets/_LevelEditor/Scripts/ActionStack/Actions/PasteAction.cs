@@ -48,6 +48,7 @@ public class PasteAction : IUndoableAction, IEditorCommand
 
         foreach (var item in statesToSpawn)
         {
+            Debug.Log(item.PrefabReference);
             GameObject instantiatedGameObject = LevelObjectSpawner.Spawn(item, isRedo); //if this is the first time pasting here, this'll need a new id if not it doesn't
             if (instantiatedGameObject == null) continue;
 

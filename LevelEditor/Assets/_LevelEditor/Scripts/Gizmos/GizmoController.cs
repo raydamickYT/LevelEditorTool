@@ -137,7 +137,7 @@ public class GizmoController
         {
             foreach (var target in _currentGizmoTargets)
             {
-                LevelObjectsRoot.Instance.AddLevelObject(target.BaseObject);
+                LevelObjectsRoot.Instance.AddObjectToLevelObjectRoot(target.BaseObject);
             }
 
             tempParentObject.DisableAndDetach();
