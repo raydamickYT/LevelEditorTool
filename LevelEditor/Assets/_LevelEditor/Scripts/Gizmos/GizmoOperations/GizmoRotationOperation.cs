@@ -14,6 +14,7 @@ public class GizmoRotationOperation : IGizmoTransformOperation
         float finalAngle = context.TargetStartRotationZ + deltaAngle;
 
         context.ActiveTarget.rotation = Quaternion.Euler(0f, 0f, finalAngle);
+        gizmoObject.transform.rotation = Quaternion.Euler(0f,0f, finalAngle);
     }
 
     private float GetMouseAngleToTarget(Vector3 targetPosition, Vector3 currentMouseWorld)

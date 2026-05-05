@@ -53,6 +53,7 @@ public class GizmoObject : MonoBehaviour, IGizmoObject
             Mathf.Abs(lossy.z) > 0.0001f ? 1f / Mathf.Abs(lossy.z) : 1f
         );
     }
+
     private float GetZoomScale()
     {
         Camera cam = Camera.main;
@@ -64,6 +65,7 @@ public class GizmoObject : MonoBehaviour, IGizmoObject
 
         return 1f;
     }
+
     private void UpdateActiveGizmoScale()
     {
         Transform activeRoot = GetActiveGizmoRoot();
@@ -76,8 +78,8 @@ public class GizmoObject : MonoBehaviour, IGizmoObject
         Vector3 scale = Vector3.one * (gizmoBaseSize * zoomScale);
         
         activeRoot.localScale = scale;
-        Debug.Log("local scale: " + scale);
     }
+
     //this'll be called anytime the gizmo changes or is activated
     public void OnShow(GizmoType gizmoType)
     {
@@ -161,6 +163,7 @@ public class GizmoObject : MonoBehaviour, IGizmoObject
         gizmoTargetData.BaseObject = null;
         selectableObject = null;
         selectedLevelObjects.Clear();
+        transform.rotation = Quaternion.identity;
         // transform.SetParent(null);
     }
 

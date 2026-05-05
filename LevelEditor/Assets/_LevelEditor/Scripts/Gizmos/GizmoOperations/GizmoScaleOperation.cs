@@ -13,7 +13,7 @@ public class GizmoScaleOperation : IGizmoTransformOperation
             uniformDelta = GizmoSnapUtility.SnapFloat(uniformDelta, context.SnappingSettings.scaleSnapSize, context.SnappingSettings.snappingEnabled);
 
             Vector3 result = context.TargetStartScale + Vector3.one * uniformDelta;
-            context.ActiveTarget.localScale = ClampScale(result);
+            context.ActiveTarget.localScale = result;
             return;
         }
 
@@ -32,7 +32,7 @@ public class GizmoScaleOperation : IGizmoTransformOperation
         };
 
         Vector3 resultScale = context.TargetStartScale + scaleDelta;
-        context.ActiveTarget.localScale = ClampScale(resultScale);
+        context.ActiveTarget.localScale = resultScale;
 
         float visualDragAmount = context.ActiveHandle.ScaleSensitivity != 0f ? scaledAmount / context.ActiveHandle.ScaleSensitivity : projectedDistance;
 
