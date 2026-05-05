@@ -2,7 +2,7 @@ using UnityEngine;
 
 public class GizmoMoveOperation : IGizmoTransformOperation
 {
-    public void Apply(GizmoDragContext context, Vector3 currentMouseWorld)
+    public void Apply(GizmoDragContext context, Vector3 currentMouseWorld, GizmoObject gizmoObject)
     {
         Vector3 delta = currentMouseWorld - context.DragStartWorld;
 
@@ -10,6 +10,7 @@ public class GizmoMoveOperation : IGizmoTransformOperation
         {
             delta = GizmoSnapUtility.SnapVector(delta, context.SnappingSettings.moveSnapSize, context.SnappingSettings.snappingEnabled);
             context.ActiveTarget.position = context.TargetStartPosition + delta;
+            gizmoObject.transform.position = context.TargetStartPosition + delta;
             return;
         }
 
@@ -19,6 +20,8 @@ public class GizmoMoveOperation : IGizmoTransformOperation
         projectedDistance = GizmoSnapUtility.SnapFloat(projectedDistance, context.SnappingSettings.moveSnapSize, context.SnappingSettings.snappingEnabled);
 
         context.ActiveTarget.position = context.TargetStartPosition + axis * projectedDistance;
+        gizmoObject.transform.position = context.TargetStartPosition + axis * projectedDistance;
+
     }
 
 }

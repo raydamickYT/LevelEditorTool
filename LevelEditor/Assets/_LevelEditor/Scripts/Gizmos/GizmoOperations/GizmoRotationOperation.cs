@@ -3,7 +3,7 @@ using UnityEngine;
 
 public class GizmoRotationOperation : IGizmoTransformOperation
 {
-    public void Apply(GizmoDragContext context, Vector3 currentMouseWorld)
+    public void Apply(GizmoDragContext context, Vector3 currentMouseWorld, GizmoObject gizmoObject)
     {
         float currentAngle = GetMouseAngleToTarget(context.ActiveTarget.position, currentMouseWorld);
         float deltaAngle = Mathf.DeltaAngle(context.StartMouseAngle, currentAngle);

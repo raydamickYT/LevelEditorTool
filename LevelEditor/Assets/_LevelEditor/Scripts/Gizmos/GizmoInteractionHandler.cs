@@ -27,6 +27,7 @@ public class GizmoInteractionHandler : MonoBehaviour
     private float targetStartRotationZ;
     private float startMouseAngle;
     private bool isDragging;
+    private GizmoObject gizmoObject;
 
     //undo stack
     private TransformAction currentAction;
@@ -128,7 +129,8 @@ public class GizmoInteractionHandler : MonoBehaviour
 
         activeHandle = handle;
         activeTarget = handle.Owner.TargetTransform;
-        var gizmoObject = handle.Owner;
+        if (gizmoObject == null)
+            gizmoObject = handle.Owner;
 
         dragStartWorld = GetMouseWorldPosition();
         targetStartPosition = activeTarget.position;
@@ -137,13 +139,13 @@ public class GizmoInteractionHandler : MonoBehaviour
         startMouseAngle = GetMouseAngleToTarget(activeTarget.position);
 
         // Debug.Log("logging action" + gizmoObject.dragLevelObjects.Count);
-        if (gizmoObject.selectedDragLevelObjects.Count == 1)
+        if (gizmoObject.selectedLevelObjects.Count == 1)
         {
-            currentAction = new TransformAction(gizmoObject.selectedDragLevelObjects[0]);
+            currentAction = new TransformAction(gizmoObject.selectedLevelObjects[0]);
         }
         else
         {
-            foreach (var levelObj in gizmoObject.selectedDragLevelObjects)
+            foreach (var levelObj in gizmoObject.selectedLevelObjects)
             {
                 var t = new TransformAction(levelObj);
                 transformActions.Add(t);
@@ -198,16 +200,16 @@ public class GizmoInteractionHandler : MonoBehaviour
         {
             case GizmoHandleMode.Move:
                 // ApplyMove(currentMouseWorld);
-                gizmoMoveOperation.Apply(context, currentMouseWorld);
+                gizmoMoveOperation.Apply(context, currentMouseWorld, gizmoObject);
                 break;
 
             case GizmoHandleMode.Rotate:
-                gizmoRotationOperation.Apply(context, currentMouseWorld);
+                gizmoRotationOperation.Apply(context, currentMouseWorld, gizmoObject);
                 break;
 
             case GizmoHandleMode.Scale:
                 // ApplyScale(currentMouseWorld);
-                gizmoScaleOperation.Apply(context, currentMouseWorld);
+                gizmoScaleOperation.Apply(context, currentMouseWorld, gizmoObject);
                 break;
         }
     }

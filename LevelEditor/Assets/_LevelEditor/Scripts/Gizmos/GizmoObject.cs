@@ -1,9 +1,8 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
-using Mono.Cecil.Cil;
+using System.Text.RegularExpressions;
 using UnityEngine;
-using UnityEngine.Rendering;
 
 public class GizmoObject : MonoBehaviour, IGizmoObject
 {
@@ -12,11 +11,13 @@ public class GizmoObject : MonoBehaviour, IGizmoObject
     [SerializeField] private float gizmoBaseSize = 1f;
 
     [HideInInspector]
-    public List<LevelObject> selectedDragLevelObjects = new();
+    public List<LevelObject> selectedLevelObjects = new(); //list of currently selected objects
 
     public Transform TargetTransform => gizmoTargetData != null && gizmoTargetData.BaseObject != null
         ? gizmoTargetData.BaseObject.transform
         : null;
+
+    private bool groupSelectionIsActive => selectedLevelObjects.Count > 1 ? true : false;
 
     // Start is called once before the first execution of Update after the MonoBehaviour is created
     void Start()
@@ -26,8 +27,6 @@ public class GizmoObject : MonoBehaviour, IGizmoObject
             Debug.LogError("GizmoTargetData is not assigned in the inspector for " + this.gameObject.name); //TODO this can be found in the children of this gameobj, so update it so that it searches first
             return;
         }
-
-        // EventManager.Instance.AddDelegateListener(SelectionEvents.OnSelectionChanged, (Action<HashSet<SelectableTargetData>>)SetTarget);
     }
     void LateUpdate()
     {
@@ -71,12 +70,13 @@ public class GizmoObject : MonoBehaviour, IGizmoObject
         if (activeRoot == null)
             return;
 
-        Vector3 inverseTargetScale = GetInverseTargetScale(TargetTransform);
+        // Vector3 inverseTargetScale = GetInverseTargetScale(TargetTransform);
         float zoomScale = GetZoomScale();
 
-        Vector3 finalScale = inverseTargetScale * (gizmoBaseSize * zoomScale);
-
-        activeRoot.localScale = finalScale;
+        Vector3 scale = Vector3.one * (gizmoBaseSize * zoomScale);
+        
+        activeRoot.localScale = scale;
+        Debug.Log("local scale: " + scale);
     }
     //this'll be called anytime the gizmo changes or is activated
     public void OnShow(GizmoType gizmoType)
@@ -141,7 +141,7 @@ public class GizmoObject : MonoBehaviour, IGizmoObject
                 selectableObject = obj.SelectableComponent;
 
                 Transform parent = obj.BaseObject.transform;
-                transform.SetParent(parent, false);
+                // transform.SetParent(parent, true);
 
                 transform.localPosition = Vector3.zero;
                 transform.localRotation = Quaternion.identity;
@@ -151,7 +151,7 @@ public class GizmoObject : MonoBehaviour, IGizmoObject
                 break;
             default: //meaning more than 1, so probably multi selection
                 selectableObject = selectable.FirstOrDefault().SelectableComponent;
-                transform.SetParent(gizmoTargetData.BaseObject.transform);
+                // transform.SetParent(gizmoTargetData.BaseObject.transform, true);
                 break;
         }
     }
@@ -160,8 +160,8 @@ public class GizmoObject : MonoBehaviour, IGizmoObject
     {
         gizmoTargetData.BaseObject = null;
         selectableObject = null;
-        selectedDragLevelObjects.Clear();
-        transform.SetParent(null);
+        selectedLevelObjects.Clear();
+        // transform.SetParent(null);
     }
 
     public Transform GetActiveGizmoRoot()

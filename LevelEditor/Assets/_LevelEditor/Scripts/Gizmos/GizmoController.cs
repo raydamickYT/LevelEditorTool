@@ -1,7 +1,5 @@
 using System.Collections.Generic;
 using System.Linq;
-using System.Runtime.CompilerServices;
-using Unity.Mathematics;
 using UnityEngine;
 
 /// <summary>
@@ -70,7 +68,7 @@ public class GizmoController
         gizmoObject?.OnShow(currentGizmoType);
 
         //needed for the actionstack, GizmoInteractionController needs the list of selected levelobjects
-        gizmoObject.selectedDragLevelObjects = GetSelectedLevelObjects();
+        gizmoObject.selectedLevelObjects = GetSelectedLevelObjects();
     }
 
     private void ShowGroupGizmo()
@@ -92,7 +90,7 @@ public class GizmoController
         gizmoObject?.OnShow(currentGizmoType);
 
         //needed for the actionstack, GizmoInteractionController needs the list of selected levelobjects
-        gizmoObject.selectedDragLevelObjects = GetSelectedLevelObjects();
+        gizmoObject.selectedLevelObjects = GetSelectedLevelObjects();
 
         groupSelectionIsActive = true;
     }
@@ -154,6 +152,7 @@ public class GizmoController
             tempParentObject = tempParent.AddComponent<GizmoTempParent>();
         }
 
+        // tempParentObject.transform.localScale = new Vector3(1, 1, 1);
         tempParentObject.transform.position = center;
         tempParentObject.transform.rotation = Quaternion.identity;
         tempParentObject.gameObject.SetActive(true);

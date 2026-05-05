@@ -3,7 +3,7 @@ using UnityEngine;
 public class GizmoScaleOperation : IGizmoTransformOperation
 {
     const float minScale = 0f;
-    public void Apply(GizmoDragContext context, Vector3 currentMouseWorld)
+    public void Apply(GizmoDragContext context, Vector3 currentMouseWorld, GizmoObject gizmoObject)
     {
         Vector3 delta = currentMouseWorld - context.DragStartWorld;
 
