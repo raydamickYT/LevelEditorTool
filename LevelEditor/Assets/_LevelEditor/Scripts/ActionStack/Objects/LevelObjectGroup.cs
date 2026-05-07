@@ -1,5 +1,8 @@
 using System.Collections.Generic;
 using System.Linq;
+using UnityEditor;
+using UnityEditor.Animations;
+using UnityEditor.Rendering;
 using UnityEngine;
 
 public class LevelObjectGroup : LevelObject
@@ -14,16 +17,16 @@ public class LevelObjectGroup : LevelObject
     {
         public List<LevelObject> Children { get; }
 
-        public GroupMemento(LevelObjectGroup group)
-            : base(group.transform, group.PrefabReference, group.ObjectID, null, null, group.levelObjectGroup) //last one is null because this object does not need a sprite nor an assetID
+        public GroupMemento(LevelObjectGroup thisObject)
+            : base(thisObject.transform, thisObject.PrefabReference, thisObject.ObjectID, null, null, thisObject.levelObjectGroup) //there's two nulls because this object does not need a sprite nor an assetID
         {
-            Children = group.levelObjects.ToList();
+            Children = thisObject.levelObjects.ToList();
         }
     }
 
     void Start()
     {
-        if(this.PrefabReference == null)
+        if (this.PrefabReference == null)
         {
             PrefabReference = this.gameObject;
         }
@@ -37,6 +40,18 @@ public class LevelObjectGroup : LevelObject
 
         levelObjects.Add(child);
         child.UpdateParent(this);
+    }
+
+    public void RebuildChildrenFromTransform()
+    {
+        ClearChildren();
+        foreach (Transform chidTransform in transform)
+        {
+            Debug.Log("found child" + name);
+            if (!chidTransform.TryGetComponent(out LevelObject component)) continue;
+
+            AddChild(component);
+        }
     }
 
     public void SaveSelectableTargetData(IEnumerable<SelectableTargetData> data)
@@ -59,12 +74,15 @@ public class LevelObjectGroup : LevelObject
 
     public void ClearChildren()
     {
+        if (selectableTargetDatas.Count >= 1)
+            selectableTargetDatas.Clear();
+
+        if (levelObjects.Count == 0) return;
         foreach (LevelObject child in levelObjects)
         {
             child.ClearParent();
         }
         levelObjects.Clear();
-        selectableTargetDatas.Clear();
     }
 
     public override Memento Save()

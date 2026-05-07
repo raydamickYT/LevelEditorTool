@@ -23,8 +23,8 @@ public class LevelObject : MonoBehaviour
         public int ObjectID;
         public string AssetID;
         public Sprite Sprite;
-        private LevelObjectGroup LevelObjectGroup;
-
+        public LevelObjectGroup LevelObjectGroup;
+        public virtual bool HasParent => LevelObjectGroup != null ? true : false;
 
         public Memento(Transform t, GameObject obj, int id, Sprite sprite, string assetID, LevelObjectGroup levelObjectGroup)
         {
@@ -58,7 +58,6 @@ public class LevelObject : MonoBehaviour
 
         if (string.IsNullOrEmpty(AssetID))
             Debug.LogWarning("No asset ID assigned to this object");
-
         // else
         // Debug.Log("AssetID: " + AssetID);
 

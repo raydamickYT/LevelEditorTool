@@ -90,19 +90,31 @@ public class ObjectHierarchyManager : MonoBehaviour
         existingNames.Add(levelObject.name);
     }
 
-    private void AddParent(LevelObjectGroup levelObject)
+    private void AddParent(LevelObjectGroup group)
     {
-        if (levelObject == null) return;
+        if (group == null) return;
+        if (parentItems.ContainsKey(group)) return;
 
-        if (items.ContainsKey(levelObject)) return;
-
-        levelObject.name = GetUniqueHierarchyName(levelObject.name);
+        group.name = GetUniqueHierarchyName(group.name);
 
         HierarchyParentObjectItem parentItem = Instantiate(parentPrefab, contentParent);
-        parentItem.Initialize(levelObject);
+        parentItems.Add(group, parentItem);
+        existingNames.Add(group.name);
 
-        parentItems.Add(levelObject, parentItem);
-        existingNames.Add(levelObject.name);
+        if (group.LevelObjects.Count() == 0)
+            group.RebuildChildrenFromTransform();
+
+        Debug.LogWarning("ParentsChildren " + group.LevelObjects.Count() + group.name);
+        foreach (LevelObject child in group.LevelObjects)
+        {
+            if (child == null) continue;
+
+            if (child.hierarchyObjectItem != null) continue;
+
+            AddItem(child);
+        }
+
+        parentItem.Initialize(group);
     }
 
     private void Clear(LevelObject levelObject)

@@ -38,18 +38,20 @@ public class PasteAction : IUndoableAction, IEditorCommand
         if (ObjectsToPaste.Count == 0)
             Debug.LogWarning("no objects to paste");
 
-        Debug.LogWarning("objects to paste" + ObjectsToPaste.Count);
 
         instantiatedGameObjects.Clear();
 
         bool isRedo = pastedStates.Count > 0;
 
         IEnumerable<LevelObject.Memento> statesToSpawn = isRedo ? pastedStates : ObjectsToPaste; //if redo true: assign pasted states, if redo false: assign objectsToPaste
+        Debug.LogWarning("objects to paste:" + statesToSpawn.ToList().Count);
+
+        //todo: Check if it is a child with a parent and if so if it isn't already pasted (we can do this by checking if it's in the list we create)
 
         foreach (var item in statesToSpawn)
         {
-            Debug.Log(item.PrefabReference);
-            GameObject instantiatedGameObject = LevelObjectSpawner.Spawn(item, isRedo); //if this is the first time pasting here, this'll need a new id if not it doesn't
+            bool isParent = item is LevelObjectGroup.GroupMemento;
+            GameObject instantiatedGameObject = LevelObjectSpawner.Spawn(item, isRedo, null, isParent); //if this is the first time pasting here, this'll need a new id if not it doesn't
             if (instantiatedGameObject == null) continue;
 
             instantiatedGameObjects.Add(instantiatedGameObject);
@@ -58,9 +60,10 @@ public class PasteAction : IUndoableAction, IEditorCommand
             {
                 LevelObject levelObject = instantiatedGameObject.GetComponent<LevelObject>();
                 if (levelObject != null)
-                    pastedStates.Add(levelObject.Save());
+                    pastedStates.Add(levelObject.Save()); //and finally (if this were a group) saving the parent
             }
         }
+
 
         EventManager.Instance.TriggerDelegate(SelectionEvents.ReplaceSelectionWithObject, instantiatedGameObjects);
     }

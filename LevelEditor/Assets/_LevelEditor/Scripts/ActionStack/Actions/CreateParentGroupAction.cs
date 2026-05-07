@@ -152,7 +152,7 @@ public class CreateParentGroupAction : IUndoableAction, IEditorCommand
 
             child.transform.SetParent(oldParents[i], true);
             child.transform.SetSiblingIndex(oldSiblingIndexes[i]);
-            child.UpdateParent(null); // todo: thisll work if it hasn't moved between parents but if it did, it'll fall through...
+            child.UpdateParent(null); // *! this'll work if it hasn't moved between parents but if it did, it'll fall through...
 
             LevelObjectsRoot.Instance.AddObjectToLevelObjectRoot(child.gameObject);
         }

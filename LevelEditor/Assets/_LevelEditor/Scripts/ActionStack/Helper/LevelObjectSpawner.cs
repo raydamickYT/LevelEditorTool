@@ -3,7 +3,7 @@ using UnityEngine;
 
 public static class LevelObjectSpawner
 {
-    public static GameObject Spawn(LevelObject.Memento memento, bool preserveObjectID = false)
+    public static GameObject Spawn(LevelObject.Memento memento, bool preserveObjectID = false, Transform parent = null, bool isParent = false)
     {
         if (memento == null || memento.PrefabReference == null)
         {
@@ -16,6 +16,8 @@ public static class LevelObjectSpawner
             memento.Position,
             memento.Rotation
         );
+
+
 
         Sprite spriteToUse = null;
 
@@ -42,7 +44,12 @@ public static class LevelObjectSpawner
         spawnedObject.SetActive(true);
         spawnedObject.hideFlags = HideFlags.None;
 
-        LevelObjectsRoot.Instance.AddObjectToLevelObjectRoot(spawnedObject);
+        //Add a parent if given
+        if (parent != null)
+            spawnedObject.transform.SetParent(parent, true);
+        else
+            LevelObjectsRoot.Instance.AddObjectToLevelObjectRoot(spawnedObject);
+
         spawnedObject.transform.localScale = memento.Scale;
 
         LevelObject levelObject = spawnedObject.GetComponent<LevelObject>();
@@ -68,7 +75,10 @@ public static class LevelObjectSpawner
         }
 
         //object hierarchy menu
-        var change = new HierarchyChange(levelObject, HierarchyChangeType.Added);
+        Debug.LogWarning("this is a parent " + isParent);
+        HierarchyChangeType type = isParent ? HierarchyChangeType.AddedParent : HierarchyChangeType.Added;
+        var change = new HierarchyChange(levelObject, type);
+
         EventManager.Instance.TriggerDelegate(ObjectHierarchyEvents.RefreshMenu, new List<HierarchyChange> { change });
 
         return spawnedObject;
