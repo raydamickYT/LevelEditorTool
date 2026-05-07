@@ -51,6 +51,7 @@ public class LevelObjectGroup : LevelObject
         {
             if (!chidTransform.TryGetComponent(out LevelObject component)) continue;
             component.UpdateParent(null);
+            component.hierarchyObjectItem = null;
             ObjectRegistry.OnObjectCreated(component);
 
             AddChild(component);
