@@ -29,6 +29,7 @@ public class HierarchyObjectItem : MonoBehaviour
         levelObject = target;
         nameText.text = target.name;
         levelObject.hierarchyObjectItem = this;
+        Debug.Log("object ref: " + levelObject.hierarchyObjectItem + levelObject.name);
 
         if (!levelObject.gameObject.TryGetComponent(out selectableObject))
         {

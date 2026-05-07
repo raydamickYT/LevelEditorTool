@@ -1,8 +1,5 @@
 using System.Collections.Generic;
 using System.Linq;
-using UnityEditor;
-using UnityEditor.Animations;
-using UnityEditor.Rendering;
 using UnityEngine;
 
 public class LevelObjectGroup : LevelObject
@@ -34,7 +31,6 @@ public class LevelObjectGroup : LevelObject
 
     public void AddChild(LevelObject child)
     {
-        Debug.Log("found child" + child);
         if (child == null) return;
         if (child.HasParent) return;
         if (levelObjects.Contains(child)) return;
@@ -49,12 +45,22 @@ public class LevelObjectGroup : LevelObject
         ClearChildren();
         foreach (Transform chidTransform in transform)
         {
-            if (!chidTransform.TryGetComponent(out LevelObject component)) continue;
-            component.UpdateParent(null);
-            component.hierarchyObjectItem = null;
-            ObjectRegistry.OnObjectCreated(component);
+            if (chidTransform.TryGetComponent(out LevelObject component))
+            {
+                component.hierarchyObjectItem = null;
+                ObjectRegistry.OnObjectCreated(component);
+                levelObjects.Add(component);
+            }
 
-            AddChild(component);
+            if (component.transform.TryGetComponent(out SelectableObject selectableObject))
+            {
+                var data = selectableObject.TargetData;
+                if (data != null)
+                    selectableTargetDatas.Add(data);
+            }
+
+
+            component.UpdateParent(this);
         }
     }
 
@@ -168,4 +174,6 @@ public class LevelObjectGroup : LevelObject
             AddChild(child);
         }
     }
+
+
 }

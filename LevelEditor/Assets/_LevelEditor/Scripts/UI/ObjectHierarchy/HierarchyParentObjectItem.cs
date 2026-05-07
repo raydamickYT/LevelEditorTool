@@ -1,4 +1,5 @@
 using System.Collections.Generic;
+using System.Collections;
 using System.Linq;
 using TMPro;
 using UnityEngine;
@@ -34,12 +35,29 @@ public class HierarchyParentObjectItem : MonoBehaviour
     [SerializeField] private float childHeight = 60f;
     [SerializeField] private float spacing = 2f;
 
+
+    [Header("Debugging")]
+    public bool rebuildHierarchy;
+
+
     void Awake()
     {
         layoutElement = GetComponent<LayoutElement>();
     }
+
+    void Update()
+    {
+        if (rebuildHierarchy)
+        {
+            UpdatePreferredHeight();
+            RebuildHierarchyLayout();
+            rebuildHierarchy = false;
+        }
+    }
     public void Initialize(LevelObjectGroup target)
     {
+        hierarchyObjectItems.Clear();
+
         levelObjectGroup = target;
         nameText.text = target.name;
 
@@ -50,6 +68,7 @@ public class HierarchyParentObjectItem : MonoBehaviour
         }
         selectableObject.OnSelectionChanged += UpdateSelectionVisuals;
 
+        button.onClick.RemoveAllListeners();
         button.onClick.AddListener(SetSelected);
 
         //get group objects
@@ -60,7 +79,11 @@ public class HierarchyParentObjectItem : MonoBehaviour
         }
 
         // save the children buttons
-        if (levelObjectGroup.LevelObjects.ToList().Count == 0) return;
+        if (levelObjectGroup.LevelObjects.ToList().Count == 0)
+        {
+            Debug.Log("No children in object");
+            return;
+        }
 
         foreach (LevelObject child in levelObjectGroup.LevelObjects.ToList())
         {
@@ -69,11 +92,9 @@ public class HierarchyParentObjectItem : MonoBehaviour
             HierarchyObjectItem childItem = child.hierarchyObjectItem;
 
             hierarchyObjectItems.Add(childItem);
-            childItem.transform.SetParent(ChildrenContainer, false);
         }
 
-        UpdatePreferredHeight();
-        RebuildHierarchyLayout();
+        RefreshLayoutDelayed();
     }
     private void UpdatePreferredHeight()
     {
@@ -118,6 +139,26 @@ public class HierarchyParentObjectItem : MonoBehaviour
         if (selectableObject == null) return;
 
         background.color = selectableObject.IsSelected ? selectedColor : normalColor;
+    }
+
+    
+    // * for some reason unity didn't like the pasting, it wouldn't display the children properly. That's why we wait till the end of the frame before we display the children
+    // * properly
+    private void RefreshLayoutDelayed()
+    {
+        StartCoroutine(RebuildAtEndOfFrame());
+    }
+    private IEnumerator RebuildAtEndOfFrame()
+    {
+        yield return new WaitForEndOfFrame();
+
+        foreach (HierarchyObjectItem child in hierarchyObjectItems)
+        {
+            child.transform.SetParent(ChildrenContainer);
+        }
+
+        UpdatePreferredHeight();
+        RebuildHierarchyLayout();
     }
 
     private void SetSelected()

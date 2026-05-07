@@ -3,17 +3,18 @@ using UnityEngine;
 
 public class SelectableObject : MonoBehaviour, ISelectable
 {
-    public bool IsSelected => TargetData.IsSelected;
-    [SerializeField] private SelectableTargetData TargetData = new();
+    public bool IsSelected => targetData.IsSelected;
+    [SerializeField] private SelectableTargetData targetData = new();
+    public SelectableTargetData TargetData => targetData;
     public Action OnSelectionChanged;
 
     // Start is called once before the first execution of Update after the MonoBehaviour is created
     void Awake()
     {
-        TargetData.BaseObject = gameObject;
-        TargetData.SelectableComponent = this;
+        targetData.BaseObject = gameObject;
+        targetData.SelectableComponent = this;
 
-        EventManager.Instance.TriggerDelegate(SelectionEvents.RegisterToSelectionController, gameObject, TargetData);
+        EventManager.Instance.TriggerDelegate(SelectionEvents.RegisterToSelectionController, gameObject, targetData);
     }
     void OnDestroy()
     {
@@ -22,13 +23,13 @@ public class SelectableObject : MonoBehaviour, ISelectable
 
     public void OnDeselect()
     {
-        TargetData.IsSelected = false;
+        targetData.IsSelected = false;
         OnSelectionChanged?.Invoke();
     }
 
     public void OnSelect()
     {
-        TargetData.IsSelected = true;
+        targetData.IsSelected = true;
         OnSelectionChanged?.Invoke();
     }
 

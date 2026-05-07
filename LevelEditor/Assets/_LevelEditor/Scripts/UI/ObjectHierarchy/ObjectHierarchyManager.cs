@@ -77,6 +77,7 @@ public class ObjectHierarchyManager : MonoBehaviour
     private void AddItem(LevelObject levelObject)
     {
         if (levelObject == null) return;
+        Debug.Log("found child" + levelObject + items.ContainsKey(levelObject));
 
         if (items.ContainsKey(levelObject)) return;
 
@@ -101,19 +102,14 @@ public class ObjectHierarchyManager : MonoBehaviour
         parentItems.Add(group, parentItem);
         existingNames.Add(group.name);
 
-        if (group.LevelObjects.Count() == 0)
-        {
+        if (group.LevelObjects.ToList().Count == 0)
             group.RebuildChildrenFromTransform();
 
-            Debug.LogWarning("ParentsChildren " + group.LevelObjects.Count() + group.name);
-            foreach (LevelObject child in group.LevelObjects)
-            {
-                if (child == null) continue;
 
-                if (child.hierarchyObjectItem != null) continue;
-
-                AddItem(child);
-            }
+        Debug.LogWarning("ParentsChildren " + group.LevelObjects.Count() + group.name);
+        foreach (LevelObject child in group.LevelObjects)
+        {
+            GetOrCreateChild(child, parentItem.ChildrenContainer);
         }
 
         parentItem.Initialize(group);
@@ -164,6 +160,31 @@ public class ObjectHierarchyManager : MonoBehaviour
         while (existingNames.Contains(candidateName));
 
         return candidateName;
+    }
+
+    private HierarchyObjectItem GetOrCreateChild(LevelObject levelObject, Transform parent)
+    {
+        if (levelObject == null)
+            return null;
+
+        if (items.TryGetValue(levelObject, out HierarchyObjectItem existingItem))
+        {
+            if (existingItem != null)
+            {
+                levelObject.hierarchyObjectItem = existingItem;
+                return existingItem;
+            }
+
+            items.Remove(levelObject);
+        }
+
+        HierarchyObjectItem item = Instantiate(itemPrefab, contentParent);
+        item.Initialize(levelObject);
+
+        items.Add(levelObject, item);
+        existingNames.Add(levelObject.name);
+
+        return item;
     }
 }
 
