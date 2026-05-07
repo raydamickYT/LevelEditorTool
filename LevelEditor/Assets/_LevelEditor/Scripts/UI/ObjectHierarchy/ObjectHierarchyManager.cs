@@ -102,16 +102,18 @@ public class ObjectHierarchyManager : MonoBehaviour
         existingNames.Add(group.name);
 
         if (group.LevelObjects.Count() == 0)
+        {
             group.RebuildChildrenFromTransform();
 
-        Debug.LogWarning("ParentsChildren " + group.LevelObjects.Count() + group.name);
-        foreach (LevelObject child in group.LevelObjects)
-        {
-            if (child == null) continue;
+            Debug.LogWarning("ParentsChildren " + group.LevelObjects.Count() + group.name);
+            foreach (LevelObject child in group.LevelObjects)
+            {
+                if (child == null) continue;
 
-            if (child.hierarchyObjectItem != null) continue;
+                if (child.hierarchyObjectItem != null) continue;
 
-            AddItem(child);
+                AddItem(child);
+            }
         }
 
         parentItem.Initialize(group);

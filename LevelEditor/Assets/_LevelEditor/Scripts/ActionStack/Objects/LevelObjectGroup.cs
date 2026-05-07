@@ -34,9 +34,11 @@ public class LevelObjectGroup : LevelObject
 
     public void AddChild(LevelObject child)
     {
+        Debug.Log("found child" + child);
         if (child == null) return;
         if (child.HasParent) return;
         if (levelObjects.Contains(child)) return;
+
 
         levelObjects.Add(child);
         child.UpdateParent(this);
@@ -47,8 +49,9 @@ public class LevelObjectGroup : LevelObject
         ClearChildren();
         foreach (Transform chidTransform in transform)
         {
-            Debug.Log("found child" + name);
             if (!chidTransform.TryGetComponent(out LevelObject component)) continue;
+            component.UpdateParent(null);
+            ObjectRegistry.OnObjectCreated(component);
 
             AddChild(component);
         }
