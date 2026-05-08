@@ -14,6 +14,7 @@ public class GizmoScaleOperation : IGizmoTransformOperation
 
             Vector3 result = context.TargetStartScale + Vector3.one * uniformDelta;
             context.ActiveTarget.localScale = result;
+            EventManager.Instance.TriggerUnityEvent(TransformWindowEvents.OnTransformValuesUpdated);
             return;
         }
 
@@ -36,6 +37,7 @@ public class GizmoScaleOperation : IGizmoTransformOperation
 
         float visualDragAmount = context.ActiveHandle.ScaleSensitivity != 0f ? scaledAmount / context.ActiveHandle.ScaleSensitivity : projectedDistance;
 
+        EventManager.Instance.TriggerUnityEvent(TransformWindowEvents.OnTransformValuesUpdated);
         UpdateActiveScaleHandleVisual(visualDragAmount, context.ActiveHandle); //nice visual feedback for the user to see how much they're scaling along the axis.
     }
 

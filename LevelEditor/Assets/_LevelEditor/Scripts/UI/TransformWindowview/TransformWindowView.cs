@@ -1,7 +1,6 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
-using Unity.VisualScripting;
 using UnityEngine;
 using UnityEngine.UIElements;
 
@@ -43,39 +42,22 @@ public class TransformWindowView : MonoBehaviour
         resetButton = root.Q<Button>("reset-transform-button");
 
         RegisterCallbacks();
-        // SetTarget(null);
-
-        // ForceFieldTextColor(positionX);
-        // ForceFieldTextColor(positionY);
-        // ForceFieldTextColor(positionZ);
-
-        // ForceFieldTextColor(rotationZ);
-
-        // ForceFieldTextColor(scaleX);
-        // ForceFieldTextColor(scaleY);
-
-        LogReferenceState("transform-window", transformWindowRoot);
-
-        LogReferenceState("position-x", positionX);
-        LogReferenceState("position-y", positionY);
-        LogReferenceState("position-z", positionZ);
-
-        LogReferenceState("rotation-z", rotationZ);
-
-        LogReferenceState("scale-x", scaleX);
-        LogReferenceState("scale-y", scaleY);
-
-        LogReferenceState("reset-transform-button", resetButton);
+        SetTarget(null);
 
         EventManager.Instance.AddDelegateListener(SelectionEvents.OnSelectionChanged, (Action<HashSet<SelectableTargetData>>)ActivateWindow);
     }
-    private void LogReferenceState(string referenceName, VisualElement element)
+    void Start()
     {
-        if (element == null)
-            Debug.LogError($"TransformWindow reference missing: {referenceName}");
-        else
-            Debug.Log($"TransformWindow reference found: {referenceName} -> {element.name}");
+        EventManager.Instance.AddUnityEventListener(TransformWindowEvents.OnTransformValuesUpdated, RefreshUI);
     }
+
+    void Update()
+    {
+        // if(!EditorBlackBoard.HasSelection) return;
+
+        // RefreshUI();
+    }
+
     private void RegisterCallbacks()
     {
         positionX.RegisterValueChangedCallback(_ => ApplyPosition());
@@ -144,6 +126,8 @@ public class TransformWindowView : MonoBehaviour
         if (selectedTransform == null)
             return;
 
+        UpdateGizmo();
+
         isUpdatingUI = true;
 
 
@@ -166,24 +150,15 @@ public class TransformWindowView : MonoBehaviour
         isUpdatingUI = false;
     }
 
-    private void ForceFieldTextColor(FloatField field)
-    {
-        field.style.color = Color.black;
-        field.style.backgroundColor = new Color(0.93f, 0.93f, 0.93f);
-
-        VisualElement input = field.Q(className: "unity-text-input");
-
-        if (input != null)
-        {
-            input.style.color = Color.black;
-            input.style.backgroundColor = new Color(0.93f, 0.93f, 0.93f);
-        }
-    }
-
     private void ApplyPosition()
     {
         if (isUpdatingUI || selectedTransform == null)
             return;
+
+        float clampedZ = Mathf.Max(0f, positionZ.value);
+
+        if (!Mathf.Approximately(positionZ.value, clampedZ))
+            positionZ.value = clampedZ;
 
         selectedTransform.position = new Vector3(
             positionX.value,
@@ -241,4 +216,15 @@ public class TransformWindowView : MonoBehaviour
 
         resetButton.SetEnabled(enabled);
     }
+
+    private void UpdateGizmo()
+    {
+        EventManager.Instance.TriggerDelegate(TransformWindowEvents.OnSelectedObjectTransformUpdated, selectedTransform);
+    }
+}
+
+public static class TransformWindowEvents
+{
+    public const string OnSelectedObjectTransformUpdated = "OnSelectedObjectTransformUpdated";
+    public const string OnTransformValuesUpdated = "OnTransformValuesUpdated";
 }

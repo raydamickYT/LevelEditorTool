@@ -279,6 +279,26 @@
             "Width": 7728,
             "Height": 5152,
             "PixelsPerUnit": 100.0
+        },
+        {
+            "AssetID": "4958e232-4742-468a-8804-825ead35365e",
+            "FileName": "IMG_20210109_235439.jpg",
+            "OriginalFilePath": "D:\\foto's\\11-20-21\\IMG_20210109_235439.jpg",
+            "LocalFilePath": "D:/Gihub/LevelEditorTool/LevelEditor/Assets\\..\\UserData\\Assets\\Sprites\\4958e232-4742-468a-8804-825ead35365e.jpg",
+            "AssetType": "Sprite",
+            "Width": 1440,
+            "Height": 1080,
+            "PixelsPerUnit": 100.0
+        },
+        {
+            "AssetID": "f9a389d9-9036-44bc-ae32-abe007f3fb89",
+            "FileName": "IMG_20210109_235503.jpg",
+            "OriginalFilePath": "D:\\foto's\\11-20-21\\IMG_20210109_235503.jpg",
+            "LocalFilePath": "D:/Gihub/LevelEditorTool/LevelEditor/Assets\\..\\UserData\\Assets\\Sprites\\f9a389d9-9036-44bc-ae32-abe007f3fb89.jpg",
+            "AssetType": "Sprite",
+            "Width": 1440,
+            "Height": 1080,
+            "PixelsPerUnit": 100.0
         }
     ]
 }

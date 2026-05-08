@@ -1,7 +1,6 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
-using System.Text.RegularExpressions;
 using UnityEngine;
 
 public class GizmoObject : MonoBehaviour, IGizmoObject
@@ -17,8 +16,6 @@ public class GizmoObject : MonoBehaviour, IGizmoObject
         ? gizmoTargetData.BaseObject.transform
         : null;
 
-    private bool groupSelectionIsActive => selectedLevelObjects.Count > 1 ? true : false;
-
     // Start is called once before the first execution of Update after the MonoBehaviour is created
     void Start()
     {
@@ -27,6 +24,8 @@ public class GizmoObject : MonoBehaviour, IGizmoObject
             Debug.LogError("GizmoTargetData is not assigned in the inspector for " + this.gameObject.name); //TODO this can be found in the children of this gameobj, so update it so that it searches first
             return;
         }
+
+        EventManager.Instance.AddDelegateListener(TransformWindowEvents.OnSelectedObjectTransformUpdated, (Action<Transform>)UpdateGizmoTransform);
     }
     void LateUpdate()
     {
@@ -38,20 +37,6 @@ public class GizmoObject : MonoBehaviour, IGizmoObject
             return;
 
         UpdateActiveGizmoScale();
-    }
-
-    private Vector3 GetInverseTargetScale(Transform transform)
-    {
-        if (transform == null)
-            return Vector3.one;
-
-        Vector3 lossy = transform.lossyScale;
-
-        return new Vector3(
-            Mathf.Abs(lossy.x) > 0.0001f ? 1f / Mathf.Abs(lossy.x) : 1f,
-            Mathf.Abs(lossy.y) > 0.0001f ? 1f / Mathf.Abs(lossy.y) : 1f,
-            Mathf.Abs(lossy.z) > 0.0001f ? 1f / Mathf.Abs(lossy.z) : 1f
-        );
     }
 
     private float GetZoomScale()
@@ -76,7 +61,7 @@ public class GizmoObject : MonoBehaviour, IGizmoObject
         float zoomScale = GetZoomScale();
 
         Vector3 scale = Vector3.one * (gizmoBaseSize * zoomScale);
-        
+
         activeRoot.localScale = scale;
     }
 
@@ -142,9 +127,6 @@ public class GizmoObject : MonoBehaviour, IGizmoObject
                 gizmoTargetData.BaseObject = obj.BaseObject;
                 selectableObject = obj.SelectableComponent;
 
-                Transform parent = obj.BaseObject.transform;
-                // transform.SetParent(parent, true);
-
                 transform.localPosition = Vector3.zero;
                 transform.localRotation = Quaternion.identity;
                 transform.localScale = Vector3.one;
@@ -153,7 +135,6 @@ public class GizmoObject : MonoBehaviour, IGizmoObject
                 break;
             default: //meaning more than 1, so probably multi selection
                 selectableObject = selectable.FirstOrDefault().SelectableComponent;
-                // transform.SetParent(gizmoTargetData.BaseObject.transform, true);
                 break;
         }
     }
@@ -179,5 +160,14 @@ public class GizmoObject : MonoBehaviour, IGizmoObject
             GizmoType.scale => gizmoTargetData.ScaleGizmo != null ? gizmoTargetData.ScaleGizmo.transform : null,
             _ => null
         };
+    }
+
+    public void UpdateGizmoTransform(Transform targetTransform)
+    {
+        Vector3 position = targetTransform.position;
+        position.z = this.transform.position.z;
+
+        transform.position = position;
+        transform.rotation = targetTransform.rotation;
     }
 }
