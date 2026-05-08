@@ -21,7 +21,10 @@ public class TransformWindowView : MonoBehaviour
     private Button resetButton;
 
     private Transform selectedTransform;
+    private LevelObject selectedLevelObject;
     private bool isUpdatingUI;
+    private bool isCapturingTransformAction;
+    private TransformAction currentTransformAction;
     private VisualElement transformWindowRoot;
 
     private void Awake()
@@ -49,6 +52,13 @@ public class TransformWindowView : MonoBehaviour
     void Start()
     {
         EventManager.Instance.AddUnityEventListener(TransformWindowEvents.OnTransformValuesUpdated, RefreshUI);
+        EventManager.Instance.AddDelegateListener(ShortcutBindingEvents.OnCommandTriggered, (Action<EditorCommand>)HandleCommand);
+    }
+
+    private void HandleCommand(EditorCommand command)
+    {
+        if (command == EditorCommand.Undo || command == EditorCommand.Redo)
+            RefreshUI();
     }
 
     private void RegisterCallbacks()
@@ -82,12 +92,13 @@ public class TransformWindowView : MonoBehaviour
             return;
         }
 
-        SetTarget(selectedLevelObject.transform);
+        SetTarget(selectedLevelObject);
     }
 
-    public void SetTarget(Transform target)
+    public void SetTarget(LevelObject target)
     {
-        selectedTransform = target;
+        selectedLevelObject = target;
+        selectedTransform = target != null ? target.transform : null;
 
         bool hasTarget = selectedTransform != null;
 
@@ -148,6 +159,8 @@ public class TransformWindowView : MonoBehaviour
         if (isUpdatingUI || selectedTransform == null)
             return;
 
+        BeginTransformAction();
+
         float clampedZ = Mathf.Max(0f, positionZ.value);
 
         if (!Mathf.Approximately(positionZ.value, clampedZ))
@@ -158,6 +171,8 @@ public class TransformWindowView : MonoBehaviour
             positionY.value,
             positionZ.value
         );
+
+        EndTransformAction();
     }
 
     private void ApplyRotation()
@@ -165,11 +180,16 @@ public class TransformWindowView : MonoBehaviour
         if (isUpdatingUI || selectedTransform == null)
             return;
 
+        BeginTransformAction();
+
+
         selectedTransform.eulerAngles = new Vector3(
             0f,
             0f,
             rotationZ.value
         );
+
+        EndTransformAction();
     }
 
     private void ApplyScale()
@@ -177,11 +197,15 @@ public class TransformWindowView : MonoBehaviour
         if (isUpdatingUI || selectedTransform == null)
             return;
 
+        BeginTransformAction();
+
         selectedTransform.localScale = new Vector3(
             scaleX.value,
             scaleY.value,
             1f
         );
+
+        EndTransformAction();
     }
 
     private void ResetTransform()
@@ -189,11 +213,15 @@ public class TransformWindowView : MonoBehaviour
         if (selectedTransform == null)
             return;
 
+        BeginTransformAction();
+
         selectedTransform.position = Vector3.zero;
         selectedTransform.eulerAngles = Vector3.zero;
         selectedTransform.localScale = Vector3.one;
 
         RefreshUI();
+
+        EndTransformAction();
     }
 
     private void SetEnabled(bool enabled)
@@ -213,6 +241,31 @@ public class TransformWindowView : MonoBehaviour
     private void UpdateGizmo()
     {
         EventManager.Instance.TriggerDelegate(TransformWindowEvents.OnSelectedObjectTransformUpdated, selectedTransform);
+    }
+
+    private void BeginTransformAction()
+    {
+        if (selectedLevelObject == null || isCapturingTransformAction)
+            return;
+
+        currentTransformAction = new TransformAction(selectedLevelObject);
+        isCapturingTransformAction = true;
+    }
+
+    private void EndTransformAction()
+    {
+        if (!isCapturingTransformAction || currentTransformAction == null)
+            return;
+
+        currentTransformAction.CaptureAfterState();
+
+        if (currentTransformAction.HasChanged())
+        {
+            EventManager.Instance.TriggerDelegate(ActionStackEvents.RegisterAction, currentTransformAction);
+        }
+
+        currentTransformAction = null;
+        isCapturingTransformAction = false;
     }
 }
 
