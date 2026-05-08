@@ -1,0 +1,48 @@
+<ui:UXML xmlns:ui="UnityEngine.UIElements" xmlns:uie="UnityEditor.UIElements">
+    <Style src="TransformWindow.uss" />
+
+    <ui:VisualElement name="transform-window" class="transform-window">
+        
+        <ui:Label text="Transform" class="window-title" />
+
+        <ui:VisualElement class="section">
+            <ui:Label text="Position" class="section-title" />
+
+            <ui:VisualElement class="row">
+                <ui:Label text="X" class="axis-label" />
+                <ui:FloatField name="position-x" class="axis-field"/>
+
+                <ui:Label text="Y" class="axis-label" />
+                <ui:FloatField name="position-y" class="axis-field" />
+
+                <ui:Label text="Z" class="axis-label" />
+                <ui:FloatField name="position-z" class="axis-field" />
+
+            </ui:VisualElement>
+        </ui:VisualElement>
+
+        <ui:VisualElement class="section">
+            <ui:Label text="Rotation" class="section-title" />
+
+            <ui:VisualElement class="row">
+                <ui:Label text="Z" class="axis-label" />
+                <ui:FloatField name="rotation-z" class="axis-field" />
+            </ui:VisualElement>
+        </ui:VisualElement>
+
+        <ui:VisualElement class="section">
+            <ui:Label text="Scale" class="section-title" />
+
+            <ui:VisualElement class="row">
+                <ui:Label text="X" class="axis-label" />
+                <ui:FloatField name="scale-x" class="axis-field" />
+
+                <ui:Label text="Y" class="axis-label" />
+                <ui:FloatField name="scale-y" class="axis-field" />
+            </ui:VisualElement>
+        </ui:VisualElement>
+
+        <ui:Button name="reset-transform-button" text="Reset" />
+
+    </ui:VisualElement>
+</ui:UXML>
