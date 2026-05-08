@@ -51,13 +51,6 @@ public class TransformWindowView : MonoBehaviour
         EventManager.Instance.AddUnityEventListener(TransformWindowEvents.OnTransformValuesUpdated, RefreshUI);
     }
 
-    void Update()
-    {
-        // if(!EditorBlackBoard.HasSelection) return;
-
-        // RefreshUI();
-    }
-
     private void RegisterCallbacks()
     {
         positionX.RegisterValueChangedCallback(_ => ApplyPosition());
