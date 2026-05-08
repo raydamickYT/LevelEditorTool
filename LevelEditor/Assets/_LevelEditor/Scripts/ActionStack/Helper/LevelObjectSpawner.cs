@@ -1,4 +1,5 @@
 using System.Collections.Generic;
+using Unity.VisualScripting;
 using UnityEngine;
 
 public static class LevelObjectSpawner
@@ -18,7 +19,6 @@ public static class LevelObjectSpawner
         );
 
 
-
         Sprite spriteToUse = null;
 
         if (!string.IsNullOrEmpty(memento.AssetID))
@@ -35,11 +35,19 @@ public static class LevelObjectSpawner
         if (spriteToUse != null && spawnedObject.TryGetComponent(out SpriteRenderer spriteRenderer))
         {
             spriteRenderer.sprite = spriteToUse;
+
+            //box collider setup
+            spawnedObject.TryGetComponent(out BoxCollider2D boxCollider2D);
+            
+            Bounds bounds = spriteRenderer.sprite.bounds;
+            boxCollider2D.size = bounds.size;
+            boxCollider2D.offset = bounds.center;
         }
         else
         {
             Debug.LogWarning($"No sprite found for spawned object. AssetID: {memento.AssetID}");
         }
+
 
         spawnedObject.SetActive(true);
         spawnedObject.hideFlags = HideFlags.None;
