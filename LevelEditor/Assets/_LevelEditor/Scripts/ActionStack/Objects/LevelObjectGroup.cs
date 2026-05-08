@@ -79,6 +79,15 @@ public class LevelObjectGroup : LevelObject
         if (child == null) return;
 
         levelObjects.Remove(child);
+        
+        if (child.TryGetComponent(out SelectableObject selectableObject))
+        {
+            SelectableTargetData data = selectableObject.TargetData;
+
+            if (data != null)
+                selectableTargetDatas.Remove(data);
+        }
+
         child.ClearParent();
     }
 

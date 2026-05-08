@@ -43,6 +43,11 @@ public class LevelObject : MonoBehaviour
     {
         sprite1 = getSprite();
     }
+    void OnDisable()
+    {
+        if (HasParent)
+            levelObjectGroup.RemoveChild(this);
+    }
 
     //NOTE: this is called at the end of a frame. So there's a slight chance this could lead to problems. If so, here's your reminder.
     public void OnDestroy()
