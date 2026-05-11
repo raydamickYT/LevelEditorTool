@@ -10,7 +10,7 @@ GameObject:
   m_Component:
   - component: {fileID: 428461828310549840}
   - component: {fileID: 3523434022083734486}
-  m_Layer: 0
+  m_Layer: 7
   m_Name: Gizmo
   m_TagString: Untagged
   m_Icon: {fileID: 0}
@@ -54,6 +54,7 @@ MonoBehaviour:
     RotateGizmo: {fileID: 316315613166419855}
     ScaleGizmo: {fileID: 2532695061472954397}
   gizmoBaseSize: 3
+  selectedLevelObjects: []
 --- !u!1 &316315613166419855
 GameObject:
   m_ObjectHideFlags: 0
