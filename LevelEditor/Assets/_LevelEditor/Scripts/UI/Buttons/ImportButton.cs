@@ -6,6 +6,7 @@ public class ImportButton : MonoBehaviour
 {
     public void ImportFolder()
     {
+
         string[] paths = StandaloneFileBrowser.OpenFolderPanel(
             "Select Asset Folder",
             "",
@@ -33,7 +34,8 @@ public class ImportButton : MonoBehaviour
         string[] paths = StandaloneFileBrowser.OpenFilePanel(
             "Select File",
             "",
-            extensions, false);
+            extensions,
+            true);
 
         if (paths == null || paths.Length == 0)
         {
@@ -41,6 +43,9 @@ public class ImportButton : MonoBehaviour
             return;
         }
 
-        EventManager.Instance.TriggerDelegate(AssetRegistryEvents.ImportAssets, paths[0], false);
+        foreach (string path in paths)
+        {
+            EventManager.Instance.TriggerDelegate(AssetRegistryEvents.ImportAssets, path, false);
+        }
     }
 }

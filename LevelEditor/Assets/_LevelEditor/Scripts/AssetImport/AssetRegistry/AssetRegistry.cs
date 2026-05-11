@@ -26,16 +26,16 @@ public class AssetRegistry : MonoBehaviour
         assetImportService = new();
 
         if (canImportOnStart)
-            ImportSprites(filePath);
+            MultiFileImport(filePath);
     }
-    void EventCalls(string path, bool isFolder = false)
+    void EventCalls(string path, bool isMultiFile = false)
     {
         if (assetImportService == null) return;
         if (string.IsNullOrEmpty(path)) return;
 
-        if (isFolder)
+        if (isMultiFile)
         {
-            ImportSprites(path);
+            MultiFileImport(path);
             return;
         }
         singleFileImport(path);
@@ -52,7 +52,7 @@ public class AssetRegistry : MonoBehaviour
         EventManager.Instance.TriggerDelegate(ObjectLibraryManagerEvents.UpdateObjectLibrary, new List<ImportedAssetMetaData>() { importedAssetData });
     }
 
-    void ImportSprites(string path)
+    void MultiFileImport(string path)
     {
         List<ImportedAssetMetaData> importedAssets = assetImportService.ImportFolder(path);
 

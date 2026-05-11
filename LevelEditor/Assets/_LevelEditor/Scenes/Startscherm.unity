@@ -5112,6 +5112,10 @@ PrefabInstance:
       propertyPath: m_AnchoredPosition.y
       value: 3.3
       objectReference: {fileID: 0}
+    - target: {fileID: 1131004571368937973, guid: 59211b6dc91824d42ac3d1d8cacf6528, type: 3}
+      propertyPath: m_IsActive
+      value: 0
+      objectReference: {fileID: 0}
     - target: {fileID: 1240546421480750625, guid: 59211b6dc91824d42ac3d1d8cacf6528, type: 3}
       propertyPath: m_IsActive
       value: 0
@@ -5229,6 +5233,16 @@ PrefabInstance:
     - target: {fileID: 7322473832791172155, guid: 59211b6dc91824d42ac3d1d8cacf6528, type: 3}
       propertyPath: m_AnchoredPosition.y
       value: -8.969971
+      objectReference: {fileID: 0}
+    - target: {fileID: 7515532754024137009, guid: 59211b6dc91824d42ac3d1d8cacf6528, type: 3}
+      propertyPath: m_Name
+      value: Import Assets
+      objectReference: {fileID: 0}
+    - target: {fileID: 7603031853257750053, guid: 59211b6dc91824d42ac3d1d8cacf6528, type: 3}
+      propertyPath: m_text
+      value: 'Import Assets
+
+'
       objectReference: {fileID: 0}
     - target: {fileID: 8146553309691615568, guid: 59211b6dc91824d42ac3d1d8cacf6528, type: 3}
       propertyPath: m_Name
