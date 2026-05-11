@@ -3,7 +3,14 @@
 
     <ui:VisualElement name="transform-window" class="transform-window">
         
-        <ui:Label text="Transform" class="window-title" />
+        <ui:VisualElement class="window-header">
+            <ui:Label text="Transform" class="window-title" />
+
+            <ui:VisualElement class="layer-row">
+                <ui:Label text="Layer" class="layer-label" />
+                <ui:IntegerField name="Object Layer" class="layer-field" />
+            </ui:VisualElement>
+        </ui:VisualElement>
 
         <ui:VisualElement class="section">
             <ui:Label text="Position" class="section-title" />

@@ -9,6 +9,9 @@ public class TransformWindowView : MonoBehaviour
     [Header("UI")]
     [SerializeField] private UIDocument uiDocument;
 
+    private IntegerField layerField;
+    private SpriteRenderer spriteRenderer;
+
     private FloatField positionX;
     private FloatField positionY;
     private FloatField positionZ;
@@ -32,6 +35,8 @@ public class TransformWindowView : MonoBehaviour
         VisualElement root = uiDocument.rootVisualElement;
 
         transformWindowRoot = root.Q<VisualElement>("transform-window");
+
+        layerField = root.Q<IntegerField>("Object Layer");
 
         positionX = root.Q<FloatField>("position-x");
         positionY = root.Q<FloatField>("position-y");
@@ -63,6 +68,8 @@ public class TransformWindowView : MonoBehaviour
 
     private void RegisterCallbacks()
     {
+        layerField.RegisterValueChangedCallback(_ => ApplyLayer());
+
         positionX.RegisterValueChangedCallback(_ => ApplyPosition());
         positionY.RegisterValueChangedCallback(_ => ApplyPosition());
         positionZ.RegisterValueChangedCallback(_ => ApplyPosition());
@@ -75,9 +82,46 @@ public class TransformWindowView : MonoBehaviour
         resetButton.clicked += ResetTransform;
     }
 
+    //update UI visuals
+    public void RefreshUI()
+    {
+        if (selectedTransform == null)
+            return;
+
+        UpdateGizmo();
+
+        isUpdatingUI = true;
+
+        if(selectedTransform.TryGetComponent(out SpriteRenderer renderer))
+        {
+            int renderLayer = renderer.sortingOrder;
+            layerField.SetValueWithoutNotify(renderLayer);
+            // this.spriteRenderer = renderer;
+        }
+
+
+        Vector3 pos = selectedTransform.position;
+        positionX.SetValueWithoutNotify(pos.x);
+        positionY.SetValueWithoutNotify(pos.y);
+        positionZ.SetValueWithoutNotify(pos.z);
+
+        Vector3 rot = selectedTransform.eulerAngles;
+        rotationZ.SetValueWithoutNotify(rot.z);
+
+        Vector3 scale = selectedTransform.localScale;
+        scaleX.SetValueWithoutNotify(scale.x);
+        scaleY.SetValueWithoutNotify(scale.y);
+        // Debug.Log("scale value" + scaleX.value);
+
+        // Debug.Log($"RefreshUI target: {selectedTransform.name}");
+        // Debug.Log($"Position: {pos}, Rotation Z: {rot.z}, Scale: {scale}");
+
+        isUpdatingUI = false;
+    }
+
     public void ActivateWindow(HashSet<SelectableTargetData> selectableTargetDatas)
     {
-        Debug.Log(EditorBlackBoard.HasSelection + " ... " + EditorBlackBoard.HasMultiSelection);
+        // Debug.Log(EditorBlackBoard.HasSelection + " ... " + EditorBlackBoard.HasMultiSelection);
         if (!EditorBlackBoard.HasSelection || EditorBlackBoard.HasMultiSelection)
         {
             SetTarget(null);
@@ -125,34 +169,6 @@ public class TransformWindowView : MonoBehaviour
         transformWindowRoot.style.display = DisplayStyle.None;
     }
 
-    public void RefreshUI()
-    {
-        if (selectedTransform == null)
-            return;
-
-        UpdateGizmo();
-
-        isUpdatingUI = true;
-
-
-        Vector3 pos = selectedTransform.position;
-        positionX.SetValueWithoutNotify(pos.x);
-        positionY.SetValueWithoutNotify(pos.y);
-        positionZ.SetValueWithoutNotify(pos.z);
-
-        Vector3 rot = selectedTransform.eulerAngles;
-        rotationZ.SetValueWithoutNotify(rot.z);
-
-        Vector3 scale = selectedTransform.localScale;
-        scaleX.SetValueWithoutNotify(scale.x);
-        scaleY.SetValueWithoutNotify(scale.y);
-        Debug.Log("scale value" + scaleX.value);
-
-        Debug.Log($"RefreshUI target: {selectedTransform.name}");
-        Debug.Log($"Position: {pos}, Rotation Z: {rot.z}, Scale: {scale}");
-
-        isUpdatingUI = false;
-    }
 
     private void ApplyPosition()
     {
@@ -206,6 +222,19 @@ public class TransformWindowView : MonoBehaviour
         );
 
         EndTransformAction();
+    }
+
+    private void ApplyLayer()
+    {
+        if(isUpdatingUI || selectedTransform == null) return;
+
+        if(!selectedTransform.TryGetComponent(out SpriteRenderer renderer))
+        {
+            Debug.LogWarning($"{selectedTransform.name} has no active sprite renderer");
+            return;
+        }
+
+        renderer.sortingOrder = layerField.value;
     }
 
     private void ResetTransform()
