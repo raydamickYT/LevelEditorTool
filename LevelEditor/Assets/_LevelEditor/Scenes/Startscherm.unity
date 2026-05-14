@@ -959,6 +959,7 @@ Transform:
   m_ConstrainProportionsScale: 0
   m_Children:
   - {fileID: 2048723049}
+  - {fileID: 1791640872}
   - {fileID: 1995624888}
   - {fileID: 871594553}
   - {fileID: 601380513}
@@ -4189,6 +4190,75 @@ RectTransform:
   m_CorrespondingSourceObject: {fileID: 6103897695728146083, guid: abfaf2c910b83344eb35e8f08ee5889d, type: 3}
   m_PrefabInstance: {fileID: 1259131841706146763}
   m_PrefabAsset: {fileID: 0}
+--- !u!1 &1791640871
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 1791640872}
+  - component: {fileID: 1791640874}
+  - component: {fileID: 1791640873}
+  m_Layer: 0
+  m_Name: TopBar
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!4 &1791640872
+Transform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1791640871}
+  serializedVersion: 2
+  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
+  m_LocalPosition: {x: 0, y: 0, z: 0}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_ConstrainProportionsScale: 0
+  m_Children: []
+  m_Father: {fileID: 425429882}
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!114 &1791640873
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1791640871}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 33999650619a5014d83952b28bd2523d, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::EditorTopBarController
+  uiDocument: {fileID: 1791640874}
+--- !u!114 &1791640874
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1791640871}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 19102, guid: 0000000000000000e000000000000000, type: 0}
+  m_Name: 
+  m_EditorClassIdentifier: UnityEngine.dll::UnityEngine.UIElements.UIDocument
+  m_PanelSettings: {fileID: 11400000, guid: 8f5a1ef32017c654fa8db5a23d2ef661, type: 2}
+  m_ParentUI: {fileID: 0}
+  sourceAsset: {fileID: 9197481963319205126, guid: e3773457eb2c50a4f9a44ad5fdfd5aa3, type: 3}
+  m_SortingOrder: 1
+  m_Position: 0
+  m_WorldSpaceSizeMode: 1
+  m_WorldSpaceWidth: 1920
+  m_WorldSpaceHeight: 1080
+  m_PivotReferenceSize: 0
+  m_Pivot: 0
+  m_WorldSpaceCollider: {fileID: 0}
 --- !u!1 &1827878470
 GameObject:
   m_ObjectHideFlags: 0
@@ -4781,7 +4851,7 @@ GameObject:
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
-  m_IsActive: 1
+  m_IsActive: 0
 --- !u!114 &1995624885
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -5450,7 +5520,7 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 8911597405449336043, guid: 59211b6dc91824d42ac3d1d8cacf6528, type: 3}
       propertyPath: m_AnchorMax.y
-      value: 0
+      value: 1
       objectReference: {fileID: 0}
     - target: {fileID: 8911597405449336043, guid: 59211b6dc91824d42ac3d1d8cacf6528, type: 3}
       propertyPath: m_AnchorMin.x
@@ -5458,7 +5528,7 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 8911597405449336043, guid: 59211b6dc91824d42ac3d1d8cacf6528, type: 3}
       propertyPath: m_AnchorMin.y
-      value: 0
+      value: 1
       objectReference: {fileID: 0}
     - target: {fileID: 8911597405449336043, guid: 59211b6dc91824d42ac3d1d8cacf6528, type: 3}
       propertyPath: m_SizeDelta.x
@@ -5502,11 +5572,11 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 8911597405449336043, guid: 59211b6dc91824d42ac3d1d8cacf6528, type: 3}
       propertyPath: m_AnchoredPosition.x
-      value: 0
+      value: 80
       objectReference: {fileID: 0}
     - target: {fileID: 8911597405449336043, guid: 59211b6dc91824d42ac3d1d8cacf6528, type: 3}
       propertyPath: m_AnchoredPosition.y
-      value: 0
+      value: -668
       objectReference: {fileID: 0}
     - target: {fileID: 8911597405449336043, guid: 59211b6dc91824d42ac3d1d8cacf6528, type: 3}
       propertyPath: m_LocalEulerAnglesHint.x

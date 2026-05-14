@@ -68,7 +68,11 @@ public enum EditorCommand
     Paste,
     Duplicate,
     Cut,
-    ToggleSelect
+    ToggleSelect,
+    SaveFile,
+    OpenFile,
+    NewFile,
+    ImportAssets
 }
 
 [Serializable]

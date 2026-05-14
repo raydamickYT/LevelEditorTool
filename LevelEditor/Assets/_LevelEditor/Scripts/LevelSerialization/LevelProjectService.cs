@@ -44,6 +44,8 @@ public static class LevelProjectService
             AssetStorageService.WriteProjectRegistrySnapshot(Path.Combine(directory, ProjectAssetRegistryFileName));
             LevelProjectSession.SetProjectDirectory(directory);
         }
+
+        LevelProjectSession.SetCurrentLevelJsonPath(Path.GetFullPath(levelJsonFilePath));
     }
 
     public static void LoadLevelFromPath(string levelJsonFilePath)
@@ -53,6 +55,10 @@ public static class LevelProjectService
             Debug.LogError("Level JSON not found: " + levelJsonFilePath);
             return;
         }
+
+        string fullLevelPath = Path.GetFullPath(levelJsonFilePath);
+        if (LevelProjectSession.IsSameLevelJsonLoaded(fullLevelPath))
+            return;
 
         EventManager.Instance.TriggerDelegate(
             SelectionEvents.ReplaceSelectionWithObject,
@@ -93,6 +99,8 @@ public static class LevelProjectService
         EventManager.Instance.TriggerDelegate(
             SelectionEvents.ReplaceSelectionWithObject,
             Enumerable.Empty<GameObject>());
+
+        LevelProjectSession.SetCurrentLevelJsonPath(fullLevelPath);
     }
 
     static LevelProjectFile BuildProjectFileFromScene(string levelName)
@@ -210,7 +218,16 @@ public static class LevelProjectService
 
             string destFileName = $"{assetId}{ext}";
             string destAbs = Path.Combine(spritesDir, destFileName);
-            File.Copy(meta.LocalFilePath, destAbs, true);
+
+            string sourceAbs = Path.GetFullPath(meta.LocalFilePath);
+            string destAbsFull = Path.GetFullPath(destAbs);
+
+            // After load, LocalFilePath often points at this same bundled file — File.Copy onto itself fails / locks on Windows.
+            if (!sourceAbs.Equals(destAbsFull, StringComparison.OrdinalIgnoreCase))
+            {
+                AssetRuntimeLoader.RemoveFromCache(assetId);
+                CopyFileReplacing(sourceAbs, destAbsFull);
+            }
 
             string json = JsonUtility.ToJson(meta);
             ImportedAssetMetaData clone = JsonUtility.FromJson<ImportedAssetMetaData>(json);
@@ -223,6 +240,13 @@ public static class LevelProjectService
 
         string registryPath = Path.Combine(bundleRoot, "asset_registry.json");
         File.WriteAllText(registryPath, JsonUtility.ToJson(fragment, true), Encoding.UTF8);
+    }
+
+    /// <summary>Overwrites destination from disk bytes (avoids <see cref="File.Copy"/> exclusive-lock issues on Windows).</summary>
+    static void CopyFileReplacing(string sourceFullPath, string destFullPath)
+    {
+        byte[] bytes = File.ReadAllBytes(sourceFullPath);
+        File.WriteAllBytes(destFullPath, bytes);
     }
 
     static List<LevelObjectRecord> SortRecordsParentBeforeChildren(List<LevelObjectRecord> records)

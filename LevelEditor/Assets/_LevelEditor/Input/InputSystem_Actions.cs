@@ -246,6 +246,42 @@ public partial class @InputSystem_Actions: IInputActionCollection2, IDisposable
                     ""initialStateCheck"": false
                 },
                 {
+                    ""name"": ""Save"",
+                    ""type"": ""Button"",
+                    ""id"": ""f12c1f53-e0fc-4449-909d-f422350f7756"",
+                    ""expectedControlType"": """",
+                    ""processors"": """",
+                    ""interactions"": """",
+                    ""initialStateCheck"": false
+                },
+                {
+                    ""name"": ""Import Assets"",
+                    ""type"": ""Button"",
+                    ""id"": ""ae1f44a5-c7f4-4103-a39c-40d237080834"",
+                    ""expectedControlType"": """",
+                    ""processors"": """",
+                    ""interactions"": """",
+                    ""initialStateCheck"": false
+                },
+                {
+                    ""name"": ""New Project"",
+                    ""type"": ""Button"",
+                    ""id"": ""3e13b9df-b4ca-4fba-bf0c-a255d4e84a3c"",
+                    ""expectedControlType"": """",
+                    ""processors"": """",
+                    ""interactions"": """",
+                    ""initialStateCheck"": false
+                },
+                {
+                    ""name"": ""Open Project"",
+                    ""type"": ""Button"",
+                    ""id"": ""f0d3842a-5f03-483c-bb66-a61c6768485f"",
+                    ""expectedControlType"": """",
+                    ""processors"": """",
+                    ""interactions"": """",
+                    ""initialStateCheck"": false
+                },
+                {
                     ""name"": ""Paste"",
                     ""type"": ""Button"",
                     ""id"": ""686e7c86-63ab-449a-a266-74f1c61682fd"",
@@ -727,6 +763,138 @@ public partial class @InputSystem_Actions: IInputActionCollection2, IDisposable
                 },
                 {
                     ""name"": ""One Modifier"",
+                    ""id"": ""1e333a30-311a-4592-b7bd-a751a2170c81"",
+                    ""path"": ""OneModifier"",
+                    ""interactions"": """",
+                    ""processors"": """",
+                    ""groups"": """",
+                    ""action"": ""Save"",
+                    ""isComposite"": true,
+                    ""isPartOfComposite"": false
+                },
+                {
+                    ""name"": ""modifier"",
+                    ""id"": ""96c6a033-3add-45f1-8956-24091a3dd6bc"",
+                    ""path"": ""<Keyboard>/shift"",
+                    ""interactions"": """",
+                    ""processors"": """",
+                    ""groups"": """",
+                    ""action"": ""Save"",
+                    ""isComposite"": false,
+                    ""isPartOfComposite"": true
+                },
+                {
+                    ""name"": ""binding"",
+                    ""id"": ""a692455e-c60e-41f6-a7f8-eb5067e43ab4"",
+                    ""path"": ""<Keyboard>/s"",
+                    ""interactions"": """",
+                    ""processors"": """",
+                    ""groups"": """",
+                    ""action"": ""Save"",
+                    ""isComposite"": false,
+                    ""isPartOfComposite"": true
+                },
+                {
+                    ""name"": ""One Modifier"",
+                    ""id"": ""11ae8a97-2524-47ae-b6f5-2d4a071768d5"",
+                    ""path"": ""OneModifier"",
+                    ""interactions"": """",
+                    ""processors"": """",
+                    ""groups"": """",
+                    ""action"": ""Import Assets"",
+                    ""isComposite"": true,
+                    ""isPartOfComposite"": false
+                },
+                {
+                    ""name"": ""modifier"",
+                    ""id"": ""2af87f11-57ec-4639-b2c8-30212ea383fc"",
+                    ""path"": ""<Keyboard>/shift"",
+                    ""interactions"": """",
+                    ""processors"": """",
+                    ""groups"": """",
+                    ""action"": ""Import Assets"",
+                    ""isComposite"": false,
+                    ""isPartOfComposite"": true
+                },
+                {
+                    ""name"": ""binding"",
+                    ""id"": ""5d4516ad-f0d4-4692-89ff-4f7cf29a3494"",
+                    ""path"": ""<Keyboard>/i"",
+                    ""interactions"": """",
+                    ""processors"": """",
+                    ""groups"": """",
+                    ""action"": ""Import Assets"",
+                    ""isComposite"": false,
+                    ""isPartOfComposite"": true
+                },
+                {
+                    ""name"": ""One Modifier"",
+                    ""id"": ""96c07d94-4c3b-4ba6-a625-c2afe05eafdb"",
+                    ""path"": ""OneModifier"",
+                    ""interactions"": """",
+                    ""processors"": """",
+                    ""groups"": """",
+                    ""action"": ""New Project"",
+                    ""isComposite"": true,
+                    ""isPartOfComposite"": false
+                },
+                {
+                    ""name"": ""modifier"",
+                    ""id"": ""6d9dbdd2-23fe-40db-8437-a62a9d5f0280"",
+                    ""path"": ""<Keyboard>/shift"",
+                    ""interactions"": """",
+                    ""processors"": """",
+                    ""groups"": """",
+                    ""action"": ""New Project"",
+                    ""isComposite"": false,
+                    ""isPartOfComposite"": true
+                },
+                {
+                    ""name"": ""binding"",
+                    ""id"": ""73764a9f-d88d-471c-adea-bb732fbb73c9"",
+                    ""path"": ""<Keyboard>/n"",
+                    ""interactions"": """",
+                    ""processors"": """",
+                    ""groups"": """",
+                    ""action"": ""New Project"",
+                    ""isComposite"": false,
+                    ""isPartOfComposite"": true
+                },
+                {
+                    ""name"": ""One Modifier"",
+                    ""id"": ""63966bf0-e69c-4704-b78c-785156735eec"",
+                    ""path"": ""OneModifier"",
+                    ""interactions"": """",
+                    ""processors"": """",
+                    ""groups"": """",
+                    ""action"": ""Open Project"",
+                    ""isComposite"": true,
+                    ""isPartOfComposite"": false
+                },
+                {
+                    ""name"": ""modifier"",
+                    ""id"": ""be2a129e-a988-4df7-bb03-ce11bd1a0ad9"",
+                    ""path"": ""<Keyboard>/shift"",
+                    ""interactions"": """",
+                    ""processors"": """",
+                    ""groups"": """",
+                    ""action"": ""Open Project"",
+                    ""isComposite"": false,
+                    ""isPartOfComposite"": true
+                },
+                {
+                    ""name"": ""binding"",
+                    ""id"": ""6b4e0cae-f0ed-41dc-b824-a7c7f754a261"",
+                    ""path"": ""<Keyboard>/o"",
+                    ""interactions"": """",
+                    ""processors"": """",
+                    ""groups"": """",
+                    ""action"": ""Open Project"",
+                    ""isComposite"": false,
+                    ""isPartOfComposite"": true
+                },
+                {
+                    ""name"": ""One Modifier"",
                     ""id"": ""e66ef2e2-3f85-4e54-8491-9bf891688d06"",
                     ""path"": ""OneModifier"",
                     ""interactions"": """",
@@ -909,6 +1077,10 @@ public partial class @InputSystem_Actions: IInputActionCollection2, IDisposable
         m_UI_Undo = m_UI.FindAction("Undo", throwIfNotFound: true);
         m_UI_Redo = m_UI.FindAction("Redo", throwIfNotFound: true);
         m_UI_Copy = m_UI.FindAction("Copy", throwIfNotFound: true);
+        m_UI_Save = m_UI.FindAction("Save", throwIfNotFound: true);
+        m_UI_ImportAssets = m_UI.FindAction("Import Assets", throwIfNotFound: true);
+        m_UI_NewProject = m_UI.FindAction("New Project", throwIfNotFound: true);
+        m_UI_OpenProject = m_UI.FindAction("Open Project", throwIfNotFound: true);
         m_UI_Paste = m_UI.FindAction("Paste", throwIfNotFound: true);
         m_UI_Duplicate = m_UI.FindAction("Duplicate", throwIfNotFound: true);
         m_UI_Cut = m_UI.FindAction("Cut", throwIfNotFound: true);
@@ -1009,6 +1181,10 @@ public partial class @InputSystem_Actions: IInputActionCollection2, IDisposable
     private readonly InputAction m_UI_Undo;
     private readonly InputAction m_UI_Redo;
     private readonly InputAction m_UI_Copy;
+    private readonly InputAction m_UI_Save;
+    private readonly InputAction m_UI_ImportAssets;
+    private readonly InputAction m_UI_NewProject;
+    private readonly InputAction m_UI_OpenProject;
     private readonly InputAction m_UI_Paste;
     private readonly InputAction m_UI_Duplicate;
     private readonly InputAction m_UI_Cut;
@@ -1091,6 +1267,22 @@ public partial class @InputSystem_Actions: IInputActionCollection2, IDisposable
         /// Provides access to the underlying input action "UI/Copy".
         /// </summary>
         public InputAction @Copy => m_Wrapper.m_UI_Copy;
+        /// <summary>
+        /// Provides access to the underlying input action "UI/Save".
+        /// </summary>
+        public InputAction @Save => m_Wrapper.m_UI_Save;
+        /// <summary>
+        /// Provides access to the underlying input action "UI/ImportAssets".
+        /// </summary>
+        public InputAction @ImportAssets => m_Wrapper.m_UI_ImportAssets;
+        /// <summary>
+        /// Provides access to the underlying input action "UI/NewProject".
+        /// </summary>
+        public InputAction @NewProject => m_Wrapper.m_UI_NewProject;
+        /// <summary>
+        /// Provides access to the underlying input action "UI/OpenProject".
+        /// </summary>
+        public InputAction @OpenProject => m_Wrapper.m_UI_OpenProject;
         /// <summary>
         /// Provides access to the underlying input action "UI/Paste".
         /// </summary>
@@ -1180,6 +1372,18 @@ public partial class @InputSystem_Actions: IInputActionCollection2, IDisposable
             @Copy.started += instance.OnCopy;
             @Copy.performed += instance.OnCopy;
             @Copy.canceled += instance.OnCopy;
+            @Save.started += instance.OnSave;
+            @Save.performed += instance.OnSave;
+            @Save.canceled += instance.OnSave;
+            @ImportAssets.started += instance.OnImportAssets;
+            @ImportAssets.performed += instance.OnImportAssets;
+            @ImportAssets.canceled += instance.OnImportAssets;
+            @NewProject.started += instance.OnNewProject;
+            @NewProject.performed += instance.OnNewProject;
+            @NewProject.canceled += instance.OnNewProject;
+            @OpenProject.started += instance.OnOpenProject;
+            @OpenProject.performed += instance.OnOpenProject;
+            @OpenProject.canceled += instance.OnOpenProject;
             @Paste.started += instance.OnPaste;
             @Paste.performed += instance.OnPaste;
             @Paste.canceled += instance.OnPaste;
@@ -1251,6 +1455,18 @@ public partial class @InputSystem_Actions: IInputActionCollection2, IDisposable
             @Copy.started -= instance.OnCopy;
             @Copy.performed -= instance.OnCopy;
             @Copy.canceled -= instance.OnCopy;
+            @Save.started -= instance.OnSave;
+            @Save.performed -= instance.OnSave;
+            @Save.canceled -= instance.OnSave;
+            @ImportAssets.started -= instance.OnImportAssets;
+            @ImportAssets.performed -= instance.OnImportAssets;
+            @ImportAssets.canceled -= instance.OnImportAssets;
+            @NewProject.started -= instance.OnNewProject;
+            @NewProject.performed -= instance.OnNewProject;
+            @NewProject.canceled -= instance.OnNewProject;
+            @OpenProject.started -= instance.OnOpenProject;
+            @OpenProject.performed -= instance.OnOpenProject;
+            @OpenProject.canceled -= instance.OnOpenProject;
             @Paste.started -= instance.OnPaste;
             @Paste.performed -= instance.OnPaste;
             @Paste.canceled -= instance.OnPaste;
@@ -1484,6 +1700,34 @@ public partial class @InputSystem_Actions: IInputActionCollection2, IDisposable
         /// <seealso cref="UnityEngine.InputSystem.InputAction.performed" />
         /// <seealso cref="UnityEngine.InputSystem.InputAction.canceled" />
         void OnCopy(InputAction.CallbackContext context);
+        /// <summary>
+        /// Method invoked when associated input action "Save" is either <see cref="UnityEngine.InputSystem.InputAction.started" />, <see cref="UnityEngine.InputSystem.InputAction.performed" /> or <see cref="UnityEngine.InputSystem.InputAction.canceled" />.
+        /// </summary>
+        /// <seealso cref="UnityEngine.InputSystem.InputAction.started" />
+        /// <seealso cref="UnityEngine.InputSystem.InputAction.performed" />
+        /// <seealso cref="UnityEngine.InputSystem.InputAction.canceled" />
+        void OnSave(InputAction.CallbackContext context);
+        /// <summary>
+        /// Method invoked when associated input action "Import Assets" is either <see cref="UnityEngine.InputSystem.InputAction.started" />, <see cref="UnityEngine.InputSystem.InputAction.performed" /> or <see cref="UnityEngine.InputSystem.InputAction.canceled" />.
+        /// </summary>
+        /// <seealso cref="UnityEngine.InputSystem.InputAction.started" />
+        /// <seealso cref="UnityEngine.InputSystem.InputAction.performed" />
+        /// <seealso cref="UnityEngine.InputSystem.InputAction.canceled" />
+        void OnImportAssets(InputAction.CallbackContext context);
+        /// <summary>
+        /// Method invoked when associated input action "New Project" is either <see cref="UnityEngine.InputSystem.InputAction.started" />, <see cref="UnityEngine.InputSystem.InputAction.performed" /> or <see cref="UnityEngine.InputSystem.InputAction.canceled" />.
+        /// </summary>
+        /// <seealso cref="UnityEngine.InputSystem.InputAction.started" />
+        /// <seealso cref="UnityEngine.InputSystem.InputAction.performed" />
+        /// <seealso cref="UnityEngine.InputSystem.InputAction.canceled" />
+        void OnNewProject(InputAction.CallbackContext context);
+        /// <summary>
+        /// Method invoked when associated input action "Open Project" is either <see cref="UnityEngine.InputSystem.InputAction.started" />, <see cref="UnityEngine.InputSystem.InputAction.performed" /> or <see cref="UnityEngine.InputSystem.InputAction.canceled" />.
+        /// </summary>
+        /// <seealso cref="UnityEngine.InputSystem.InputAction.started" />
+        /// <seealso cref="UnityEngine.InputSystem.InputAction.performed" />
+        /// <seealso cref="UnityEngine.InputSystem.InputAction.canceled" />
+        void OnOpenProject(InputAction.CallbackContext context);
         /// <summary>
         /// Method invoked when associated input action "Paste" is either <see cref="UnityEngine.InputSystem.InputAction.started" />, <see cref="UnityEngine.InputSystem.InputAction.performed" /> or <see cref="UnityEngine.InputSystem.InputAction.canceled" />.
         /// </summary>

@@ -149,4 +149,36 @@ public class InputHandler : MonoBehaviour, InputSystem_Actions.IUIActions
             triggerCommand(EditorCommand.Cut);
         }
     }
+
+    public void OnSave(InputAction.CallbackContext context)
+    {
+        if (context.started)
+        {
+            triggerCommand(EditorCommand.SaveFile);
+        }
+    }
+
+    public void OnImportAssets(InputAction.CallbackContext context)
+    {
+        if (context.started)
+        {
+            triggerCommand(EditorCommand.ImportAssets);
+        }
+    }
+
+    public void OnNewProject(InputAction.CallbackContext context)
+    {
+        if (context.started)
+        {
+            triggerCommand(EditorCommand.NewFile);
+        }
+    }
+
+    public void OnOpenProject(InputAction.CallbackContext context)
+    {
+        if (context.started)
+        {
+            triggerCommand(EditorCommand.OpenFile);
+        }
+    }
 }

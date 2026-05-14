@@ -30,6 +30,22 @@ public class CopyPasteManager : MonoBehaviour
             case EditorCommand.Cut:
                 Cut();
                 break;
+
+            case EditorCommand.SaveFile:
+                LevelEditorFileMenuCommands.SaveLevel();
+                break;
+
+            case EditorCommand.OpenFile:
+                LevelEditorFileMenuCommands.OpenLevel();
+                break;
+
+            case EditorCommand.NewFile:
+                LevelEditorFileMenuCommands.NewEmptyLevel();
+                break;
+
+            case EditorCommand.ImportAssets:
+                LevelEditorFileMenuCommands.ImportAssets();
+                break;
         }
     }
 

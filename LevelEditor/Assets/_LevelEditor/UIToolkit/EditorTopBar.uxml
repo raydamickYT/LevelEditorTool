@@ -1,0 +1,17 @@
+<ui:UXML xmlns:ui="UnityEngine.UIElements" editor-extension-mode="False">
+    <Style src="EditorTopBar.uss" />
+    <ui:VisualElement name="top-bar-root" class="top-bar">
+        <ui:VisualElement name="menu-host" class="menu-host">
+            <ui:Button name="menu-file-trigger" text="File" class="menu-trigger" />
+            <ui:VisualElement name="menu-file-panel" class="dropdown-panel" style="display: none;">
+                <ui:Button name="item-new-file" text="New File" class="menu-item" />
+                <ui:Button name="item-open" text="Open" class="menu-item" />
+                <ui:Button name="item-save" text="Save" class="menu-item" />
+                <!-- <ui:Button name="item-export" text="Export" class="menu-item" /> --> <!-- Future feature: does the same as saving right now -->
+                <ui:VisualElement class="menu-separator" />
+                <ui:Button name="item-import-folder" text="Import Folder" class="menu-item" />
+                <ui:Button name="item-import-assets" text="Import Assets" class="menu-item" />
+            </ui:VisualElement>
+        </ui:VisualElement>
+    </ui:VisualElement>
+</ui:UXML>
