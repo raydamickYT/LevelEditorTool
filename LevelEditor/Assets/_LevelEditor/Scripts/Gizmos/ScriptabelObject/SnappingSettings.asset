@@ -16,3 +16,4 @@ MonoBehaviour:
   moveSnapSize: 1
   rotateSnapAngle: 15
   scaleSnapSize: 0.25
+  edgeSnapThreshold: 0.35

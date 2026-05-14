@@ -319,6 +319,36 @@
             "Width": 1440,
             "Height": 1080,
             "PixelsPerUnit": 100.0
+        },
+        {
+            "AssetID": "3aa9b24c-7c7d-406f-b46c-3f44c66a3a8c",
+            "FileName": "IMG_20210116_163527.jpg",
+            "OriginalFilePath": "D:\\foto's\\11-20-21\\IMG_20210116_163527.jpg",
+            "LocalFilePath": "D:/Gihub/LevelEditorTool/LevelEditor/Assets\\..\\UserData\\Assets\\Sprites\\3aa9b24c-7c7d-406f-b46c-3f44c66a3a8c.jpg",
+            "AssetType": "Sprite",
+            "Width": 1440,
+            "Height": 1080,
+            "PixelsPerUnit": 100.0
+        },
+        {
+            "AssetID": "baed4011-7dbd-41b5-babc-0e3cf5442d70",
+            "FileName": "IMG_20210411_205140.jpg",
+            "OriginalFilePath": "D:\\foto's\\11-20-21\\IMG_20210411_205140.jpg",
+            "LocalFilePath": "D:/Gihub/LevelEditorTool/LevelEditor/Assets\\..\\UserData\\Assets\\Sprites\\baed4011-7dbd-41b5-babc-0e3cf5442d70.jpg",
+            "AssetType": "Sprite",
+            "Width": 1440,
+            "Height": 1080,
+            "PixelsPerUnit": 100.0
+        },
+        {
+            "AssetID": "08bd942c-55ec-439d-ab72-a147341cdca3",
+            "FileName": "IMG_20210408_083046.jpg",
+            "OriginalFilePath": "D:\\foto's\\11-20-21\\IMG_20210408_083046.jpg",
+            "LocalFilePath": "D:/Gihub/LevelEditorTool/LevelEditor/Assets\\..\\UserData\\Assets\\Sprites\\08bd942c-55ec-439d-ab72-a147341cdca3.jpg",
+            "AssetType": "Sprite",
+            "Width": 1440,
+            "Height": 1080,
+            "PixelsPerUnit": 100.0
         }
     ]
 }

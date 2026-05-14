@@ -1,6 +1,161 @@
+using System.Collections.Generic;
 using UnityEngine;
 
 public static class GizmoSnapToEdgeUtility
 {
+    static readonly List<Bounds> s_OtherBoundsScratch = new(128);
+    static readonly HashSet<GameObject> s_ExcludeScratch = new();
 
+    /// <summary>
+    /// Applies edge alignment (within threshold) then grid snapping. Edge snap wins per axis when applied;
+    /// otherwise that axis uses the grid.
+    /// </summary>
+    public static Vector3 ResolveSnappedMoveWorldPosition(
+        Vector3 rawWorldPosition,
+        GizmoDragContext context,
+        GizmoObject gizmoObject)
+    {
+        SnappingSettings s = context.SnappingSettings;
+        if (s == null || !s.snappingEnabled)
+            return rawWorldPosition;
+
+        Vector3 start = context.TargetStartPosition;
+        Vector2 planeDelta = new Vector2(rawWorldPosition.x - start.x, rawWorldPosition.y - start.y);
+
+        GizmoAxis axisMode = context.ActiveHandle.Axis;
+        Vector3 axisWorld = axisMode != GizmoAxis.All
+            ? context.ActiveHandle.GetAxisVectorWorld().normalized
+            : Vector3.zero;
+
+        if (axisMode != GizmoAxis.All)
+        {
+            float alongRaw = Vector3.Dot(new Vector3(planeDelta.x, planeDelta.y, 0f), axisWorld);
+            planeDelta = new Vector2(axisWorld.x * alongRaw, axisWorld.y * alongRaw);
+        }
+
+        bool usedEdgeX = false;
+        bool usedEdgeY = false;
+        Vector2 edgeCorrection = Vector2.zero;
+
+        if (context.HasSelectionBoundsWorld
+            && s.edgeSnapThreshold > 0f
+            && LevelObjectsRoot.Instance != null
+            && gizmoObject != null
+            && gizmoObject.selectedLevelObjects != null
+            && gizmoObject.selectedLevelObjects.Count > 0)
+        {
+            s_OtherBoundsScratch.Clear();
+            s_ExcludeScratch.Clear();
+            for (int i = 0; i < gizmoObject.selectedLevelObjects.Count; i++)
+            {
+                LevelObject lo = gizmoObject.selectedLevelObjects[i];
+                if (lo != null)
+                    s_ExcludeScratch.Add(lo.gameObject);
+            }
+
+            LevelObjectsRoot.Instance.AppendLevelColliderBounds(s_OtherBoundsScratch, s_ExcludeScratch);
+
+            if (s_OtherBoundsScratch.Count > 0)
+            {
+                edgeCorrection = ComputeAxisAlignedEdgeCorrection(
+                    planeDelta,
+                    context.SelectionBoundsWorldAtDragStart,
+                    s_OtherBoundsScratch,
+                    s.edgeSnapThreshold);
+
+                if (Mathf.Abs(edgeCorrection.x) > 1e-5f)
+                    usedEdgeX = true;
+                if (Mathf.Abs(edgeCorrection.y) > 1e-5f)
+                    usedEdgeY = true;
+            }
+        }
+
+        Vector2 afterEdge = planeDelta + edgeCorrection;
+
+        float grid = s.moveSnapSize;
+        Vector3 result;
+
+        if (axisMode == GizmoAxis.All)
+        {
+            Vector3 worldBeforeGrid = start + new Vector3(afterEdge.x, afterEdge.y, 0f);
+            worldBeforeGrid.z = start.z;
+            result = worldBeforeGrid;
+            result.x = GizmoSnapToGridUtility.SnapFloat(result.x, grid, !usedEdgeX);
+            result.y = GizmoSnapToGridUtility.SnapFloat(result.y, grid, !usedEdgeY);
+        }
+        else
+        {
+            float along = Vector3.Dot(new Vector3(afterEdge.x, afterEdge.y, 0f), axisWorld);
+            bool skipGridAlong = Mathf.Abs(Vector3.Dot(new Vector3(edgeCorrection.x, edgeCorrection.y, 0f), axisWorld)) > 1e-5f;
+            along = GizmoSnapToGridUtility.SnapFloat(along, grid, !skipGridAlong);
+            result = start + axisWorld * along;
+            result.z = start.z;
+        }
+
+        return result;
+    }
+
+    static Vector2 ComputeAxisAlignedEdgeCorrection(
+        Vector2 translation,
+        Bounds selectionAtDragStart,
+        List<Bounds> others,
+        float threshold)
+    {
+        float minX = selectionAtDragStart.min.x + translation.x;
+        float maxX = selectionAtDragStart.max.x + translation.x;
+        float minY = selectionAtDragStart.min.y + translation.y;
+        float maxY = selectionAtDragStart.max.y + translation.y;
+
+        float bestDx = 0f;
+        float bestAbsDx = threshold + 1f;
+        float bestDy = 0f;
+        float bestAbsDy = threshold + 1f;
+
+        for (int i = 0; i < others.Count; i++)
+        {
+            Bounds o = others[i];
+            float ominX = o.min.x;
+            float omaxX = o.max.x;
+            float ominY = o.min.y;
+            float omaxY = o.max.y;
+
+            ConsiderDx(omaxX - minX, ref bestDx, ref bestAbsDx, threshold);
+            ConsiderDx(ominX - maxX, ref bestDx, ref bestAbsDx, threshold);
+            ConsiderDx(ominX - minX, ref bestDx, ref bestAbsDx, threshold);
+            ConsiderDx(omaxX - maxX, ref bestDx, ref bestAbsDx, threshold);
+
+            ConsiderDy(omaxY - minY, ref bestDy, ref bestAbsDy, threshold);
+            ConsiderDy(ominY - maxY, ref bestDy, ref bestAbsDy, threshold);
+            ConsiderDy(ominY - minY, ref bestDy, ref bestAbsDy, threshold);
+            ConsiderDy(omaxY - maxY, ref bestDy, ref bestAbsDy, threshold);
+        }
+
+        Vector2 total = Vector2.zero;
+        if (bestAbsDx <= threshold)
+            total.x = bestDx;
+        if (bestAbsDy <= threshold)
+            total.y = bestDy;
+
+        return total;
+    }
+
+    static void ConsiderDx(float dx, ref float bestDx, ref float bestAbsDx, float threshold)
+    {
+        float ax = Mathf.Abs(dx);
+        if (ax <= threshold && ax < bestAbsDx - 1e-6f)
+        {
+            bestAbsDx = ax;
+            bestDx = dx;
+        }
+    }
+
+    static void ConsiderDy(float dy, ref float bestDy, ref float bestAbsDy, float threshold)
+    {
+        float ay = Mathf.Abs(dy);
+        if (ay <= threshold && ay < bestAbsDy - 1e-6f)
+        {
+            bestAbsDy = ay;
+            bestDy = dy;
+        }
+    }
 }

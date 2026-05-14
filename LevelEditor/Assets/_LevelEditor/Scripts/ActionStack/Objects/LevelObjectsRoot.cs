@@ -80,4 +80,31 @@ public class LevelObjectsRoot : MonoBehaviour
             levelObjectsInRoot.Remove(child);
         }
     }
+
+    /// <summary>
+    /// Appends world-space <see cref="Bounds"/> for every <see cref="Collider2D"/> under tracked level objects,
+    /// skipping roots listed in <paramref name="excludedLevelObjectRoots"/>.
+    /// </summary>
+    public void AppendLevelColliderBounds(List<Bounds> buffer, HashSet<GameObject> excludedLevelObjectRoots)
+    {
+        if (buffer == null || levelObjectsInRoot == null)
+            return;
+
+        foreach (GameObject go in levelObjectsInRoot)
+        {
+            if (go == null)
+                continue;
+            if (excludedLevelObjectRoots != null && excludedLevelObjectRoots.Contains(go))
+                continue;
+
+            Collider2D[] colliders = go.GetComponentsInChildren<Collider2D>(true);
+            for (int i = 0; i < colliders.Length; i++)
+            {
+                Collider2D col = colliders[i];
+                if (col == null)
+                    continue;
+                buffer.Add(col.bounds);
+            }
+        }
+    }
 }

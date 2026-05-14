@@ -29,8 +29,10 @@ public class GizmoObject : MonoBehaviour, IGizmoObject
     }
     void LateUpdate()
     {
-        if (TargetTransform == null)
-            return;
+        // Keep world pose aligned with the target every frame. Relying only on
+        // TransformWindowEvents would drift (e.g. after camera zoom, parenting, or missed events).
+        if (TargetTransform != null)
+            SyncWorldPoseFromTarget();
 
         Transform activeRoot = GetActiveGizmoRoot();
         if (activeRoot == null)
@@ -164,10 +166,21 @@ public class GizmoObject : MonoBehaviour, IGizmoObject
 
     public void UpdateGizmoTransform(Transform targetTransform)
     {
-        Vector3 position = targetTransform.position;
-        position.z = this.transform.position.z;
+        if (targetTransform == null)
+            return;
 
-        transform.position = position;
-        transform.rotation = targetTransform.rotation;
+        SyncWorldPoseFromTarget(targetTransform);
+    }
+
+    private void SyncWorldPoseFromTarget(Transform targetTransform = null)
+    {
+        Transform t = targetTransform != null ? targetTransform : TargetTransform;
+        if (t == null)
+            return;
+
+        Vector3 position = t.position;
+        position.z = transform.position.z;
+
+        transform.SetPositionAndRotation(position, t.rotation);
     }
 }

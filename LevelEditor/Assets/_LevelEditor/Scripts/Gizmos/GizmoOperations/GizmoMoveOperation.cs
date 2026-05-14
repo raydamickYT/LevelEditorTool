@@ -6,24 +6,24 @@ public class GizmoMoveOperation : IGizmoTransformOperation
     {
         Vector3 delta = currentMouseWorld - context.DragStartWorld;
 
+        Vector3 rawPosition;
         if (context.ActiveHandle.Axis == GizmoAxis.All)
         {
-            delta = GizmoSnapToGridUtility.SnapVector(delta, context.SnappingSettings.moveSnapSize, context.SnappingSettings.snappingEnabled);
-            context.ActiveTarget.position = context.TargetStartPosition + delta;
-            gizmoObject.transform.position = context.TargetStartPosition + delta;
-            EventManager.Instance.TriggerUnityEvent(TransformWindowEvents.OnTransformValuesUpdated);
-            return;
+            rawPosition = context.TargetStartPosition + delta;
+        }
+        else
+        {
+            Vector3 axis = context.ActiveHandle.GetAxisVectorWorld().normalized;
+            float projectedDistance = Vector3.Dot(delta, axis);
+            rawPosition = context.TargetStartPosition + axis * projectedDistance;
         }
 
-        Vector3 axis = context.ActiveHandle.GetAxisVectorWorld().normalized;
-        float projectedDistance = Vector3.Dot(delta, axis);
+        rawPosition.z = context.TargetStartPosition.z;
 
-        projectedDistance = GizmoSnapToGridUtility.SnapFloat(projectedDistance, context.SnappingSettings.moveSnapSize, context.SnappingSettings.snappingEnabled);
+        Vector3 snapped = GizmoSnapToEdgeUtility.ResolveSnappedMoveWorldPosition(rawPosition, context, gizmoObject);
 
-        context.ActiveTarget.position = context.TargetStartPosition + axis * projectedDistance;
-        gizmoObject.transform.position = context.TargetStartPosition + axis * projectedDistance;
-
+        context.ActiveTarget.position = snapped;
+        gizmoObject.transform.position = snapped;
         EventManager.Instance.TriggerUnityEvent(TransformWindowEvents.OnTransformValuesUpdated);
     }
-
 }

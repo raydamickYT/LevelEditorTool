@@ -13,6 +13,10 @@ public class GizmoDragContext
 
     public SnappingSettings SnappingSettings { get; }
 
+    /// <summary>Combined world bounds of the selection at drag start (for edge snapping).</summary>
+    public bool HasSelectionBoundsWorld { get; }
+    public Bounds SelectionBoundsWorldAtDragStart { get; }
+
     public GizmoDragContext(
         GizmoHandle activeHandle,
         Transform activeTarget,
@@ -21,7 +25,9 @@ public class GizmoDragContext
         Vector3 targetStartScale,
         float targetStartRotationZ,
         float startMouseAngle,
-        SnappingSettings snappingSettings)
+        SnappingSettings snappingSettings,
+        Bounds selectionBoundsWorldAtDragStart,
+        bool hasSelectionBoundsWorld)
     {
         ActiveHandle = activeHandle;
         ActiveTarget = activeTarget;
@@ -31,5 +37,7 @@ public class GizmoDragContext
         TargetStartRotationZ = targetStartRotationZ;
         StartMouseAngle = startMouseAngle;
         SnappingSettings = snappingSettings;
+        SelectionBoundsWorldAtDragStart = selectionBoundsWorldAtDragStart;
+        HasSelectionBoundsWorld = hasSelectionBoundsWorld;
     }
 }

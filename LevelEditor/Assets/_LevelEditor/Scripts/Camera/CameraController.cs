@@ -10,6 +10,11 @@ public class CameraController : MonoBehaviour
     private Vector3 lastMouseWorldPos;
     [SerializeField] private LayerMask targetLayer;
 
+    [Header("Zoom (orthographic)")]
+    [Tooltip("Kleinste orthographicSize = sterkst ingezoomd. Grootste = verst uitgezoomd.")]
+    [SerializeField] private float minOrthographicSize = 2f;
+    [SerializeField] private float maxOrthographicSize = 20f;
+
     // Start is called once before the first execution of Update after the MonoBehaviour is created
     void Start()
     {
@@ -56,8 +61,13 @@ public class CameraController : MonoBehaviour
 
         float scrollValue = context.ReadValue<Vector2>().y;
         cam.orthographicSize -= scrollValue * 0.5f;
-        cam.orthographicSize = Mathf.Clamp(cam.orthographicSize, 2f, 20f);
+        cam.orthographicSize = Mathf.Clamp(cam.orthographicSize, minOrthographicSize, maxOrthographicSize);
 
-        EventManager.Instance.TriggerUnityEvent("OnCameraZoom");
+        EventManager.Instance.TriggerUnityEvent(CameraEvents.OnCameraZoom);
     }
+}
+
+public static class CameraEvents
+{
+    public const string OnCameraZoom = "OnCameraZoom";
 }

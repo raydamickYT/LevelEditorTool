@@ -12,7 +12,7 @@ public class GizmoInteractionHandler : MonoBehaviour
     [SerializeField] private SnappingSettings snappingSettings;
     public bool SnappingEnabled => snappingSettings.snappingEnabled;
 
-    [Header("Camer & Gizmo LayerMaskName")]
+    [Header("Camera & Gizmo LayerMaskName")]
     [SerializeField] private Camera cam;
     [SerializeField] private string gizmoHandleLayerName = "GizmoHandle";
 
@@ -27,6 +27,9 @@ public class GizmoInteractionHandler : MonoBehaviour
     private float startMouseAngle;
     private bool isDragging;
     private GizmoObject gizmoObject;
+
+    private Bounds selectionBoundsWorldAtDragStart;
+    private bool hasSelectionBoundsWorldAtDragStart;
 
     //undo stack
     private TransformAction currentAction;
@@ -151,7 +154,43 @@ public class GizmoInteractionHandler : MonoBehaviour
             }
         }
 
+        hasSelectionBoundsWorldAtDragStart = TryGetCombinedColliderBoundsWorld(
+            gizmoObject.selectedLevelObjects, out selectionBoundsWorldAtDragStart);
+
         isDragging = true;
+    }
+
+    static bool TryGetCombinedColliderBoundsWorld(List<LevelObject> levelObjects, out Bounds combined)
+    {
+        combined = default;
+        if (levelObjects == null || levelObjects.Count == 0)
+            return false;
+
+        bool hasAny = false;
+        for (int i = 0; i < levelObjects.Count; i++)
+        {
+            LevelObject lo = levelObjects[i];
+            if (lo == null)
+                continue;
+
+            Collider2D[] cols = lo.GetComponentsInChildren<Collider2D>(true);
+            for (int c = 0; c < cols.Length; c++)
+            {
+                Collider2D col = cols[c];
+                if (col == null)
+                    continue;
+
+                if (!hasAny)
+                {
+                    combined = col.bounds;
+                    hasAny = true;
+                }
+                else
+                    combined.Encapsulate(col.bounds);
+            }
+        }
+
+        return hasAny;
     }
 
     private void StopDragging()
@@ -185,6 +224,8 @@ public class GizmoInteractionHandler : MonoBehaviour
         currentAction = null;
         transformActions.Clear();
 
+        hasSelectionBoundsWorldAtDragStart = false;
+
         isDragging = false;
         activeHandle = null;
         activeTarget = null;
@@ -215,9 +256,17 @@ public class GizmoInteractionHandler : MonoBehaviour
 
     GizmoDragContext CreateDragContext()
     {
-        GizmoDragContext dragCtx = new GizmoDragContext(activeHandle, activeTarget, dragStartWorld,
-        targetStartPosition, targetStartScale, targetStartRotationZ, startMouseAngle, snappingSettings);
-        return dragCtx;
+        return new GizmoDragContext(
+            activeHandle,
+            activeTarget,
+            dragStartWorld,
+            targetStartPosition,
+            targetStartScale,
+            targetStartRotationZ,
+            startMouseAngle,
+            snappingSettings,
+            selectionBoundsWorldAtDragStart,
+            hasSelectionBoundsWorldAtDragStart);
     }
 
     private Vector3 GetMouseWorldPosition()
