@@ -1,6 +1,6 @@
 using UnityEngine;
 
-public static class GizmoSnapUtility
+public static class GizmoSnapToGridUtility
 {
     public static float SnapFloat(float value, float snapSize, bool snappingEnabled)
     {

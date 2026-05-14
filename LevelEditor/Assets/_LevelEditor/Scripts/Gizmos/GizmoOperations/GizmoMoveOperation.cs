@@ -8,7 +8,7 @@ public class GizmoMoveOperation : IGizmoTransformOperation
 
         if (context.ActiveHandle.Axis == GizmoAxis.All)
         {
-            delta = GizmoSnapUtility.SnapVector(delta, context.SnappingSettings.moveSnapSize, context.SnappingSettings.snappingEnabled);
+            delta = GizmoSnapToGridUtility.SnapVector(delta, context.SnappingSettings.moveSnapSize, context.SnappingSettings.snappingEnabled);
             context.ActiveTarget.position = context.TargetStartPosition + delta;
             gizmoObject.transform.position = context.TargetStartPosition + delta;
             EventManager.Instance.TriggerUnityEvent(TransformWindowEvents.OnTransformValuesUpdated);
@@ -18,7 +18,7 @@ public class GizmoMoveOperation : IGizmoTransformOperation
         Vector3 axis = context.ActiveHandle.GetAxisVectorWorld().normalized;
         float projectedDistance = Vector3.Dot(delta, axis);
 
-        projectedDistance = GizmoSnapUtility.SnapFloat(projectedDistance, context.SnappingSettings.moveSnapSize, context.SnappingSettings.snappingEnabled);
+        projectedDistance = GizmoSnapToGridUtility.SnapFloat(projectedDistance, context.SnappingSettings.moveSnapSize, context.SnappingSettings.snappingEnabled);
 
         context.ActiveTarget.position = context.TargetStartPosition + axis * projectedDistance;
         gizmoObject.transform.position = context.TargetStartPosition + axis * projectedDistance;

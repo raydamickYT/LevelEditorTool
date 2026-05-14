@@ -8,7 +8,7 @@ public class GizmoRotationOperation : IGizmoTransformOperation
         float deltaAngle = Mathf.DeltaAngle(context.StartMouseAngle, currentAngle);
 
         deltaAngle *= context.ActiveHandle.RotationSensitivity;
-        deltaAngle = GizmoSnapUtility.SnapFloat(deltaAngle, context.SnappingSettings.rotateSnapAngle, context.SnappingSettings.snappingEnabled);
+        deltaAngle = GizmoSnapToGridUtility.SnapFloat(deltaAngle, context.SnappingSettings.rotateSnapAngle, context.SnappingSettings.snappingEnabled);
 
         float finalAngle = context.TargetStartRotationZ + deltaAngle;
 

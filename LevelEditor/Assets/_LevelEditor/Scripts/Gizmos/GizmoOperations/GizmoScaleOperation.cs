@@ -10,7 +10,7 @@ public class GizmoScaleOperation : IGizmoTransformOperation
         if (context.ActiveHandle.Axis == GizmoAxis.All)
         {
             float uniformDelta = (delta.x + delta.y) * context.ActiveHandle.ScaleSensitivity;
-            uniformDelta = GizmoSnapUtility.SnapFloat(uniformDelta, context.SnappingSettings.scaleSnapSize, context.SnappingSettings.snappingEnabled);
+            uniformDelta = GizmoSnapToGridUtility.SnapFloat(uniformDelta, context.SnappingSettings.scaleSnapSize, context.SnappingSettings.snappingEnabled);
 
             Vector3 result = context.TargetStartScale + Vector3.one * uniformDelta;
             context.ActiveTarget.localScale = result;
@@ -22,7 +22,7 @@ public class GizmoScaleOperation : IGizmoTransformOperation
         float projectedDistance = Vector3.Dot(delta, axis);
 
         float scaledAmount = projectedDistance * context.ActiveHandle.ScaleSensitivity;
-        scaledAmount = GizmoSnapUtility.SnapFloat(scaledAmount, context.SnappingSettings.scaleSnapSize, context.SnappingSettings.snappingEnabled);
+        scaledAmount = GizmoSnapToGridUtility.SnapFloat(scaledAmount, context.SnappingSettings.scaleSnapSize, context.SnappingSettings.snappingEnabled);
 
         Vector3 scaleDelta = context.ActiveHandle.Axis switch
         {
