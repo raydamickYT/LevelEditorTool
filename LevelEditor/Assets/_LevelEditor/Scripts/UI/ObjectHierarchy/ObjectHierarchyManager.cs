@@ -23,6 +23,72 @@ public class ObjectHierarchyManager : MonoBehaviour
     private void Awake()
     {
         EventManager.Instance.AddDelegateListener(ObjectHierarchyEvents.RefreshMenu, (Action<IEnumerable<HierarchyChange>>)Refresh);
+        EventManager.Instance.AddDelegateListener(ObjectHierarchyEvents.RebuildEntireHierarchy, (Action)RebuildEntireHierarchyFromScene);
+    }
+
+    /// <summary>
+    /// Clears all hierarchy UI and rebuilds it from <see cref="LevelObjectsRoot"/> (used after level import).
+    /// </summary>
+    public void RebuildEntireHierarchyFromScene()
+    {
+        ClearAllHierarchyVisuals();
+
+        if (LevelObjectsRoot.Instance == null || contentParent == null)
+            return;
+
+        List<GameObject> roots = LevelObjectsRoot.Instance.GetRootLevelObjectsSnapshot();
+        roots.Sort((a, b) => a.transform.GetSiblingIndex().CompareTo(b.transform.GetSiblingIndex()));
+
+        foreach (GameObject rootGo in roots)
+        {
+            if (rootGo == null)
+                continue;
+            LevelObject lo = rootGo.GetComponent<LevelObject>();
+            if (lo == null)
+                continue;
+
+            if (lo is LevelObjectGroup group)
+                AddParent(group, contentParent);
+            else
+                AddItem(lo);
+        }
+    }
+
+    void ClearAllHierarchyVisuals()
+    {
+        foreach (KeyValuePair<LevelObject, HierarchyParentObjectItem> kv in parentItems.ToList())
+        {
+            if (kv.Value != null)
+                kv.Value.ReleaseChildren(contentParent);
+        }
+
+        foreach (KeyValuePair<LevelObject, HierarchyObjectItem> kv in items.ToList())
+        {
+            if (kv.Value != null)
+                Destroy(kv.Value.gameObject);
+        }
+
+        items.Clear();
+
+        foreach (KeyValuePair<LevelObject, HierarchyParentObjectItem> kv in parentItems.ToList())
+        {
+            if (kv.Value != null)
+                Destroy(kv.Value.gameObject);
+        }
+
+        parentItems.Clear();
+        existingNames.Clear();
+
+        ClearHierarchyItemRefsOnAllLevelObjects();
+    }
+
+    static void ClearHierarchyItemRefsOnAllLevelObjects()
+    {
+        foreach (LevelObject lo in UnityEngine.Object.FindObjectsByType<LevelObject>(FindObjectsInactive.Include, FindObjectsSortMode.None))
+        {
+            if (lo != null)
+                lo.hierarchyObjectItem = null;
+        }
     }
 
     public void Refresh(IEnumerable<HierarchyChange> hierarchyChangeObjects)
@@ -48,7 +114,7 @@ public class ObjectHierarchyManager : MonoBehaviour
                 foreach (HierarchyChange change in changes)
                 {
                     if (change.LevelObject is LevelObjectGroup group)
-                        AddParent(group);
+                        AddParent(group, contentParent);
                     else
                         Debug.LogWarning($"{change.LevelObject.name} is not a levelObjectGroup");
                 }
@@ -77,7 +143,6 @@ public class ObjectHierarchyManager : MonoBehaviour
     private void AddItem(LevelObject levelObject)
     {
         if (levelObject == null) return;
-        Debug.Log("found child" + levelObject + items.ContainsKey(levelObject));
 
         if (items.ContainsKey(levelObject)) return;
 
@@ -91,27 +156,37 @@ public class ObjectHierarchyManager : MonoBehaviour
         existingNames.Add(levelObject.name);
     }
 
-    private void AddParent(LevelObjectGroup group)
+    private void AddParent(LevelObjectGroup group, Transform rowParent)
     {
         if (group == null) return;
         if (parentItems.ContainsKey(group)) return;
 
+        Transform parentForRow = rowParent != null ? rowParent : contentParent;
+
         group.name = GetUniqueHierarchyName(group.name);
 
-        HierarchyParentObjectItem parentItem = Instantiate(parentPrefab, contentParent);
+        HierarchyParentObjectItem parentItem = Instantiate(parentPrefab, parentForRow);
         parentItems.Add(group, parentItem);
         existingNames.Add(group.name);
 
         if (group.LevelObjects.ToList().Count == 0)
             group.RebuildChildrenFromTransform();
 
+        List<HierarchyParentObjectItem> stagedNested = new();
 
-        Debug.LogWarning("ParentsChildren " + group.LevelObjects.Count() + group.name);
-        foreach (LevelObject child in group.LevelObjects)
+        foreach (LevelObject child in group.LevelObjects.ToList())
         {
-            GetOrCreateChild(child, parentItem.ChildrenContainer);
+            if (child is LevelObjectGroup childGroup)
+            {
+                AddParent(childGroup, contentParent);
+                if (parentItems.TryGetValue(childGroup, out HierarchyParentObjectItem nestedRow))
+                    stagedNested.Add(nestedRow);
+            }
+            else
+                GetOrCreateChild(child, contentParent);
         }
 
+        parentItem.SetStagedNestedGroupRows(stagedNested);
         parentItem.Initialize(group);
     }
 
@@ -178,7 +253,7 @@ public class ObjectHierarchyManager : MonoBehaviour
             items.Remove(levelObject);
         }
 
-        HierarchyObjectItem item = Instantiate(itemPrefab, contentParent);
+        HierarchyObjectItem item = Instantiate(itemPrefab, parent);
         item.Initialize(levelObject);
 
         items.Add(levelObject, item);
@@ -191,6 +266,9 @@ public class ObjectHierarchyManager : MonoBehaviour
 public static class ObjectHierarchyEvents
 {
     public const string RefreshMenu = "RefreshMenu";
+
+    /// <summary>Parameterless: rebuild the whole hierarchy list from the scene.</summary>
+    public const string RebuildEntireHierarchy = "RebuildEntireHierarchy";
 }
 
 

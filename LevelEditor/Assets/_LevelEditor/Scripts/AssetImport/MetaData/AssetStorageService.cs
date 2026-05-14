@@ -1,5 +1,7 @@
 using System.Collections.Generic;
 using System.IO;
+using System.Linq;
+using System.Text;
 using UnityEngine;
 
 /// <summary>
@@ -21,8 +23,6 @@ public static class AssetStorageService
     private static readonly string AssetFolder = Path.Combine(RootFolder, "Assets");
 
     private static readonly string SpriteFolder = Path.Combine(AssetFolder, "Sprites");
-
-    private static readonly string MetaDataPath = Path.Combine(RootFolder, "asset_registry.json");
 
     //caching meta data
     private static AssetMetaDataCollection cachedMetaData;
@@ -63,9 +63,6 @@ public static class AssetStorageService
     //this function stores the earlier made ImportedSpriteData and stores it in a metadata file
     public static void SaveMetaData(ImportedSpriteData data)
     {
-        //create the dir for metadatafiles
-        Directory.CreateDirectory(RootFolder);
-
         //check if there's already metadata stored
         AssetMetaDataCollection collection = GetCachedMetaData();
 
@@ -84,34 +81,15 @@ public static class AssetStorageService
         }
 
         assetLookup[data.AssetID] = data;
-
-        //create a json string
-        string json = JsonUtility.ToJson(collection, prettyPrint: true);
-        File.WriteAllText(MetaDataPath, json); //and store it in an actual location.
     }
 
-    //loading the meta data from the created path
+    /// <summary>
+    /// Session-only registry: do not persist <c>UserData/asset_registry.json</c> across runs.
+    /// The tool loads registry data from a saved project folder when the user opens a project.
+    /// </summary>
     private static AssetMetaDataCollection LoadMetaDataFromDisk()
     {
-        //check if the file exists if not return a new collection
-        if (!File.Exists(MetaDataPath))
-        {
-            return new AssetMetaDataCollection();
-        }
-
-        string json = File.ReadAllText(MetaDataPath);
-
-        //check if the existing file containts data, if not return a new collection
-        if (string.IsNullOrWhiteSpace(json))
-        {
-            return new AssetMetaDataCollection();
-        }
-
-        //create a new collection from the data that we got from the json
-        AssetMetaDataCollection collection = JsonUtility.FromJson<AssetMetaDataCollection>(json);
-
-        //return that but if the collection happens to be null for some reason return a new collection.
-        return collection ?? new AssetMetaDataCollection();
+        return new AssetMetaDataCollection { Assets = new List<ImportedAssetMetaData>() };
     }
 
     private static AssetMetaDataCollection GetCachedMetaData()
@@ -175,6 +153,21 @@ public static class AssetStorageService
         return null;
     }
 
+    /// <summary>All entries currently in the in-memory registry (after <see cref="GetCachedMetaData"/>).</summary>
+    public static List<ImportedAssetMetaData> GetAllCachedImportedAssets()
+    {
+        GetCachedMetaData();
+        if (cachedMetaData?.Assets == null)
+            return new List<ImportedAssetMetaData>();
+
+        // One row per AssetID (registry JSON can theoretically contain duplicates after merges).
+        return cachedMetaData.Assets
+            .Where(a => a != null && !string.IsNullOrWhiteSpace(a.AssetID))
+            .GroupBy(a => a.AssetID)
+            .Select(g => g.First())
+            .ToList();
+    }
+
     public static void ClearMetaDataCache()
     {
         cachedMetaData = null;
@@ -187,6 +180,147 @@ public static class AssetStorageService
         GetCachedMetaData();
     }
 
+    /// <summary>
+    /// Merges <c>BundledAssets/asset_registry.json</c> under <paramref name="levelDirectory"/> into the in-memory registry
+    /// and resolves <see cref="ImportedAssetMetaData.LocalFilePath"/> to absolute paths on disk.
+    /// </summary>
+    public static void MergeBundledAssetsFromLevelFolder(string levelDirectory)
+    {
+        if (string.IsNullOrEmpty(levelDirectory))
+            return;
+
+        string registryPath = Path.Combine(levelDirectory, "BundledAssets", "asset_registry.json");
+        if (!File.Exists(registryPath))
+            return;
+
+        string json = File.ReadAllText(registryPath);
+        AssetMetaDataCollection fragment = JsonUtility.FromJson<AssetMetaDataCollection>(json);
+        if (fragment == null || fragment.Assets == null)
+            return;
+
+        GetCachedMetaData();
+
+        foreach (ImportedAssetMetaData asset in fragment.Assets)
+        {
+            if (asset == null || string.IsNullOrWhiteSpace(asset.AssetID))
+                continue;
+
+            string rel = asset.LocalFilePath.Replace('\\', '/');
+            string abs = Path.GetFullPath(Path.Combine(levelDirectory, rel.Replace('/', Path.DirectorySeparatorChar)));
+
+            if (!File.Exists(abs))
+            {
+                Debug.LogWarning($"Bundled asset file missing for {asset.AssetID}: {abs}");
+                continue;
+            }
+
+            asset.LocalFilePath = abs;
+
+            int existingIndex = cachedMetaData.Assets.FindIndex(a => a != null && a.AssetID == asset.AssetID);
+            if (existingIndex >= 0)
+                cachedMetaData.Assets[existingIndex] = asset;
+            else
+                cachedMetaData.Assets.Add(asset);
+
+            assetLookup[asset.AssetID] = asset;
+        }
+
+        AssetRuntimeLoader.ClearCache();
+    }
+
+    /// <summary>Serializes the current registry to a level folder (full snapshot for reopening the project).</summary>
+    public static void WriteProjectRegistrySnapshot(string destinationFilePath)
+    {
+        if (string.IsNullOrEmpty(destinationFilePath))
+            return;
+
+        GetCachedMetaData();
+        if (cachedMetaData == null)
+            cachedMetaData = new AssetMetaDataCollection { Assets = new List<ImportedAssetMetaData>() };
+
+        string dir = Path.GetDirectoryName(destinationFilePath);
+        if (!string.IsNullOrEmpty(dir))
+            Directory.CreateDirectory(dir);
+
+        File.WriteAllText(destinationFilePath, JsonUtility.ToJson(cachedMetaData, true), Encoding.UTF8);
+    }
+
+    /// <summary>Merges a full registry snapshot from a level folder into memory (paths resolved against disk / level folder).</summary>
+    public static void MergeProjectRegistrySnapshot(string projectRegistryFilePath, string levelDirectory)
+    {
+        if (string.IsNullOrEmpty(projectRegistryFilePath) || !File.Exists(projectRegistryFilePath))
+            return;
+
+        string json = File.ReadAllText(projectRegistryFilePath, Encoding.UTF8);
+        AssetMetaDataCollection fragment = JsonUtility.FromJson<AssetMetaDataCollection>(json);
+        if (fragment == null || fragment.Assets == null)
+            return;
+
+        GetCachedMetaData();
+
+        foreach (ImportedAssetMetaData asset in fragment.Assets)
+        {
+            if (asset == null || string.IsNullOrWhiteSpace(asset.AssetID))
+                continue;
+
+            string resolved = ResolveRegistryAssetPath(asset.LocalFilePath, levelDirectory);
+            if (string.IsNullOrEmpty(resolved) || !File.Exists(resolved))
+            {
+                Debug.LogWarning($"Project registry: file missing for {asset.AssetID} ({asset.LocalFilePath})");
+                continue;
+            }
+
+            asset.LocalFilePath = resolved;
+
+            int existingIndex = cachedMetaData.Assets.FindIndex(a => a != null && a.AssetID == asset.AssetID);
+            if (existingIndex >= 0)
+                cachedMetaData.Assets[existingIndex] = asset;
+            else
+                cachedMetaData.Assets.Add(asset);
+
+            assetLookup[asset.AssetID] = asset;
+        }
+
+        AssetRuntimeLoader.ClearCache();
+    }
+
+    static string ResolveRegistryAssetPath(string localPath, string levelDirectory)
+    {
+        if (string.IsNullOrWhiteSpace(localPath))
+            return null;
+
+        if (File.Exists(localPath))
+            return Path.GetFullPath(localPath);
+
+        if (!string.IsNullOrEmpty(levelDirectory))
+        {
+            string combined = Path.GetFullPath(Path.Combine(levelDirectory, localPath.Replace('/', Path.DirectorySeparatorChar)));
+            if (File.Exists(combined))
+                return combined;
+        }
+
+        return null;
+    }
+
+    /// <summary>
+    /// Clears in-memory registry and deletes session <c>UserData</c> (imported sprite copies, etc.) when the tool closes.
+    /// </summary>
+    public static void ResetRuntimeWorkspace()
+    {
+        ClearMetaDataCache();
+        AssetRuntimeLoader.ClearCache();
+        LevelProjectSession.ClearProject();
+
+        try
+        {
+            if (Directory.Exists(RootFolder))
+                Directory.Delete(RootFolder, true);
+        }
+        catch (IOException ex)
+        {
+            Debug.LogWarning("Could not delete session UserData folder: " + ex.Message);
+        }
+    }
 }
 
 

@@ -23,6 +23,10 @@ public class GizmoController
 
     public void HandleSelectionChanged(HashSet<SelectableTargetData> data)
     {
+        // Before clearing gizmo targets: if user sole-selects a parent group again after moving children,
+        // snap the group pivot to the current bounds center (see LevelObjectGroup).
+        LevelObjectGroup.TryUpdatePivotWhenGroupBecomesSoleSelection(data);
+
         HideCurrentGizmos(); //having this at the top will make sure that all gizmo's are hidden even if there's none selected.
         if (data == null || data.Count == 0)
         {

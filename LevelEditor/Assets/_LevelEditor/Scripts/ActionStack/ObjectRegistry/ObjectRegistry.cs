@@ -37,9 +37,31 @@ public static class ObjectRegistry
     public static void DeregisterObject(LevelObject levelObject)
     {
         if (levelObject != null)
+        {
             objects.Remove(levelObject.ObjectID);
+            Debug.Log("object removed " + levelObject.ObjectID);
+        }
+    }
 
-        Debug.Log("object removed " + levelObject.ObjectID);
+    public static void ClearAllForNewLevel()
+    {
+        objects.Clear();
+        currentID = 0;
+    }
+
+    /// <summary>True if this GameObject is already in the registry (e.g. after level spawn — avoid assigning a second ID).</summary>
+    public static bool IsGameObjectRegistered(GameObject go)
+    {
+        if (go == null)
+            return false;
+
+        foreach (KeyValuePair<int, GameObject> kv in objects)
+        {
+            if (kv.Value == go)
+                return true;
+        }
+
+        return false;
     }
 
     public static LevelObject GetLevelObject(int id)

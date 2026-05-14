@@ -29,7 +29,6 @@ public class HierarchyObjectItem : MonoBehaviour
         levelObject = target;
         nameText.text = target.name;
         levelObject.hierarchyObjectItem = this;
-        Debug.Log("object ref: " + levelObject.hierarchyObjectItem + levelObject.name);
 
         if (!levelObject.gameObject.TryGetComponent(out selectableObject))
         {
@@ -42,9 +41,12 @@ public class HierarchyObjectItem : MonoBehaviour
     }
     private void OnDestroy()
     {
-        button.onClick.RemoveListener(SetSelected);
+        if (button != null)
+            button.onClick.RemoveListener(SetSelected);
         if (selectableObject != null)
             selectableObject.OnSelectionChanged -= UpdateSelectionVisuals;
+        if (levelObject != null)
+            levelObject.hierarchyObjectItem = null;
     }
 
     //responsible for selecting the object whenever the button is pressed
@@ -62,7 +64,8 @@ public class HierarchyObjectItem : MonoBehaviour
 
     private void UpdateSelectionVisuals()
     {
-        if (selectableObject == null) return;
+        if (selectableObject == null || background == null)
+            return;
 
         background.color = selectableObject.IsSelected ? selectedColor : normalColor;
     }

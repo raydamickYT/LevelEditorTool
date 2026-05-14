@@ -10,6 +10,9 @@ public class LevelObjectGroup : LevelObject
     private List<SelectableTargetData> selectableTargetDatas = new();
     public IEnumerable<SelectableTargetData> SelectableTargetDatas => selectableTargetDatas;
 
+    /// <summary>World positions of direct children last time this group was the only selected object (for pivot recenter).</summary>
+    Dictionary<int, Vector3> childWorldPosAtLastSoleSelection;
+
     public class GroupMemento : Memento
     {
         public List<LevelObject> Children { get; }
@@ -38,30 +41,106 @@ public class LevelObjectGroup : LevelObject
 
         levelObjects.Add(child);
         child.UpdateParent(this);
+        SyncSelectableTargetsFromChildren();
+    }
+
+    /// <summary>Rebuilds <see cref="selectableTargetDatas"/> from current <see cref="LevelObjects"/> (used by <see cref="UpdateCenterWithoutMovingChildren"/>).</summary>
+    public void SyncSelectableTargetsFromChildren()
+    {
+        selectableTargetDatas.Clear();
+        foreach (LevelObject child in levelObjects)
+        {
+            if (child == null)
+                continue;
+
+            if (child.TryGetComponent(out SelectableObject so) && so.TargetData != null)
+                selectableTargetDatas.Add(so.TargetData);
+        }
+    }
+
+    /// <summary>
+    /// When the new selection is exactly one object and it is a <see cref="LevelObjectGroup"/>,
+    /// recenters the group pivot if any direct child moved since this group was last sole-selected.
+    /// </summary>
+    public static void TryUpdatePivotWhenGroupBecomesSoleSelection(HashSet<SelectableTargetData> selection)
+    {
+        if (selection == null || selection.Count != 1)
+            return;
+
+        SelectableTargetData sole = null;
+        foreach (SelectableTargetData d in selection)
+        {
+            sole = d;
+            break;
+        }
+
+        if (sole?.BaseObject == null)
+            return;
+
+        LevelObjectGroup group = sole.BaseObject.GetComponent<LevelObjectGroup>();
+        if (group == null)
+            return;
+
+        group.SyncSelectableTargetsFromChildren();
+
+        if (group.HaveChildrenMovedSinceLastSoleSelection())
+            group.UpdateCenterWithoutMovingChildren();
+
+        group.RecordChildWorldPositionsForNextSoleSelection();
+    }
+
+    bool HaveChildrenMovedSinceLastSoleSelection()
+    {
+        if (childWorldPosAtLastSoleSelection == null || childWorldPosAtLastSoleSelection.Count == 0)
+            return false;
+
+        foreach (LevelObject child in levelObjects)
+        {
+            if (child == null)
+                continue;
+
+            if (!childWorldPosAtLastSoleSelection.TryGetValue(child.ObjectID, out Vector3 prev))
+                return true;
+
+            if ((child.transform.position - prev).sqrMagnitude > 1e-6f)
+                return true;
+        }
+
+        return false;
+    }
+
+    void RecordChildWorldPositionsForNextSoleSelection()
+    {
+        childWorldPosAtLastSoleSelection ??= new Dictionary<int, Vector3>();
+        childWorldPosAtLastSoleSelection.Clear();
+
+        foreach (LevelObject child in levelObjects)
+        {
+            if (child == null)
+                continue;
+
+            childWorldPosAtLastSoleSelection[child.ObjectID] = child.transform.position;
+        }
     }
 
     public void RebuildChildrenFromTransform()
     {
         ClearChildren();
-        foreach (Transform chidTransform in transform)
+        foreach (Transform childTransform in transform)
         {
-            if (chidTransform.TryGetComponent(out LevelObject component))
-            {
-                component.hierarchyObjectItem = null;
+            if (!childTransform.TryGetComponent(out LevelObject component))
+                continue;
+
+            component.hierarchyObjectItem = null;
+
+            if (!ObjectRegistry.IsGameObjectRegistered(component.gameObject))
                 ObjectRegistry.OnObjectCreated(component);
-                levelObjects.Add(component);
-            }
 
-            if (component.transform.TryGetComponent(out SelectableObject selectableObject))
-            {
-                var data = selectableObject.TargetData;
-                if (data != null)
-                    selectableTargetDatas.Add(data);
-            }
-
-
+            levelObjects.Add(component);
             component.UpdateParent(this);
         }
+
+        SyncSelectableTargetsFromChildren();
     }
 
     public void SaveSelectableTargetData(IEnumerable<SelectableTargetData> data)
@@ -80,15 +159,8 @@ public class LevelObjectGroup : LevelObject
 
         levelObjects.Remove(child);
         
-        if (child.TryGetComponent(out SelectableObject selectableObject))
-        {
-            SelectableTargetData data = selectableObject.TargetData;
-
-            if (data != null)
-                selectableTargetDatas.Remove(data);
-        }
-
         child.ClearParent();
+        SyncSelectableTargetsFromChildren();
     }
 
     public void ClearChildren()

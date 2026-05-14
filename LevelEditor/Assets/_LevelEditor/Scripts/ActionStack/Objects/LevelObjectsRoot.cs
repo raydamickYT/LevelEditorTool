@@ -81,6 +81,23 @@ public class LevelObjectsRoot : MonoBehaviour
         }
     }
 
+    /// <summary>Snapshot of direct root level objects (under <see cref="RootTransform"/>).</summary>
+    public List<GameObject> GetRootLevelObjectsSnapshot()
+    {
+        return levelObjectsInRoot.Where(x => x != null).ToList();
+    }
+
+    /// <summary>Removes every root level object via <see cref="LevelObjectSpawner.Despawn"/>.</summary>
+    public void DestroyAllRootLevelObjects()
+    {
+        List<GameObject> copy = GetRootLevelObjectsSnapshot();
+        foreach (GameObject go in copy)
+        {
+            if (go != null)
+                LevelObjectSpawner.Despawn(go);
+        }
+    }
+
     /// <summary>
     /// Appends world-space <see cref="Bounds"/> for every <see cref="Collider2D"/> under tracked level objects,
     /// skipping roots listed in <paramref name="excludedLevelObjectRoots"/>.

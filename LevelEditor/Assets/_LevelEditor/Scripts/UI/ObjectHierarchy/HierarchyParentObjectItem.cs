@@ -25,6 +25,7 @@ public class HierarchyParentObjectItem : MonoBehaviour
     [SerializeField] private Color hoverColor = Color.grey;
     private SelectableObject selectableObject;
     [SerializeField] private List<HierarchyObjectItem> hierarchyObjectItems = new(); //childbuttons under this parent
+    private readonly List<HierarchyParentObjectItem> stagedNestedGroupRows = new();
     private LevelObjectGroup levelObjectGroup; //levelobject group, contains the children in the level.
 
 
@@ -54,6 +55,19 @@ public class HierarchyParentObjectItem : MonoBehaviour
             rebuildHierarchy = false;
         }
     }
+    public void SetStagedNestedGroupRows(IEnumerable<HierarchyParentObjectItem> nestedRows)
+    {
+        stagedNestedGroupRows.Clear();
+        if (nestedRows == null)
+            return;
+
+        foreach (HierarchyParentObjectItem row in nestedRows)
+        {
+            if (row != null)
+                stagedNestedGroupRows.Add(row);
+        }
+    }
+
     public void Initialize(LevelObjectGroup target)
     {
         hierarchyObjectItems.Clear();
@@ -71,27 +85,13 @@ public class HierarchyParentObjectItem : MonoBehaviour
         button.onClick.RemoveAllListeners();
         button.onClick.AddListener(SetSelected);
 
-        //get group objects
-        if (!levelObjectGroup.gameObject.TryGetComponent(out levelObjectGroup))
-        {
-            Debug.LogWarning("object does not contain LevelObjectGroup");
-            return;
-        }
-
-        // save the children buttons
-        if (levelObjectGroup.LevelObjects.ToList().Count == 0)
-        {
-            Debug.Log("No children in object");
-            return;
-        }
-
         foreach (LevelObject child in levelObjectGroup.LevelObjects.ToList())
         {
-            if (child.hierarchyObjectItem == null) continue;
+            if (child == null || child is LevelObjectGroup)
+                continue;
 
-            HierarchyObjectItem childItem = child.hierarchyObjectItem;
-
-            hierarchyObjectItems.Add(childItem);
+            if (child.hierarchyObjectItem != null)
+                hierarchyObjectItems.Add(child.hierarchyObjectItem);
         }
 
         RefreshLayoutDelayed();
@@ -101,12 +101,24 @@ public class HierarchyParentObjectItem : MonoBehaviour
         if (layoutElement == null)
             layoutElement = GetComponent<LayoutElement>();
 
-        int childCount = hierarchyObjectItems.Count;
+        int count = 0;
+        float childrenHeight = 0f;
 
-        float childrenHeight = childCount * childHeight;
+        foreach (Transform t in ChildrenContainer)
+        {
+            if (t == null)
+                continue;
 
-        if (childCount > 1)
-            childrenHeight += (childCount - 1) * spacing;
+            count++;
+
+            if (t.TryGetComponent(out LayoutElement childLe) && childLe != null && childLe.preferredHeight > 0.01f)
+                childrenHeight += childLe.preferredHeight;
+            else
+                childrenHeight += childHeight;
+        }
+
+        if (count > 1)
+            childrenHeight += (count - 1) * spacing;
 
         layoutElement.preferredHeight = headerHeight + childrenHeight;
     }
@@ -123,6 +135,16 @@ public class HierarchyParentObjectItem : MonoBehaviour
         if (newParent == null)
             return;
 
+        foreach (HierarchyParentObjectItem nested in stagedNestedGroupRows.ToList())
+        {
+            if (nested == null)
+                continue;
+
+            nested.transform.SetParent(newParent, false);
+        }
+
+        stagedNestedGroupRows.Clear();
+
         foreach (HierarchyObjectItem childItem in hierarchyObjectItems.ToList())
         {
             if (childItem == null)
@@ -136,12 +158,19 @@ public class HierarchyParentObjectItem : MonoBehaviour
 
     private void UpdateSelectionVisuals()
     {
-        if (selectableObject == null) return;
+        if (selectableObject == null || background == null)
+            return;
 
         background.color = selectableObject.IsSelected ? selectedColor : normalColor;
     }
 
-    
+    void OnDestroy()
+    {
+        if (button != null)
+            button.onClick.RemoveListener(SetSelected);
+        if (selectableObject != null)
+            selectableObject.OnSelectionChanged -= UpdateSelectionVisuals;
+    }
     // * for some reason unity didn't like the pasting, it wouldn't display the children properly. That's why we wait till the end of the frame before we display the children
     // * properly
     private void RefreshLayoutDelayed()
@@ -152,9 +181,20 @@ public class HierarchyParentObjectItem : MonoBehaviour
     {
         yield return new WaitForEndOfFrame();
 
+        foreach (HierarchyParentObjectItem nested in stagedNestedGroupRows)
+        {
+            if (nested == null)
+                continue;
+
+            nested.transform.SetParent(ChildrenContainer, false);
+        }
+
         foreach (HierarchyObjectItem child in hierarchyObjectItems)
         {
-            child.transform.SetParent(ChildrenContainer);
+            if (child == null)
+                continue;
+
+            child.transform.SetParent(ChildrenContainer, false);
         }
 
         UpdatePreferredHeight();

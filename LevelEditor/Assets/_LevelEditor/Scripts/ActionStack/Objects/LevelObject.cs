@@ -37,6 +37,20 @@ public class LevelObject : MonoBehaviour
             AssetID = assetID;
             LevelObjectGroup = levelObjectGroup;
         }
+
+        /// <summary>For level load / tooling: build a memento without a live Transform.</summary>
+        public Memento(Vector3 position, Quaternion rotation, Vector3 localScale, GameObject prefabReference, string assetID, Sprite sprite, LevelObjectGroup levelObjectGroup = null)
+        {
+            Position = position;
+            Rotation = rotation;
+            Scale = localScale;
+            PrefabReference = prefabReference;
+            parent = null;
+            ObjectID = 0;
+            Sprite = sprite;
+            AssetID = assetID ?? string.Empty;
+            LevelObjectGroup = levelObjectGroup;
+        }
     }
     void OnEnable()
     {

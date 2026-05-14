@@ -1,13 +1,18 @@
 using System;
 using System.Collections.Generic;
-using System.Linq;
 using UnityEngine;
 using UnityEngine.UI;
 
 public class ObjectLibraryManager : MonoBehaviour
 {
+    public static ObjectLibraryManager Instance { get; private set; }
+
     public Sprite DefaultSprite; //used in case no sprite was found on extraction.
     public GameObject ContentObject;
+
+    [Tooltip("When enabled, on Play the asset palette rebuilds from UserData/asset_registry.json (every registered sprite). Disable to keep the grid empty until import or level load repopulates it.")]
+    [SerializeField]
+    bool refreshEntireLibraryFromDiskOnStart = true;
 
     private GameObject gameObjectPrefab;
     private GameObject GameObjectPrefab
@@ -34,8 +39,13 @@ public class ObjectLibraryManager : MonoBehaviour
         }
     }
 
+    /// <summary>Same template used for library spawns (sprite + collider + <see cref="LevelObject"/>).</summary>
+    public GameObject SpawnPrefabTemplate => GameObjectPrefab;
+
     void Awake()
     {
+        Instance = this;
+
         DefaultSprite = SetupDefaultSprite();
 
         if (ContentObject == null)
@@ -48,26 +58,68 @@ public class ObjectLibraryManager : MonoBehaviour
         EventManager.Instance.AddDelegateListener(ObjectLibraryManagerEvents.UpdateObjectLibrary, (Action<IEnumerable<ImportedAssetMetaData>>)updateContentObject);
     }
 
+    void Start()
+    {
+        if (refreshEntireLibraryFromDiskOnStart)
+            RebuildLibraryFromAssetStorage();
+    }
+
+    /// <summary>Clears the library grid and repopulates from <see cref="AssetStorageService"/> (e.g. after level import merges bundled assets).</summary>
+    public void RebuildLibraryFromAssetStorage()
+    {
+        if (ContentObject == null)
+            return;
+
+        for (int i = ContentObject.transform.childCount - 1; i >= 0; i--)
+            Destroy(ContentObject.transform.GetChild(i).gameObject);
+
+        foreach (ImportedAssetMetaData asset in AssetStorageService.GetAllCachedImportedAssets())
+            TryAddLibraryEntry(asset);
+    }
+
     void updateContentObject(IEnumerable<ImportedAssetMetaData> data)
     {
+        if (data == null)
+            return;
+
         foreach (ImportedAssetMetaData asset in data)
+            TryAddLibraryEntry(asset);
+    }
+
+    void TryAddLibraryEntry(ImportedAssetMetaData asset)
+    {
+        if (asset == null || string.IsNullOrEmpty(asset.AssetID) || ContentObject == null)
+            return;
+
+        foreach (Transform t in ContentObject.transform)
         {
-            if (asset is ImportedSpriteData item) //for now we need this, because there's a sprite needed to setup the preview
-            {
-                GameObject obj = Instantiate(PreviewPrefab, ContentObject.transform);
-                obj.SetActive(true);
-                obj.hideFlags = HideFlags.None;
-                obj.name = item.FileName;
+            if (t != null && t.TryGetComponent(out ObjectButtonController existing) && existing.AssetID == asset.AssetID)
+                return;
+        }
 
-                if (obj.TryGetComponent(out Image image))
-                    image.sprite = item.Sprite != null ? item.Sprite : DefaultSprite;
+        Sprite sprite = null;
+        if (asset is ImportedSpriteData spriteData && spriteData.Sprite != null)
+            sprite = spriteData.Sprite;
 
-                if (obj.TryGetComponent(out ObjectButtonController controller))
-                {
-                    controller.previewSprite = item.Sprite != null ? item.Sprite : DefaultSprite;
-                    controller.AssetID = asset.AssetID; 
-                }
-            }
+        if (sprite == null && asset.AssetType == ImportedAssetTypes.Sprite)
+            sprite = AssetRuntimeLoader.LoadSpriteByAssetID(asset.AssetID);
+
+        // Do not use DefaultSprite (magenta) in the palette — skip broken paths so the grid stays readable.
+        if (sprite == null)
+            return;
+
+        GameObject obj = Instantiate(PreviewPrefab, ContentObject.transform);
+        obj.SetActive(true);
+        obj.hideFlags = HideFlags.None;
+        obj.name = string.IsNullOrEmpty(asset.FileName) ? asset.AssetID : asset.FileName;
+
+        if (obj.TryGetComponent(out Image image))
+            image.sprite = sprite;
+
+        if (obj.TryGetComponent(out ObjectButtonController controller))
+        {
+            controller.previewSprite = sprite;
+            controller.AssetID = asset.AssetID;
         }
     }
 
@@ -129,6 +181,12 @@ public class ObjectLibraryManager : MonoBehaviour
 
         Sprite sprite = Sprite.Create(texture, new Rect(0, 0, texture.width, texture.height), new Vector2(0.5f, 0.5f), 100f);
         return sprite;
+    }
+
+    void OnDestroy()
+    {
+        if (Instance == this)
+            Instance = null;
     }
 }
 
