@@ -2,7 +2,7 @@ using System;
 using System.Collections.Generic;
 using UnityEngine;
 
-/// <summary>Root JSON document for a saved level (Unity JsonUtility).</summary>
+//Root JSON document for a saved level (Unity JsonUtility).
 [Serializable]
 public class LevelProjectFile
 {
@@ -11,12 +11,12 @@ public class LevelProjectFile
     public List<LevelObjectRecord> objects = new();
 }
 
-/// <summary>One node in the level tree (sprite object or empty group).</summary>
+//One node in the level tree (sprite object or empty group).
 [Serializable]
 public class LevelObjectRecord
 {
     public int instanceId;
-    /// <summary>-1 when parent is the level root (no LevelObject parent).</summary>
+    //-1 when parent is the level root (no LevelObject parent).
     public int parentInstanceId = -1;
     public bool isGroup;
     public string objectName = "";

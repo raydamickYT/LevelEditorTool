@@ -15,12 +15,23 @@ public class LevelObjectGroup : LevelObject
 
     public class GroupMemento : Memento
     {
-        public List<LevelObject> Children { get; }
+        /// <summary>Deep snapshot of children (no live references — safe for cut / clipboard).</summary>
+        public List<Memento> ChildMementos { get; }
 
         public GroupMemento(LevelObjectGroup thisObject)
             : base(thisObject.transform, thisObject.PrefabReference, thisObject.ObjectID, null, null, thisObject.levelObjectGroup) //there's two nulls because this object does not need a sprite nor an assetID
         {
-            Children = thisObject.levelObjects.ToList();
+            ChildMementos = new List<Memento>();
+            foreach (LevelObject child in thisObject.levelObjects)
+            {
+                if (child == null)
+                    continue;
+
+                if (child is LevelObjectGroup childGroup)
+                    ChildMementos.Add(new GroupMemento(childGroup));
+                else
+                    ChildMementos.Add(child.Save());
+            }
         }
     }
 
@@ -244,16 +255,6 @@ public class LevelObjectGroup : LevelObject
     public override void Restore(Memento m)
     {
         base.Restore(m);
-
-        if (m is not GroupMemento groupMemento)
-            return;
-
-        levelObjects.Clear();
-
-        foreach (LevelObject child in groupMemento.Children)
-        {
-            AddChild(child);
-        }
     }
 
 

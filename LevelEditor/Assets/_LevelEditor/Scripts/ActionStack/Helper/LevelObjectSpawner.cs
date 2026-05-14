@@ -4,61 +4,126 @@ using UnityEngine;
 
 public static class LevelObjectSpawner
 {
-    public static GameObject Spawn(LevelObject.Memento memento, bool preserveObjectID = false, Transform parent = null, bool isParent = false)
+    /// <summary>Spawns a root memento and any nested group children (clipboard / undo / paste).</summary>
+    public static GameObject SpawnMementoWithDescendants(LevelObject.Memento memento, bool preserveObjectId)
     {
-        if (memento == null || memento.PrefabReference == null)
+        // Undo delete / paste redo: restore transform + LevelObject parent links from the captured memento.
+        // First-time paste / cut clipboard: preserveObjectId is false — ignore stored parent so copies land at root.
+        LevelObjectGroup parentGroup = null;
+        Transform parentTransform = null;
+        if (preserveObjectId && memento != null && memento.LevelObjectGroup != null)
         {
-            Debug.LogError("Cannot spawn LevelObject: missing memento or prefab reference.");
+            parentGroup = memento.LevelObjectGroup;
+            parentTransform = parentGroup.transform;
+        }
+
+        return SpawnRecursive(memento, parentTransform, parentGroup, preserveObjectId);
+    }
+
+    static GameObject SpawnRecursive(LevelObject.Memento memento, Transform parentTransform, LevelObjectGroup parentGroup, bool preserveObjectId)
+    {
+        if (memento == null)
+            return null;
+
+        bool isParent = memento is LevelObjectGroup.GroupMemento;
+        // Defer hierarchy refresh until after AddChild — otherwise levelObject.levelObjectGroup is still null and UI rows parent to Content instead of ChildContainer.
+        GameObject go = Spawn(memento, preserveObjectId, parentTransform, isParent, deferHierarchyNotification: true);
+        if (go == null)
+            return null;
+
+        if (!go.TryGetComponent(out LevelObject levelObject))
+            return go;
+
+        if (parentGroup != null && !ReferenceEquals(levelObject, parentGroup))
+            parentGroup.AddChild(levelObject);
+
+        NotifyHierarchyForSpawned(levelObject, isParent);
+
+        if (memento is LevelObjectGroup.GroupMemento gm && levelObject is LevelObjectGroup childGroup && gm.ChildMementos != null)
+        {
+            foreach (LevelObject.Memento childMem in gm.ChildMementos)
+                SpawnRecursive(childMem, childGroup.transform, childGroup, preserveObjectId);
+        }
+
+        return go;
+    }
+
+    /// <summary>Raises <see cref="ObjectHierarchyEvents.RefreshMenu"/> for a spawned object (after <see cref="LevelObjectGroup.AddChild"/> when applicable).</summary>
+    public static void NotifyHierarchyForSpawned(LevelObject levelObject, bool isParent)
+    {
+        if (levelObject == null)
+            return;
+
+        HierarchyChangeType type = isParent ? HierarchyChangeType.AddedParent : HierarchyChangeType.Added;
+        var change = new HierarchyChange(levelObject, type);
+        EventManager.Instance.TriggerDelegate(ObjectHierarchyEvents.RefreshMenu, new List<HierarchyChange> { change });
+    }
+
+    public static GameObject Spawn(LevelObject.Memento memento, bool preserveObjectID = false, Transform parent = null, bool isParent = false, bool deferHierarchyNotification = false)
+    {
+        if (memento == null)
+        {
+            Debug.LogError("Cannot spawn LevelObject: missing memento.");
             return null;
         }
 
-        GameObject spawnedObject = Object.Instantiate(
-            memento.PrefabReference,
-            memento.Position,
-            memento.Rotation
-        );
+        bool isGroupMemento = memento is LevelObjectGroup.GroupMemento;
+        GameObject spawnedObject;
 
-
-        Sprite spriteToUse = null;
-
-        if (!string.IsNullOrEmpty(memento.AssetID))
+        if (isGroupMemento)
         {
-            spriteToUse = AssetRuntimeLoader.LoadSpriteByAssetID(memento.AssetID);
-
+            // Clipboard / cut: PrefabReference often points at the live scene object — after Destroy it is gone.
+            // Rebuild an empty parent from memento transform data (same idea as level JSON load).
+            spawnedObject = CreateGroupShellFromMemento((LevelObjectGroup.GroupMemento)memento, parent);
         }
-
-        if (spriteToUse == null)
+        else if (memento.PrefabReference == null)
         {
-            spriteToUse = memento.Sprite;
-        }
-
-        if (spriteToUse != null && spawnedObject.TryGetComponent(out SpriteRenderer spriteRenderer))
-        {
-            spriteRenderer.sprite = spriteToUse;
-
-            //box collider setup
-            spawnedObject.TryGetComponent(out BoxCollider2D boxCollider2D);
-            
-            Bounds bounds = spriteRenderer.sprite.bounds;
-            boxCollider2D.size = bounds.size;
-            boxCollider2D.offset = bounds.center;
+            Debug.LogError("Cannot spawn LevelObject: missing prefab reference.");
+            return null;
         }
         else
         {
-            Debug.LogWarning($"No sprite found for spawned object. AssetID: {memento.AssetID}");
+            spawnedObject = Object.Instantiate(
+                memento.PrefabReference,
+                memento.Position,
+                memento.Rotation);
         }
-
 
         spawnedObject.SetActive(true);
         spawnedObject.hideFlags = HideFlags.None;
 
-        //Add a parent if given
-        if (parent != null)
-            spawnedObject.transform.SetParent(parent, true);
-        else
-            LevelObjectsRoot.Instance.AddObjectToLevelObjectRoot(spawnedObject);
+        if (!isGroupMemento)
+        {
+            if (parent != null)
+                spawnedObject.transform.SetParent(parent, true);
+            else
+                LevelObjectsRoot.Instance.AddObjectToLevelObjectRoot(spawnedObject);
 
-        spawnedObject.transform.localScale = memento.Scale;
+            spawnedObject.transform.localScale = memento.Scale;
+
+            Sprite spriteToUse = null;
+
+            if (!string.IsNullOrEmpty(memento.AssetID))
+                spriteToUse = AssetRuntimeLoader.LoadSpriteByAssetID(memento.AssetID);
+
+            if (spriteToUse == null)
+                spriteToUse = memento.Sprite;
+
+            if (spriteToUse != null && spawnedObject.TryGetComponent(out SpriteRenderer spriteRenderer))
+            {
+                spriteRenderer.sprite = spriteToUse;
+
+                spawnedObject.TryGetComponent(out BoxCollider2D boxCollider2D);
+
+                Bounds bounds = spriteRenderer.sprite.bounds;
+                boxCollider2D.size = bounds.size;
+                boxCollider2D.offset = bounds.center;
+            }
+            else if (!spawnedObject.TryGetComponent(out SpriteRenderer _))
+            {
+                Debug.LogWarning($"No sprite found for spawned object. AssetID: {memento.AssetID}");
+            }
+        }
 
         LevelObject levelObject = spawnedObject.GetComponent<LevelObject>();
         if (levelObject == null)
@@ -67,7 +132,7 @@ public static class LevelObjectSpawner
             return spawnedObject;
         }
 
-        levelObject.PrefabReference = memento.PrefabReference;
+        levelObject.PrefabReference = isGroupMemento ? spawnedObject : memento.PrefabReference;
 
         if (!string.IsNullOrEmpty(memento.AssetID))
             levelObject.AssetID = memento.AssetID;
@@ -82,14 +147,36 @@ public static class LevelObjectSpawner
             ObjectRegistry.OnObjectCreated(levelObject);
         }
 
-        //object hierarchy menu
-        Debug.LogWarning("this is a parent " + isParent);
-        HierarchyChangeType type = isParent ? HierarchyChangeType.AddedParent : HierarchyChangeType.Added;
-        var change = new HierarchyChange(levelObject, type);
-
-        EventManager.Instance.TriggerDelegate(ObjectHierarchyEvents.RefreshMenu, new List<HierarchyChange> { change });
+        if (!deferHierarchyNotification)
+            NotifyHierarchyForSpawned(levelObject, isParent);
 
         return spawnedObject;
+    }
+
+    static GameObject CreateGroupShellFromMemento(LevelObjectGroup.GroupMemento gm, Transform parent)
+    {
+        GameObject go = new GameObject("EmptyParent");
+        go.AddComponent<LevelObjectGroup>();
+        go.AddComponent<SelectableObject>();
+
+        Transform t = go.transform;
+        if (parent == null)
+        {
+            LevelObjectsRoot.Instance.AddObjectToLevelObjectRoot(go);
+            t.SetPositionAndRotation(gm.Position, gm.Rotation);
+            t.localScale = gm.Scale;
+        }
+        else
+        {
+            t.SetParent(parent, false);
+            t.SetPositionAndRotation(gm.Position, gm.Rotation);
+            t.localScale = gm.Scale;
+        }
+
+        LevelObjectGroup group = go.GetComponent<LevelObjectGroup>();
+        group.PrefabReference = go;
+
+        return go;
     }
 
     public static void Despawn(GameObject obj)
@@ -97,19 +184,33 @@ public static class LevelObjectSpawner
         if (obj == null)
             return;
 
-        LevelObject levelObject = obj.GetComponent<LevelObject>();
+        LevelObject[] tree = obj.GetComponentsInChildren<LevelObject>(true);
+        System.Array.Sort(tree, (a, b) => GetTransformDepth(b.transform).CompareTo(GetTransformDepth(a.transform)));
 
-        if (levelObject != null)
+        foreach (LevelObject lo in tree)
         {
-            ObjectRegistry.DeregisterObject(levelObject);
-        }
+            if (lo == null)
+                continue;
 
-        //object hierarchy menu
-        var change = new HierarchyChange(levelObject, HierarchyChangeType.Removed);
-        EventManager.Instance.TriggerDelegate(ObjectHierarchyEvents.RefreshMenu, new List<HierarchyChange> { change });
+            var change = new HierarchyChange(lo, HierarchyChangeType.Removed);
+            EventManager.Instance.TriggerDelegate(ObjectHierarchyEvents.RefreshMenu, new List<HierarchyChange> { change });
+            ObjectRegistry.DeregisterObject(lo);
+        }
 
         LevelObjectsRoot.Instance.RemoveChildFromParent(obj);
 
         Object.Destroy(obj);
+    }
+
+    static int GetTransformDepth(Transform t)
+    {
+        int d = 0;
+        while (t != null)
+        {
+            d++;
+            t = t.parent;
+        }
+
+        return d;
     }
 }

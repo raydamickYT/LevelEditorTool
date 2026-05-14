@@ -48,11 +48,11 @@ public class PasteAction : IUndoableAction, IEditorCommand
 
         //todo: Check if it is a child with a parent and if so if it isn't already pasted (we can do this by checking if it's in the list we create)
 
-        foreach (var item in statesToSpawn)
+        foreach (LevelObject.Memento item in statesToSpawn)
         {
-            bool isParent = item is LevelObjectGroup.GroupMemento;
-            GameObject instantiatedGameObject = LevelObjectSpawner.Spawn(item, isRedo, null, isParent); //if this is the first time pasting here, this'll need a new id if not it doesn't
-            if (instantiatedGameObject == null) continue;
+            GameObject instantiatedGameObject = LevelObjectSpawner.SpawnMementoWithDescendants(item, isRedo);
+            if (instantiatedGameObject == null)
+                continue;
 
             instantiatedGameObjects.Add(instantiatedGameObject);
 

@@ -68,6 +68,21 @@ public class HierarchyParentObjectItem : MonoBehaviour
         }
     }
 
+    /// <summary>
+    /// Registers a leaf row created after <see cref="Initialize"/> (e.g. undo respawned a child under this group).
+    /// Reparents into <see cref="ChildrenContainer"/> at end of frame like the initial build.
+    /// </summary>
+    public void AttachChildHierarchyItem(HierarchyObjectItem item)
+    {
+        if (item == null || levelObjectGroup == null)
+            return;
+
+        if (!hierarchyObjectItems.Contains(item))
+            hierarchyObjectItems.Add(item);
+
+        RefreshLayoutDelayed();
+    }
+
     public void Initialize(LevelObjectGroup target)
     {
         hierarchyObjectItems.Clear();

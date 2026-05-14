@@ -54,6 +54,10 @@ public static class LevelProjectService
             return;
         }
 
+        EventManager.Instance.TriggerDelegate(
+            SelectionEvents.ReplaceSelectionWithObject,
+            Enumerable.Empty<GameObject>());
+
         string levelDirectory = Path.GetDirectoryName(levelJsonFilePath);
         if (!string.IsNullOrEmpty(levelDirectory))
         {
@@ -87,8 +91,8 @@ public static class LevelProjectService
         EventManager.Instance.TriggerDelegate(ObjectHierarchyEvents.RebuildEntireHierarchy);
 
         EventManager.Instance.TriggerDelegate(
-            SelectionEvents.OnSelectionChanged,
-            new HashSet<SelectableTargetData>());
+            SelectionEvents.ReplaceSelectionWithObject,
+            Enumerable.Empty<GameObject>());
     }
 
     static LevelProjectFile BuildProjectFileFromScene(string levelName)
@@ -310,7 +314,7 @@ public static class LevelProjectService
             Vector3 scale = new Vector3(rec.sx, rec.sy, rec.sz);
 
             LevelObject.Memento memento = new LevelObject.Memento(pos, rot, scale, prefab, rec.assetId, null, null);
-            GameObject spawned = LevelObjectSpawner.Spawn(memento, false, parentTransform, false);
+            GameObject spawned = LevelObjectSpawner.Spawn(memento, false, parentTransform, false, deferHierarchyNotification: true);
             if (spawned == null)
                 continue;
 
@@ -322,6 +326,9 @@ public static class LevelProjectService
             {
                 parentGroup.AddChild(childLo);
             }
+
+            if (spawned.TryGetComponent(out LevelObject loNotify))
+                LevelObjectSpawner.NotifyHierarchyForSpawned(loNotify, false);
 
             if (spawned.TryGetComponent(out SpriteRenderer sr))
                 sr.sortingOrder = rec.sortingOrder;

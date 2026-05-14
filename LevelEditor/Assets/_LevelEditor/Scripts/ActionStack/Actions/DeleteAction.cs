@@ -50,12 +50,12 @@ public class DeleteAction : IUndoableAction, IEditorCommand
 
     public void Undo()
     {
-        if (instantiatedGameObjects.Count == 0)
+        instantiatedGameObjects.Clear();
+        foreach (LevelObject.Memento state in beforeState)
         {
-            foreach (var state in beforeState)
-            {
-                instantiatedGameObjects.Add(LevelObjectSpawner.Spawn(state, true));
-            }
+            GameObject go = LevelObjectSpawner.SpawnMementoWithDescendants(state, true);
+            if (go != null)
+                instantiatedGameObjects.Add(go);
         }
 
         EventManager.Instance.TriggerDelegate(SelectionEvents.ReplaceSelectionWithObject, new List<GameObject>(instantiatedGameObjects)); //reset the selection to earlier selected Items.

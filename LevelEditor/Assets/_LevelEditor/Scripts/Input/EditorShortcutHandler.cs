@@ -15,10 +15,16 @@ public class EditorShortcutHandler : MonoBehaviour
     {
         commandMap = new Dictionary<EditorCommand, EditorCommand>();
 
+        // All commands must reach listeners (Copy/Cut/Paste/Delete/…). The inspector list is optional extras, not a whitelist.
+        foreach (EditorCommand cmd in Enum.GetValues(typeof(EditorCommand)))
+            commandMap[cmd] = cmd;
+
         foreach (var binding in shortcutBindings)
         {
-            if (!commandMap.ContainsKey(binding.command))
-                commandMap.Add(binding.command, binding.command);
+            if (binding == null)
+                continue;
+
+            commandMap[binding.command] = binding.command;
         }
     }
 

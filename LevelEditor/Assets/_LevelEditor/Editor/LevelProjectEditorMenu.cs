@@ -1,5 +1,3 @@
-using System;
-using System.Collections.Generic;
 using System.IO;
 using UnityEditor;
 using UnityEngine;
@@ -25,25 +23,7 @@ public static class LevelProjectEditorMenu
         if (!System.IO.Directory.Exists(startDir))
             startDir = Application.dataPath;
 
-        string parentFolder = EditorUtility.SaveFolderPanel(
-            "Choose parent folder — a new folder will be created here with level.json and assets",
-            startDir,
-            "");
-
-        if (string.IsNullOrEmpty(parentFolder))
-            return;
-
-        string exportFolderName = $"LevelExport_{DateTime.Now:yyyyMMdd_HHmmss}";
-        string exportDir = Path.Combine(parentFolder, exportFolderName);
-        Directory.CreateDirectory(exportDir);
-        string jsonPath = Path.Combine(exportDir, LevelProjectService.DefaultLevelFileName);
-
-        LevelProjectService.SaveLevelToPath(jsonPath, Path.GetFileNameWithoutExtension(exportFolderName));
-        AssetDatabase.Refresh();
-        EditorUtility.DisplayDialog(
-            "Level export",
-            "Level saved.\n\n" + jsonPath + "\n\nSprites (if any) are in BundledAssets inside this folder.",
-            "OK");
+        ExportLevelFolderWindow.Show("");
     }
 
     [MenuItem(MenuRoot + "Import Level JSON…", false, 11)]

@@ -110,25 +110,19 @@ public class selectionController
     {
         if (_selectedGameObjects.Count == 0) return;
 
-        //todo: gebruik hier de blackboard
-        EventManager.Instance.TriggerDelegate(SelectionEvents.OnSelectionChanged, new HashSet<SelectableTargetData>()); //clear the data in gizmo controller to prevent the gizmo object from beeing deleted
-        EditorBlackBoard.ClearSelection();
+        List<LevelObject.Memento> mementos = _selectedGameObjects
+            .Select(item => item.BaseObject.GetComponent<LevelObject>())
+            .Where(lo => lo != null)
+            .Select(lo => lo.Save())
+            .ToList();
 
-
-        //really long line but basically: get items form _selectedGameObjects which have the component LevelObject, aren't null then call the save() in that item and add that memento
-        //to the list
-        List<LevelObject.Memento> mementos = _selectedGameObjects.Select(item => item.BaseObject.GetComponent<LevelObject>()).Where(LevelObject => LevelObject != null)
-        .Select(LevelObject => LevelObject.Save()).ToList();
-
-        if (mementos.Count == 0) return;
+        if (mementos.Count == 0)
+            return;
 
         deleteAction = new DeleteAction(mementos);
         deleteAction.Execute();
 
         EventManager.Instance.TriggerDelegate(ActionStackEvents.RegisterAction, deleteAction);
-
-        _selectedGameObjects.Clear();
-        RefreshGizmo();
     }
 
     public void Register(GameObject rootObject, SelectableTargetData data)

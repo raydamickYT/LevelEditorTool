@@ -154,6 +154,10 @@ public class ObjectHierarchyManager : MonoBehaviour
 
         items.Add(levelObject, item);
         existingNames.Add(levelObject.name);
+
+        LevelObjectGroup parentGroup = levelObject.levelObjectGroup;
+        if (parentGroup != null && parentItems.TryGetValue(parentGroup, out HierarchyParentObjectItem parentRow))
+            parentRow.AttachChildHierarchyItem(item);
     }
 
     private void AddParent(LevelObjectGroup group, Transform rowParent)

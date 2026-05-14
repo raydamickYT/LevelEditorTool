@@ -4,7 +4,7 @@ using UnityEngine;
 using UnityEditor;
 #endif
 
-/// <summary>Resolves prefab assets to/from GUIDs in the Unity Editor.</summary>
+//Resolves prefab assets to/from GUIDs in the Unity Editor
 public static class LevelPrefabPathUtil
 {
     public static string GetPrefabAssetGuid(GameObject prefabOrInstance)
