@@ -34,7 +34,10 @@
             <ui:VisualElement class="row">
                 <ui:Label text="Z" class="axis-label" />
                 <ui:FloatField name="rotation-z" class="axis-field" />
+                <ui:Label text="Mirror Object" class="layer-label" />
+            <ui:Button name="mirror-scale-h-button" text="⇄" tooltip="Horizontaal spiegelen (X)" class="mirror-inline-button" />
             </ui:VisualElement>
+
         </ui:VisualElement>
 
         <ui:VisualElement class="section">
@@ -46,6 +49,7 @@
 
                 <ui:Label text="Y" class="axis-label" />
                 <ui:FloatField name="scale-y" class="axis-field" />
+
             </ui:VisualElement>
         </ui:VisualElement>
 

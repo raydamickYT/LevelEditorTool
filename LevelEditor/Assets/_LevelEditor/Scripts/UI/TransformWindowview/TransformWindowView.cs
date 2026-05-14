@@ -22,6 +22,7 @@ public class TransformWindowView : MonoBehaviour
     private FloatField scaleY;
 
     private Button resetButton;
+    private Button mirrorScaleHorizontalButton;
 
     private Transform selectedTransform;
     private LevelObject selectedLevelObject;
@@ -48,6 +49,7 @@ public class TransformWindowView : MonoBehaviour
         scaleY = root.Q<FloatField>("scale-y");
 
         resetButton = root.Q<Button>("reset-transform-button");
+        mirrorScaleHorizontalButton = root.Q<Button>("mirror-scale-h-button");
 
         RegisterCallbacks();
         SetTarget(null);
@@ -80,6 +82,7 @@ public class TransformWindowView : MonoBehaviour
         scaleY.RegisterValueChangedCallback(_ => ApplyScale());
 
         resetButton.clicked += ResetTransform;
+        mirrorScaleHorizontalButton.clicked += MirrorScaleHorizontal;
     }
 
     //update UI visuals
@@ -253,6 +256,22 @@ public class TransformWindowView : MonoBehaviour
         EndTransformAction();
     }
 
+    private void MirrorScaleHorizontal()
+    {
+        if (selectedTransform == null)
+            return;
+
+        BeginTransformAction();
+
+        Vector3 s = selectedTransform.localScale;
+        s.x = -s.x;
+        selectedTransform.localScale = s;
+
+        RefreshUI();
+
+        EndTransformAction();
+    }
+
     private void SetEnabled(bool enabled)
     {
         positionX.SetEnabled(enabled);
@@ -265,6 +284,7 @@ public class TransformWindowView : MonoBehaviour
         scaleY.SetEnabled(enabled);
 
         resetButton.SetEnabled(enabled);
+        mirrorScaleHorizontalButton.SetEnabled(enabled);
     }
 
     private void UpdateGizmo()

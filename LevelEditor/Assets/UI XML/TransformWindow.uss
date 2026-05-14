@@ -101,6 +101,20 @@
     background-color: #eeeeee00;
 }
 
+.mirror-inline-button {
+    width: 34px;
+    min-width: 34px;
+    height: 28px;
+    margin-left: 2px;
+    margin-right: 0;
+    margin-top: 0;
+    margin-bottom: 0;
+    padding: 0;
+    align-self: center;
+    font-size: 13px;
+    -unity-text-align: middle-center;
+}
+
 
 #reset-transform-button {
     height: 24px;
