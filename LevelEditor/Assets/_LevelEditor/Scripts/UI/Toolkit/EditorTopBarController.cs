@@ -1,5 +1,6 @@
 using System.Collections.Generic;
 using UnityEngine;
+using UnityEngine.InputSystem;
 using UnityEngine.UIElements;
 
 /// <summary>
@@ -10,6 +11,7 @@ public sealed class EditorTopBarController : MonoBehaviour
 {
     [SerializeField] UIDocument uiDocument;
 
+    VisualElement _root;
     VisualElement _menuPanel;
     Button _menuTrigger;
 
@@ -27,6 +29,7 @@ public sealed class EditorTopBarController : MonoBehaviour
             return;
 
         VisualElement root = uiDocument.rootVisualElement;
+        _root = root;
         _menuPanel = root.Q<VisualElement>("menu-file-panel");
         _menuTrigger = root.Q<Button>("menu-file-trigger");
 
@@ -54,8 +57,21 @@ public sealed class EditorTopBarController : MonoBehaviour
         }
 
         _registeredClicks.Clear();
+        _root = null;
         _menuTrigger = null;
         _menuPanel = null;
+    }
+
+    void Update()
+    {
+        if (!IsMenuOpen() || Mouse.current == null || !Mouse.current.leftButton.wasPressedThisFrame)
+            return;
+
+        Vector2 panelPosition = ScreenToPanelPosition(Mouse.current.position.ReadValue());
+        if (IsInsideElement(_menuTrigger, panelPosition) || IsInsideElement(_menuPanel, panelPosition))
+            return;
+
+        CloseMenu();
     }
 
     void Register(Button button, System.Action handler)
@@ -80,6 +96,30 @@ public sealed class EditorTopBarController : MonoBehaviour
     {
         if (_menuPanel != null)
             _menuPanel.style.display = DisplayStyle.None;
+    }
+
+    bool IsMenuOpen()
+    {
+        return _menuPanel != null && _menuPanel.resolvedStyle.display != DisplayStyle.None;
+    }
+
+    bool IsInsideElement(VisualElement element, Vector2 panelPosition)
+    {
+        return element != null && element.worldBound.Contains(panelPosition);
+    }
+
+    Vector2 ScreenToPanelPosition(Vector2 screenPosition)
+    {
+        Rect panelBounds = _root != null
+            ? _root.worldBound
+            : new Rect(0f, 0f, Screen.width, Screen.height);
+
+        float width = Mathf.Max(1f, panelBounds.width);
+        float height = Mathf.Max(1f, panelBounds.height);
+
+        return new Vector2(
+            panelBounds.xMin + (screenPosition.x / Mathf.Max(1f, Screen.width)) * width,
+            panelBounds.yMin + ((Screen.height - screenPosition.y) / Mathf.Max(1f, Screen.height)) * height);
     }
 
     void OnNewFile()
