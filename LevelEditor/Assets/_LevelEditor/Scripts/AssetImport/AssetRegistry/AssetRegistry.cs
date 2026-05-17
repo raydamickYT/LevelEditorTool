@@ -19,6 +19,7 @@ public class AssetRegistry : MonoBehaviour
     void Awake()
     {
         EventManager.Instance.AddDelegateListener(AssetRegistryEvents.ImportAssets, (Action<string, bool>)EventCalls);
+        EventManager.Instance.AddDelegateListener(AssetRegistryEvents.ImportUnityProjectAssets, (Action<string>)ImportUnityProjectAssets);
     }
     // Start is called once before the first execution of Update after the MonoBehaviour is created
     void Start()
@@ -40,6 +41,20 @@ public class AssetRegistry : MonoBehaviour
         }
         singleFileImport(path);
 
+    }
+
+    public void ImportUnityProjectAssets(string projectFolderPath)
+    {
+        if (assetImportService == null || string.IsNullOrEmpty(projectFolderPath))
+            return;
+
+        List<ImportedAssetMetaData> importedAssets = assetImportService.ImportUnityProjectAssets(projectFolderPath);
+        foreach (ImportedAssetMetaData asset in importedAssets)
+        {
+            importedSprites[asset.AssetID] = asset;
+        }
+
+        EventManager.Instance.TriggerDelegate(ObjectLibraryManagerEvents.UpdateObjectLibrary, importedAssets);
     }
 
     void singleFileImport(string path)
@@ -73,4 +88,5 @@ public class AssetRegistry : MonoBehaviour
 public static class AssetRegistryEvents
 {
     public const string ImportAssets = "ImportAssets";
+    public const string ImportUnityProjectAssets = "ImportUnityProjectAssets";
 }

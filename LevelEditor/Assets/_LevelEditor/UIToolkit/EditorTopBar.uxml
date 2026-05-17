@@ -9,6 +9,7 @@
                 <ui:Button name="item-save" text="Save" class="menu-item" />
                 <!-- <ui:Button name="item-export" text="Export" class="menu-item" /> --> <!-- Future feature: does the same as saving right now -->
                 <ui:VisualElement class="menu-separator" />
+                <ui:Button name="item-import-game-assets" text="Import Game Assets" class="menu-item" />
                 <ui:Button name="item-import-folder" text="Import Folder" class="menu-item" />
                 <ui:Button name="item-import-assets" text="Import Assets" class="menu-item" />
             </ui:VisualElement>

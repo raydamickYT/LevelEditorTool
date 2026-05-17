@@ -27,6 +27,7 @@ public class ObjectLibraryManager : MonoBehaviour
     bool refreshEntireLibraryFromDiskOnStart = true;
 
     readonly HashSet<string> renderedAssetIds = new();
+    readonly Dictionary<string, VisualElement> toolkitCategoryGrids = new();
 
     VisualElement toolkitRoot;
     VisualElement toolkitLibraryRoot;
@@ -124,11 +125,16 @@ public class ObjectLibraryManager : MonoBehaviour
         if (asset is ImportedSpriteData spriteData && spriteData.Sprite != null)
             sprite = spriteData.Sprite;
 
-        if (sprite == null && asset.AssetType == ImportedAssetTypes.Sprite)
+        if (sprite == null
+            && (asset.AssetType == ImportedAssetTypes.Sprite || asset.AssetType == ImportedAssetTypes.Prefab))
+        {
             sprite = AssetRuntimeLoader.LoadSpriteByAssetID(asset.AssetID);
+        }
 
-        // Do not use DefaultSprite (magenta) in the palette — skip broken paths so the grid stays readable.
-        if (sprite == null)
+        bool isPrefabReference = string.Equals(asset.AssetType, ImportedAssetTypes.Prefab, StringComparison.OrdinalIgnoreCase);
+
+        // Do not use DefaultSprite (magenta) for broken sprites — skip broken paths so the grid stays readable.
+        if (sprite == null && !isPrefabReference)
             return;
 
         if (UsesToolkit)
@@ -136,6 +142,9 @@ public class ObjectLibraryManager : MonoBehaviour
             AddToolkitEntry(asset, sprite);
             return;
         }
+
+        if (sprite == null)
+            return;
 
         if (ContentObject == null)
             return;
@@ -189,6 +198,7 @@ public class ObjectLibraryManager : MonoBehaviour
     void ClearLibraryContent()
     {
         renderedAssetIds.Clear();
+        toolkitCategoryGrids.Clear();
         CancelToolkitDrag();
 
         if (UsesToolkit)
@@ -206,28 +216,118 @@ public class ObjectLibraryManager : MonoBehaviour
 
     void AddToolkitEntry(ImportedAssetMetaData asset, Sprite sprite)
     {
+        bool canDragIntoLevel = sprite != null
+            && (string.Equals(asset.AssetType, ImportedAssetTypes.Sprite, StringComparison.OrdinalIgnoreCase)
+                || string.Equals(asset.AssetType, ImportedAssetTypes.Prefab, StringComparison.OrdinalIgnoreCase));
+
         VisualElement tile = new();
         tile.name = string.IsNullOrEmpty(asset.FileName) ? asset.AssetID : asset.FileName;
         tile.AddToClassList("asset-tile");
+        if (!canDragIntoLevel)
+            tile.AddToClassList("asset-tile-disabled");
 
-        ToolkitImage image = new();
-        image.AddToClassList("asset-thumbnail");
-        image.scaleMode = ScaleMode.ScaleToFit;
-        image.image = sprite.texture;
-        tile.Add(image);
+        if (sprite != null)
+        {
+            ToolkitImage image = new();
+            image.AddToClassList("asset-thumbnail");
+            image.scaleMode = ScaleMode.ScaleToFit;
+            image.image = sprite.texture;
+            tile.Add(image);
+        }
+        else
+        {
+            Label placeholder = new("P");
+            placeholder.AddToClassList("asset-prefab-placeholder");
+            tile.Add(placeholder);
+        }
 
         Label label = new(string.IsNullOrEmpty(asset.FileName) ? asset.AssetID : asset.FileName);
         label.AddToClassList("asset-label");
         tile.Add(label);
 
-        string assetId = asset.AssetID;
-        tile.RegisterCallback<PointerDownEvent>(evt => BeginToolkitDrag(evt, tile, assetId, sprite));
-        tile.RegisterCallback<PointerMoveEvent>(UpdateToolkitDrag);
-        tile.RegisterCallback<PointerUpEvent>(EndToolkitDrag);
-        tile.RegisterCallback<PointerCancelEvent>(CancelToolkitDrag);
+        if (canDragIntoLevel)
+        {
+            string assetId = asset.AssetID;
+            tile.RegisterCallback<PointerDownEvent>(evt => BeginToolkitDrag(evt, tile, assetId, sprite));
+            tile.RegisterCallback<PointerMoveEvent>(UpdateToolkitDrag);
+            tile.RegisterCallback<PointerUpEvent>(EndToolkitDrag);
+            tile.RegisterCallback<PointerCancelEvent>(CancelToolkitDrag);
+        }
 
-        toolkitGrid.Add(tile);
+        VisualElement categoryGrid = GetOrCreateToolkitFolderGrid(asset.AssetType, asset.FolderPath);
+        categoryGrid.Add(tile);
         renderedAssetIds.Add(asset.AssetID);
+    }
+
+    VisualElement GetOrCreateToolkitFolderGrid(string assetType, string folderPath)
+    {
+        string categoryKey = string.IsNullOrWhiteSpace(assetType) ? "Unknown" : assetType.Trim();
+        string normalizedFolder = NormalizeFolderPath(folderPath);
+        string folderKey = $"{categoryKey}|{normalizedFolder}";
+
+        if (toolkitCategoryGrids.TryGetValue(folderKey, out VisualElement existingGrid))
+            return existingGrid;
+
+        VisualElement categoryContainer = GetOrCreateToolkitCategoryContainer(categoryKey);
+        if (string.IsNullOrEmpty(normalizedFolder))
+            return categoryContainer;
+
+        Foldout folder = new()
+        {
+            text = normalizedFolder,
+            value = false
+        };
+        folder.AddToClassList("asset-subfolder");
+
+        VisualElement folderGrid = new();
+        folderGrid.AddToClassList("asset-folder-grid");
+        folder.contentContainer.Add(folderGrid);
+        folder.contentContainer.AddToClassList("asset-folder-content");
+
+        categoryContainer.Add(folder);
+        toolkitCategoryGrids.Add(folderKey, folderGrid);
+        return folderGrid;
+    }
+
+    VisualElement GetOrCreateToolkitCategoryContainer(string categoryKey)
+    {
+        string categoryGridKey = $"{categoryKey}|";
+        if (toolkitCategoryGrids.TryGetValue(categoryGridKey, out VisualElement existingContainer))
+            return existingContainer;
+
+        Foldout folder = new()
+        {
+            text = GetCategoryDisplayName(categoryKey),
+            value = false
+        };
+        folder.AddToClassList("asset-folder");
+
+        VisualElement categoryGrid = new();
+        categoryGrid.AddToClassList("asset-folder-grid");
+        folder.contentContainer.Add(categoryGrid);
+        folder.contentContainer.AddToClassList("asset-folder-content");
+
+        toolkitGrid.Add(folder);
+        toolkitCategoryGrids.Add(categoryGridKey, categoryGrid);
+        return categoryGrid;
+    }
+
+    static string NormalizeFolderPath(string folderPath)
+    {
+        if (string.IsNullOrWhiteSpace(folderPath))
+            return string.Empty;
+
+        return folderPath.Replace('\\', '/').Trim('/');
+    }
+
+    static string GetCategoryDisplayName(string assetType)
+    {
+        if (string.IsNullOrWhiteSpace(assetType))
+            return "Unknown";
+
+        return assetType.EndsWith("s", StringComparison.OrdinalIgnoreCase)
+            ? assetType
+            : assetType + "s";
     }
 
     void BeginToolkitDrag(PointerDownEvent evt, VisualElement source, string assetId, Sprite sprite)

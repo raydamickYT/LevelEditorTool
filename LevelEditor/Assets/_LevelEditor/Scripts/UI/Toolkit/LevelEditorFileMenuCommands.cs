@@ -112,6 +112,21 @@ public static class LevelEditorFileMenuCommands
         EventManager.Instance.TriggerDelegate(AssetRegistryEvents.ImportAssets, paths[0], true);
     }
 
+    public static void ImportGameAssets()
+    {
+        string[] paths = StandaloneFileBrowser.OpenFolderPanel("Select Unity Project Folder", "", false);
+        if (paths == null || paths.Length == 0 || string.IsNullOrEmpty(paths[0]))
+        {
+            Debug.Log("No Unity project folder selected");
+            return;
+        }
+
+        if (EventManager.Instance == null)
+            return;
+
+        EventManager.Instance.TriggerDelegate(AssetRegistryEvents.ImportUnityProjectAssets, paths[0]);
+    }
+
     public static void ImportAssets()
     {
         ExtensionFilter[] extensions =

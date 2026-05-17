@@ -1,0 +1,18 @@
+<ui:UXML xmlns:ui="UnityEngine.UIElements" editor-extension-mode="False">
+    <Style src="PopupWindow.uss" />
+    <ui:VisualElement name="popup-overlay" class="popup-overlay" style="display: none;">
+        <ui:VisualElement name="popup-window" class="popup-window">
+            <ui:VisualElement class="popup-header">
+                <ui:Label name="popup-icon" text="!" class="popup-icon popup-icon-info" />
+                <ui:Label name="popup-title" text="Message" class="popup-title" />
+            </ui:VisualElement>
+            <ui:Label name="popup-message" text="Something happened." class="popup-message" />
+            <ui:ScrollView name="popup-details-scroll" class="popup-details-scroll" mode="Vertical" style="display: none;">
+                <ui:Label name="popup-details" text="" class="popup-details" />
+            </ui:ScrollView>
+            <ui:VisualElement class="popup-actions">
+                <ui:Button name="popup-ok-button" text="OK" class="popup-button popup-primary-button" />
+            </ui:VisualElement>
+        </ui:VisualElement>
+    </ui:VisualElement>
+</ui:UXML>

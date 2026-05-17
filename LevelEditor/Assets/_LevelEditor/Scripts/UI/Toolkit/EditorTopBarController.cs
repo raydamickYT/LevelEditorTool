@@ -37,6 +37,7 @@ public sealed class EditorTopBarController : MonoBehaviour
         Register(root.Q<Button>("item-open"), OnOpen);
         Register(root.Q<Button>("item-save"), OnSave);
         Register(root.Q<Button>("item-export"), OnExport);
+        Register(root.Q<Button>("item-import-game-assets"), OnImportGameAssets);
         Register(root.Q<Button>("item-import-folder"), OnImportFolder);
         Register(root.Q<Button>("item-import-assets"), OnImportAssets);
     }
@@ -109,6 +110,12 @@ public sealed class EditorTopBarController : MonoBehaviour
     {
         CloseMenu();
         LevelEditorFileMenuCommands.ImportFolder();
+    }
+
+    void OnImportGameAssets()
+    {
+        CloseMenu();
+        LevelEditorFileMenuCommands.ImportGameAssets();
     }
 
     void OnImportAssets()

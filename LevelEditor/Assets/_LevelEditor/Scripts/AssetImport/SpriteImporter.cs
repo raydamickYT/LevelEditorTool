@@ -12,6 +12,13 @@ public class SpriteImporter : IAssetImporter
 
     public ImportedSpriteData Import(string filePath)
     {
+        string fileName = Path.GetFileName(filePath);
+        if (AssetStorageService.HasAssetWithFileName(fileName, ImportedAssetTypes.Sprite))
+        {
+            Debug.LogWarning($"Sprite import skipped: a sprite named '{fileName}' is already imported.");
+            return null;
+        }
+
         byte[] fileBytes = File.ReadAllBytes(filePath);
 
         Texture2D texture = new Texture2D(2, 2);
@@ -35,9 +42,13 @@ public class SpriteImporter : IAssetImporter
         var collection = new ImportedSpriteData
         {
             AssetID = Guid.NewGuid().ToString(),
-            FileName = Path.GetFileName(filePath),
+            FileName = fileName,
             OriginalFilePath = filePath,
-            Sprite = sprite
+            Sprite = sprite,
+            SpriteRectX = 0f,
+            SpriteRectY = 0f,
+            SpriteRectWidth = texture.width,
+            SpriteRectHeight = texture.height
         };
         
         //store the imported sprite in a local folder.

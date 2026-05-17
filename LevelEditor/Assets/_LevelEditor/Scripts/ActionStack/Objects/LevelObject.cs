@@ -71,6 +71,8 @@ public class LevelObject : MonoBehaviour
     // has to be called from the action classes
     public virtual Memento Save()
     {
+        sprite1 = getSprite();
+
         if (sprite1 == null)
             Debug.LogWarning("Sprite could not be found");
 
@@ -92,17 +94,28 @@ public class LevelObject : MonoBehaviour
 
     public virtual void Restore(Memento m)
     {
+        if (m == null)
+            return;
+
         transform.position = m.Position;
         transform.rotation = m.Rotation;
         transform.localScale = m.Scale;
 
-        if (m.Sprite != null)
+        Sprite spriteToRestore = m.Sprite;
+        if (spriteToRestore == null && !string.IsNullOrEmpty(m.AssetID))
+            spriteToRestore = AssetRuntimeLoader.LoadSpriteByAssetID(m.AssetID);
+
+        if (spriteToRestore != null)
         {
             if (transform.TryGetComponent(out SpriteRenderer spriteRenderer))
             {
-                spriteRenderer.sprite = m.Sprite;
+                spriteRenderer.sprite = spriteToRestore;
+                sprite1 = spriteToRestore;
             }
         }
+
+        if (!string.IsNullOrEmpty(m.AssetID))
+            AssetID = m.AssetID;
     }
 
     public void UpdateParent(LevelObjectGroup levelObjectGroup)

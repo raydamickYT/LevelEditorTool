@@ -42,14 +42,20 @@ public class CreateParentGroupAction : IUndoableAction, IEditorCommand
 
         if (children.Count < 2)
         {
-            Debug.Log("Select at least 2 objects to create a parent");
+            Debug.LogWarning("Select at least 2 objects to create a parent");
+            EditorPopupService.ShowWarning(
+                "Cannot create group",
+                "Select at least 2 objects to create a group.");
             return;
         }
 
         List<LevelObject> AvailableChildren = children.Where(x => !x.HasParent).ToList();
         if(AvailableChildren.Count == 0)
         {
-            Debug.Log("No available children in selection");
+            Debug.LogWarning("No available children in selection");
+            EditorPopupService.ShowWarning(
+                "Cannot create group",
+                "The selected objects are already inside a group.");
             return;
         }
 

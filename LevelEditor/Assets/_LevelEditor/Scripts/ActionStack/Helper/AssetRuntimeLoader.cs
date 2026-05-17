@@ -28,7 +28,7 @@ public static class AssetRuntimeLoader
             return null;
         }
 
-        Sprite loadedSprite = LoadSpriteFromPath(metaData.LocalFilePath, metaData.FileName);
+        Sprite loadedSprite = LoadSpriteFromPath(metaData);
 
         if (loadedSprite != null)
         {
@@ -38,8 +38,9 @@ public static class AssetRuntimeLoader
         return loadedSprite;
     }
 
-    private static Sprite LoadSpriteFromPath(string localFilePath, string fileName)
+    private static Sprite LoadSpriteFromPath(ImportedAssetMetaData metaData)
     {
+        string localFilePath = metaData?.LocalFilePath;
         if (string.IsNullOrWhiteSpace(localFilePath))
         {
             Debug.LogWarning("Cannot load sprite: LocalFilePath is empty.");
@@ -63,18 +64,38 @@ public static class AssetRuntimeLoader
             return null;
         }
 
+        Rect rect = GetSpriteRect(metaData, texture);
+
         Sprite sprite = Sprite.Create(
             texture,
-            new Rect(0, 0, texture.width, texture.height),
+            rect,
             new Vector2(0.5f, 0.5f),
-            100f
+            metaData.PixelsPerUnit > 0 ? metaData.PixelsPerUnit : 100f
         );
 
-        sprite.name = string.IsNullOrWhiteSpace(fileName)
+        sprite.name = string.IsNullOrWhiteSpace(metaData.FileName)
             ? Path.GetFileNameWithoutExtension(localFilePath)
-            : fileName;
+            : metaData.FileName;
 
         return sprite;
+    }
+
+    static Rect GetSpriteRect(ImportedAssetMetaData metaData, Texture2D texture)
+    {
+        if (metaData != null
+            && metaData.SpriteRectWidth > 0f
+            && metaData.SpriteRectHeight > 0f)
+        {
+            float x = Mathf.Clamp(metaData.SpriteRectX, 0f, texture.width);
+            float y = Mathf.Clamp(metaData.SpriteRectY, 0f, texture.height);
+            float width = Mathf.Min(metaData.SpriteRectWidth, texture.width - x);
+            float height = Mathf.Min(metaData.SpriteRectHeight, texture.height - y);
+
+            if (width > 0f && height > 0f)
+                return new Rect(x, y, width, height);
+        }
+
+        return new Rect(0, 0, texture.width, texture.height);
     }
 
     public static void ClearCache()

@@ -1,0 +1,103 @@
+.popup-overlay {
+    position: absolute;
+    left: 0;
+    right: 0;
+    top: 0;
+    bottom: 0;
+    justify-content: center;
+    align-items: center;
+    background-color: rgba(0, 0, 0, 0.35);
+}
+
+.popup-window {
+    width: 520px;
+    max-height: 420px;
+    background-color: rgb(232, 232, 232);
+    border-width: 1px;
+    border-color: rgb(95, 95, 95);
+    border-radius: 4px;
+    padding-left: 16px;
+    padding-right: 16px;
+    padding-top: 14px;
+    padding-bottom: 14px;
+}
+
+.popup-header {
+    flex-direction: row;
+    align-items: center;
+    margin-bottom: 10px;
+}
+
+.popup-icon {
+    width: 28px;
+    height: 28px;
+    margin-right: 10px;
+    border-radius: 14px;
+    -unity-text-align: middle-center;
+    color: white;
+    -unity-font-style: bold;
+    font-size: 18px;
+}
+
+.popup-icon-info {
+    background-color: rgb(70, 120, 190);
+}
+
+.popup-icon-warning {
+    background-color: rgb(205, 140, 35);
+}
+
+.popup-icon-error {
+    background-color: rgb(185, 55, 45);
+}
+
+.popup-title {
+    flex-grow: 1;
+    color: rgb(35, 35, 35);
+    -unity-font-style: bold;
+    font-size: 16px;
+}
+
+.popup-message {
+    color: rgb(40, 40, 40);
+    white-space: normal;
+    margin-bottom: 10px;
+}
+
+.popup-details-scroll {
+    max-height: 170px;
+    margin-top: 6px;
+    margin-bottom: 12px;
+    background-color: rgb(210, 210, 210);
+    border-width: 1px;
+    border-color: rgb(165, 165, 165);
+}
+
+.popup-details {
+    padding-left: 8px;
+    padding-right: 8px;
+    padding-top: 6px;
+    padding-bottom: 6px;
+    color: rgb(55, 55, 55);
+    white-space: normal;
+    font-size: 11px;
+}
+
+.popup-actions {
+    flex-direction: row;
+    justify-content: flex-end;
+}
+
+.popup-button {
+    min-width: 90px;
+    height: 28px;
+}
+
+.popup-primary-button {
+    background-color: rgb(215, 215, 215);
+    border-color: rgb(120, 120, 120);
+}
+
+.popup-primary-button:hover {
+    background-color: rgb(235, 235, 235);
+}

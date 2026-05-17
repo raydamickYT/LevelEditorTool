@@ -61,8 +61,11 @@ public static class AssetStorageService
     }
 
     //this function stores the earlier made ImportedSpriteData and stores it in a metadata file
-    public static void SaveMetaData(ImportedSpriteData data)
+    public static void SaveMetaData(ImportedAssetMetaData data)
     {
+        if (data == null || string.IsNullOrWhiteSpace(data.AssetID))
+            return;
+
         //check if there's already metadata stored
         AssetMetaDataCollection collection = GetCachedMetaData();
 
@@ -151,6 +154,70 @@ public static class AssetStorageService
         }
 
         return null;
+    }
+
+    public static bool HasAssetWithFileName(string fileName, string assetType = null)
+    {
+        if (string.IsNullOrWhiteSpace(fileName))
+            return false;
+
+        GetCachedMetaData();
+        if (cachedMetaData?.Assets == null)
+            return false;
+
+        string targetFileName = Path.GetFileName(fileName);
+        string targetNameWithoutExtension = Path.GetFileNameWithoutExtension(targetFileName);
+
+        return cachedMetaData.Assets.Any(asset =>
+        {
+            if (asset == null || string.IsNullOrWhiteSpace(asset.FileName))
+                return false;
+
+            if (!string.IsNullOrWhiteSpace(assetType)
+                && !string.Equals(asset.AssetType, assetType, System.StringComparison.OrdinalIgnoreCase))
+            {
+                return false;
+            }
+
+            string existingFileName = Path.GetFileName(asset.FileName);
+            string existingNameWithoutExtension = Path.GetFileNameWithoutExtension(existingFileName);
+
+            return string.Equals(existingFileName, targetFileName, System.StringComparison.OrdinalIgnoreCase)
+                || string.Equals(existingNameWithoutExtension, targetNameWithoutExtension, System.StringComparison.OrdinalIgnoreCase);
+        });
+    }
+
+    public static bool HasAssetAtRelativePath(string assetRelativePath, string assetType = null)
+    {
+        if (string.IsNullOrWhiteSpace(assetRelativePath))
+            return false;
+
+        GetCachedMetaData();
+        if (cachedMetaData?.Assets == null)
+            return false;
+
+        string normalizedPath = NormalizeRelativePath(assetRelativePath);
+        return cachedMetaData.Assets.Any(asset =>
+        {
+            if (asset == null || string.IsNullOrWhiteSpace(asset.AssetRelativePath))
+                return false;
+
+            if (!string.IsNullOrWhiteSpace(assetType)
+                && !string.Equals(asset.AssetType, assetType, System.StringComparison.OrdinalIgnoreCase))
+            {
+                return false;
+            }
+
+            return string.Equals(
+                NormalizeRelativePath(asset.AssetRelativePath),
+                normalizedPath,
+                System.StringComparison.OrdinalIgnoreCase);
+        });
+    }
+
+    static string NormalizeRelativePath(string path)
+    {
+        return (path ?? string.Empty).Replace('\\', '/').Trim('/');
     }
 
     /// <summary>All entries currently in the in-memory registry (after <see cref="GetCachedMetaData"/>).</summary>
@@ -327,4 +394,5 @@ public static class AssetStorageService
 public static class ImportedAssetTypes
 {
     public const string Sprite = "Sprite";
+    public const string Prefab = "Prefab";
 }
