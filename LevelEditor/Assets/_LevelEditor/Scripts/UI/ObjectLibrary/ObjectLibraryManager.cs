@@ -20,6 +20,7 @@ public class ObjectLibraryManager : MonoBehaviour
     [SerializeField] UIDocument uiDocument;
     [SerializeField] string gridElementName = "asset-grid";
     [SerializeField] string libraryRootElementName = "object-library-root";
+    [SerializeField] int dragPreviewSortingOrder = 32767;
 
     [Tooltip("When enabled, on Play the asset palette rebuilds from UserData/asset_registry.json (every registered sprite). Disable to keep the grid empty until import or level load repopulates it.")]
     [SerializeField]
@@ -166,9 +167,23 @@ public class ObjectLibraryManager : MonoBehaviour
         if (uiDocument == null)
             return;
 
+        SetDocumentSortingOrder(uiDocument, dragPreviewSortingOrder);
+
         toolkitRoot = uiDocument.rootVisualElement;
         toolkitGrid = toolkitRoot?.Q<VisualElement>(gridElementName);
         toolkitLibraryRoot = toolkitRoot?.Q<VisualElement>(libraryRootElementName) ?? toolkitGrid;
+    }
+
+    static void SetDocumentSortingOrder(UIDocument document, int sortingOrder)
+    {
+        if (document == null)
+            return;
+
+        System.Reflection.PropertyInfo property = typeof(UIDocument).GetProperty("sortingOrder");
+        if (property == null || !property.CanWrite)
+            return;
+
+        property.SetValue(document, sortingOrder);
     }
 
     void ClearLibraryContent()
@@ -238,7 +253,7 @@ public class ObjectLibraryManager : MonoBehaviour
         if (evt.pointerId != draggedPointerId || draggedSprite == null)
             return;
 
-        if (IsPointerInsideLibrary(evt.position))
+        if (IsPointerInsideLibrary(evt.position) || IsPointerOverOtherUIDocument(evt.position))
         {
             ShowDragPreview(evt.position);
             RemoveDraggedSpawnedObject();
@@ -301,6 +316,7 @@ public class ObjectLibraryManager : MonoBehaviour
         dragPreview.image = sprite.texture;
         dragPreview.pickingMode = PickingMode.Ignore;
         toolkitRoot.Add(dragPreview);
+        dragPreview.BringToFront();
     }
 
     void ShowDragPreview(Vector2 panelPosition)
@@ -311,6 +327,7 @@ public class ObjectLibraryManager : MonoBehaviour
         dragPreview.style.display = DisplayStyle.Flex;
         dragPreview.style.left = panelPosition.x - 32f;
         dragPreview.style.top = panelPosition.y - 32f;
+        dragPreview.BringToFront();
     }
 
     void HideDragPreview()
@@ -339,6 +356,65 @@ public class ObjectLibraryManager : MonoBehaviour
         return toolkitLibraryRoot.worldBound.Contains(panelPosition);
     }
 
+    bool IsPointerOverOtherUIDocument(Vector2 panelPosition)
+    {
+        foreach (UIDocument document in FindObjectsByType<UIDocument>(FindObjectsInactive.Exclude, FindObjectsSortMode.None))
+        {
+            if (document == null || document == uiDocument)
+                continue;
+
+            VisualElement root = document.rootVisualElement;
+            if (root == null || root.panel == null)
+                continue;
+
+            Vector2 otherPanelPosition = ConvertPanelPosition(panelPosition, toolkitRoot, root);
+            VisualElement picked = root.panel.Pick(otherPanelPosition);
+            if (picked == null || picked == root)
+                continue;
+
+            return true;
+        }
+
+        return false;
+    }
+
+    static Vector2 ConvertPanelPosition(Vector2 sourcePanelPosition, VisualElement sourceRoot, VisualElement targetRoot)
+    {
+        Vector2 screenPosition = PanelPositionToScreenPosition(sourcePanelPosition, sourceRoot);
+        return ScreenPositionToPanelPosition(screenPosition, targetRoot);
+    }
+
+    static Vector2 PanelPositionToScreenPosition(Vector2 panelPosition, VisualElement root)
+    {
+        Rect panelBounds = root != null
+            ? root.worldBound
+            : new Rect(0f, 0f, Screen.width, Screen.height);
+
+        float width = Mathf.Max(1f, panelBounds.width);
+        float height = Mathf.Max(1f, panelBounds.height);
+
+        float normalizedX = (panelPosition.x - panelBounds.xMin) / width;
+        float normalizedYFromTop = (panelPosition.y - panelBounds.yMin) / height;
+
+        return new Vector2(
+            normalizedX * Screen.width,
+            Screen.height - (normalizedYFromTop * Screen.height));
+    }
+
+    static Vector2 ScreenPositionToPanelPosition(Vector2 screenPosition, VisualElement root)
+    {
+        Rect panelBounds = root != null
+            ? root.worldBound
+            : new Rect(0f, 0f, Screen.width, Screen.height);
+
+        float width = Mathf.Max(1f, panelBounds.width);
+        float height = Mathf.Max(1f, panelBounds.height);
+
+        return new Vector2(
+            panelBounds.xMin + (screenPosition.x / Mathf.Max(1f, Screen.width)) * width,
+            panelBounds.yMin + ((Screen.height - screenPosition.y) / Mathf.Max(1f, Screen.height)) * height);
+    }
+
     void MoveOrCreateDraggedSpawnedObject(Vector2 panelPosition)
     {
         Vector3 worldPosition = PanelPositionToWorld(panelPosition);
@@ -360,28 +436,11 @@ public class ObjectLibraryManager : MonoBehaviour
         if (cam == null)
             return Vector3.zero;
 
-        Vector2 screenPosition2D = PanelPositionToScreenPosition(panelPosition);
+        Vector2 screenPosition2D = PanelPositionToScreenPosition(panelPosition, toolkitRoot);
         Vector3 screenPosition = new(screenPosition2D.x, screenPosition2D.y, 0f);
         Vector3 worldPosition = cam.ScreenToWorldPoint(screenPosition);
         worldPosition.z = 0f;
         return worldPosition;
-    }
-
-    Vector2 PanelPositionToScreenPosition(Vector2 panelPosition)
-    {
-        Rect panelBounds = toolkitRoot != null
-            ? toolkitRoot.worldBound
-            : new Rect(0f, 0f, Screen.width, Screen.height);
-
-        float width = Mathf.Max(1f, panelBounds.width);
-        float height = Mathf.Max(1f, panelBounds.height);
-
-        float normalizedX = (panelPosition.x - panelBounds.xMin) / width;
-        float normalizedYFromTop = (panelPosition.y - panelBounds.yMin) / height;
-
-        return new Vector2(
-            normalizedX * Screen.width,
-            Screen.height - (normalizedYFromTop * Screen.height));
     }
 
     void ConfigureSpawnedSprite(GameObject spawnedObject, Sprite sprite)
