@@ -20,7 +20,10 @@ public class ObjectLibraryManager : MonoBehaviour
     [SerializeField] UIDocument uiDocument;
     [SerializeField] string gridElementName = "asset-grid";
     [SerializeField] string libraryRootElementName = "object-library-root";
+    [SerializeField] string resizeHandleElementName = "object-library-resize-handle";
     [SerializeField] int dragPreviewSortingOrder = 32767;
+    [SerializeField] float minLibraryWidth = 260f;
+    [SerializeField] float maxLibraryWidth = 900f;
 
     [Tooltip("When enabled, on Play the asset palette rebuilds from UserData/asset_registry.json (every registered sprite). Disable to keep the grid empty until import or level load repopulates it.")]
     [SerializeField]
@@ -32,12 +35,15 @@ public class ObjectLibraryManager : MonoBehaviour
     VisualElement toolkitRoot;
     VisualElement toolkitLibraryRoot;
     VisualElement toolkitGrid;
+    VisualElement resizeHandle;
     ToolkitImage dragPreview;
     VisualElement dragSource;
     string draggedAssetId;
     Sprite draggedSprite;
     GameObject draggedSpawnedObject;
     int draggedPointerId = InvalidPointerId;
+    int resizePointerId = InvalidPointerId;
+    bool isResizingLibrary;
 
     private GameObject gameObjectPrefab;
     private GameObject GameObjectPrefab
@@ -181,6 +187,7 @@ public class ObjectLibraryManager : MonoBehaviour
         toolkitRoot = uiDocument.rootVisualElement;
         toolkitGrid = toolkitRoot?.Q<VisualElement>(gridElementName);
         toolkitLibraryRoot = toolkitRoot?.Q<VisualElement>(libraryRootElementName) ?? toolkitGrid;
+        SetupResizeHandle();
     }
 
     static void SetDocumentSortingOrder(UIDocument document, int sortingOrder)
@@ -193,6 +200,84 @@ public class ObjectLibraryManager : MonoBehaviour
             return;
 
         property.SetValue(document, sortingOrder);
+    }
+
+    void SetupResizeHandle()
+    {
+        VisualElement foundHandle = toolkitRoot?.Q<VisualElement>(resizeHandleElementName);
+        if (foundHandle == resizeHandle)
+            return;
+
+        if (resizeHandle != null)
+        {
+            resizeHandle.UnregisterCallback<PointerDownEvent>(BeginResizeLibrary);
+            resizeHandle.UnregisterCallback<PointerMoveEvent>(ResizeLibrary);
+            resizeHandle.UnregisterCallback<PointerUpEvent>(EndResizeLibrary);
+            resizeHandle.UnregisterCallback<PointerCancelEvent>(CancelResizeLibrary);
+        }
+
+        resizeHandle = foundHandle;
+        if (resizeHandle == null)
+            return;
+
+        resizeHandle.RegisterCallback<PointerDownEvent>(BeginResizeLibrary);
+        resizeHandle.RegisterCallback<PointerMoveEvent>(ResizeLibrary);
+        resizeHandle.RegisterCallback<PointerUpEvent>(EndResizeLibrary);
+        resizeHandle.RegisterCallback<PointerCancelEvent>(CancelResizeLibrary);
+    }
+
+    void BeginResizeLibrary(PointerDownEvent evt)
+    {
+        if (evt.button != 0 || toolkitLibraryRoot == null || toolkitRoot == null)
+            return;
+
+        isResizingLibrary = true;
+        resizePointerId = evt.pointerId;
+        resizeHandle.CapturePointer(resizePointerId);
+        ResizeLibraryToPointer(evt.position);
+        evt.StopPropagation();
+    }
+
+    void ResizeLibrary(PointerMoveEvent evt)
+    {
+        if (!isResizingLibrary || evt.pointerId != resizePointerId)
+            return;
+
+        ResizeLibraryToPointer(evt.position);
+        evt.StopPropagation();
+    }
+
+    void EndResizeLibrary(PointerUpEvent evt)
+    {
+        if (evt.pointerId != resizePointerId)
+            return;
+
+        FinishResizeLibrary();
+        evt.StopPropagation();
+    }
+
+    void CancelResizeLibrary(PointerCancelEvent _)
+    {
+        FinishResizeLibrary();
+    }
+
+    void FinishResizeLibrary()
+    {
+        if (resizeHandle != null && resizePointerId != InvalidPointerId)
+            resizeHandle.ReleasePointer(resizePointerId);
+
+        isResizingLibrary = false;
+        resizePointerId = InvalidPointerId;
+    }
+
+    void ResizeLibraryToPointer(Vector2 panelPosition)
+    {
+        Rect panelBounds = toolkitRoot.worldBound;
+        float panelRight = panelBounds.xMax;
+        float desiredWidth = panelRight - panelPosition.x;
+        float maxWidth = Mathf.Min(maxLibraryWidth, Mathf.Max(minLibraryWidth, panelBounds.width));
+
+        toolkitLibraryRoot.style.width = Mathf.Clamp(desiredWidth, minLibraryWidth, maxWidth);
     }
 
     void ClearLibraryContent()

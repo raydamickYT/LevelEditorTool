@@ -11,6 +11,19 @@
     border-right-color: rgb(140, 140, 140);
 }
 
+.object-library-resize-handle {
+    position: absolute;
+    left: -4px;
+    top: 0;
+    bottom: 0;
+    width: 8px;
+    background-color: rgba(0, 0, 0, 0);
+}
+
+.object-library-resize-handle:hover {
+    background-color: rgba(80, 120, 180, 0.45);
+}
+
 .asset-scroll-view {
     flex-grow: 1;
 }

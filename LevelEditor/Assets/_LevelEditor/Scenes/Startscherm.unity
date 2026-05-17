@@ -2832,6 +2832,7 @@ Transform:
   - {fileID: 1891404353}
   - {fileID: 1290933648}
   - {fileID: 1861936955}
+  - {fileID: 1628773075}
   m_Father: {fileID: 0}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
 --- !u!1001 &1179319185
@@ -3740,7 +3741,10 @@ MonoBehaviour:
   uiDocument: {fileID: 1476075464}
   gridElementName: asset-grid
   libraryRootElementName: object-library-root
+  resizeHandleElementName: object-library-resize-handle
   dragPreviewSortingOrder: 32767
+  minLibraryWidth: 260
+  maxLibraryWidth: 900
   refreshEntireLibraryFromDiskOnStart: 0
 --- !u!114 &1476075464
 MonoBehaviour:
@@ -4215,6 +4219,61 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::SelectionBoxVisual
   rectTransform: {fileID: 1291077056}
   parentRectTransform: {fileID: 1626930756}
+--- !u!1 &1628773074
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 1628773075}
+  - component: {fileID: 1628773076}
+  m_Layer: 0
+  m_Name: MouseCursorManager
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!4 &1628773075
+Transform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1628773074}
+  serializedVersion: 2
+  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
+  m_LocalPosition: {x: 0, y: 0, z: 0}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_ConstrainProportionsScale: 0
+  m_Children: []
+  m_Father: {fileID: 1166710610}
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!114 &1628773076
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1628773074}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 608e36c1bf0b18d4e89dc332d3e9da54, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::MouseCursorManager
+  defaultCursor: {fileID: 2800000, guid: 529c2e849f8428f44a84fac5f2237140, type: 3}
+  clickableCursor: {fileID: 2800000, guid: 02fd2069cd0dcb14bb2718c5097c4317, type: 3}
+  defaultHotspot: {x: 0, y: 0}
+  clickableHotspot: {x: 0, y: 0}
+  targetCamera: {fileID: 519420031}
+  clickableWorldLayers:
+    serializedVersion: 2
+    m_Bits: 136
+  includeUGuiClickables: 1
+  includeUIToolkitElements: 1
+  uiToolkitDocuments: []
 --- !u!1 &1637161512
 GameObject:
   m_ObjectHideFlags: 0

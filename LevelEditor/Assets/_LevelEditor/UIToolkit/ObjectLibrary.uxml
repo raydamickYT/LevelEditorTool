@@ -1,6 +1,7 @@
 <ui:UXML xmlns:ui="UnityEngine.UIElements" editor-extension-mode="False">
     <Style src="ObjectLibrary.uss" />
     <ui:VisualElement name="object-library-root" class="object-library">
+        <ui:VisualElement name="object-library-resize-handle" class="object-library-resize-handle" />
         <ui:ScrollView name="asset-scroll-view" class="asset-scroll-view" mode="Vertical">
             <ui:VisualElement name="asset-grid" class="asset-grid" />
         </ui:ScrollView>
