@@ -1,0 +1,67 @@
+.object-library {
+    position: absolute;
+    top: 300px;
+    right: 0;
+    bottom: 0;
+    width: 380px;
+    background-color: rgba(214, 214, 214, 0.9);
+    border-left-width: 1px;
+    border-left-color: rgb(140, 140, 140);
+    border-right-width: 1px;
+    border-right-color: rgb(140, 140, 140);
+}
+
+.asset-scroll-view {
+    flex-grow: 1;
+}
+
+.asset-grid {
+    flex-direction: row;
+    flex-wrap: wrap;
+    padding-left: 12px;
+    padding-top: 12px;
+    padding-right: 0;
+    padding-bottom: 0;
+}
+
+.asset-tile {
+    width: 110px;
+    height: 130px;
+    margin-right: 8px;
+    margin-bottom: 8px;
+    justify-content: center;
+    align-items: center;
+    background-color: rgba(255, 255, 255, 0.12);
+    border-width: 1px;
+    border-color: rgba(160, 160, 160, 0.35);
+    border-radius: 2px;
+}
+
+.asset-tile:hover {
+    background-color: rgba(255, 255, 255, 0.28);
+    border-color: rgba(110, 130, 170, 0.8);
+}
+
+.asset-thumbnail {
+    width: 80px;
+    height: 80px;
+    -unity-background-scale-mode: scale-to-fit;
+}
+
+.asset-label {
+    margin-top: 6px;
+    height: 32px;
+    max-width: 96px;
+    -unity-text-align: middle-center;
+    font-size: 9px;
+    color: rgb(55, 55, 55);
+    overflow: hidden;
+}
+
+.asset-drag-preview {
+    position: absolute;
+    width: 64px;
+    height: 64px;
+    -unity-background-scale-mode: scale-to-fit;
+    opacity: 0.9;
+}
