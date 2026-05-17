@@ -24,8 +24,42 @@
     background-color: rgba(80, 120, 180, 0.45);
 }
 
+.object-library-header {
+    height: 30px;
+    flex-direction: row;
+    align-items: center;
+    justify-content: space-between;
+    padding-left: 10px;
+    padding-right: 6px;
+    border-bottom-width: 1px;
+    border-bottom-color: rgba(140, 140, 140, 0.55);
+    background-color: rgba(205, 205, 205, 0.95);
+}
+
+.object-library-title {
+    -unity-font-style: bold;
+    font-size: 11px;
+    color: rgb(45, 45, 45);
+}
+
+.object-library-collapse-button {
+    height: 22px;
+    min-width: 48px;
+    padding-left: 6px;
+    padding-right: 6px;
+    font-size: 10px;
+}
+
 .asset-scroll-view {
     flex-grow: 1;
+}
+
+.object-library-collapsed .asset-scroll-view {
+    display: none;
+}
+
+.object-library-collapsed .object-library-resize-handle {
+    display: none;
 }
 
 .asset-grid {

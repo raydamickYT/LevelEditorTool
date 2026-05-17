@@ -21,9 +21,12 @@ public class ObjectLibraryManager : MonoBehaviour
     [SerializeField] string gridElementName = "asset-grid";
     [SerializeField] string libraryRootElementName = "object-library-root";
     [SerializeField] string resizeHandleElementName = "object-library-resize-handle";
+    [SerializeField] string collapseButtonElementName = "object-library-collapse-button";
     [SerializeField] int dragPreviewSortingOrder = 32767;
     [SerializeField] float minLibraryWidth = 260f;
     [SerializeField] float maxLibraryWidth = 900f;
+    [SerializeField] float expandedLibraryTop = 300f;
+    [SerializeField] float collapsedLibraryHeight = 30f;
 
     [Tooltip("When enabled, on Play the asset palette rebuilds from UserData/asset_registry.json (every registered sprite). Disable to keep the grid empty until import or level load repopulates it.")]
     [SerializeField]
@@ -36,6 +39,7 @@ public class ObjectLibraryManager : MonoBehaviour
     VisualElement toolkitLibraryRoot;
     VisualElement toolkitGrid;
     VisualElement resizeHandle;
+    Button collapseButton;
     ToolkitImage dragPreview;
     VisualElement dragSource;
     string draggedAssetId;
@@ -44,6 +48,7 @@ public class ObjectLibraryManager : MonoBehaviour
     int draggedPointerId = InvalidPointerId;
     int resizePointerId = InvalidPointerId;
     bool isResizingLibrary;
+    bool isLibraryCollapsed;
 
     private GameObject gameObjectPrefab;
     private GameObject GameObjectPrefab
@@ -188,6 +193,7 @@ public class ObjectLibraryManager : MonoBehaviour
         toolkitGrid = toolkitRoot?.Q<VisualElement>(gridElementName);
         toolkitLibraryRoot = toolkitRoot?.Q<VisualElement>(libraryRootElementName) ?? toolkitGrid;
         SetupResizeHandle();
+        SetupCollapseButton();
     }
 
     static void SetDocumentSortingOrder(UIDocument document, int sortingOrder)
@@ -226,9 +232,58 @@ public class ObjectLibraryManager : MonoBehaviour
         resizeHandle.RegisterCallback<PointerCancelEvent>(CancelResizeLibrary);
     }
 
+    void SetupCollapseButton()
+    {
+        Button foundButton = toolkitRoot?.Q<Button>(collapseButtonElementName);
+        if (foundButton == collapseButton)
+            return;
+
+        if (collapseButton != null)
+            collapseButton.clicked -= ToggleLibraryCollapsed;
+
+        collapseButton = foundButton;
+        if (collapseButton == null)
+            return;
+
+        collapseButton.clicked += ToggleLibraryCollapsed;
+        ApplyLibraryCollapsedState();
+    }
+
+    void ToggleLibraryCollapsed()
+    {
+        isLibraryCollapsed = !isLibraryCollapsed;
+        ApplyLibraryCollapsedState();
+    }
+
+    void ApplyLibraryCollapsedState()
+    {
+        if (toolkitLibraryRoot == null)
+            return;
+
+        if (isLibraryCollapsed)
+        {
+            CancelToolkitDrag();
+            FinishResizeLibrary();
+            toolkitLibraryRoot.AddToClassList("object-library-collapsed");
+            toolkitLibraryRoot.style.top = StyleKeyword.Auto;
+            toolkitLibraryRoot.style.bottom = 0f;
+            toolkitLibraryRoot.style.height = collapsedLibraryHeight;
+        }
+        else
+        {
+            toolkitLibraryRoot.RemoveFromClassList("object-library-collapsed");
+            toolkitLibraryRoot.style.top = expandedLibraryTop;
+            toolkitLibraryRoot.style.bottom = 0f;
+            toolkitLibraryRoot.style.height = StyleKeyword.Auto;
+        }
+
+        if (collapseButton != null)
+            collapseButton.text = isLibraryCollapsed ? "Show" : "Hide";
+    }
+
     void BeginResizeLibrary(PointerDownEvent evt)
     {
-        if (evt.button != 0 || toolkitLibraryRoot == null || toolkitRoot == null)
+        if (evt.button != 0 || isLibraryCollapsed || toolkitLibraryRoot == null || toolkitRoot == null)
             return;
 
         isResizingLibrary = true;

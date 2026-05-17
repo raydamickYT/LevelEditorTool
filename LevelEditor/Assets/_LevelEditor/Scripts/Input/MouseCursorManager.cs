@@ -18,6 +18,7 @@ public sealed class MouseCursorManager : MonoBehaviour
     [SerializeField] Vector2 defaultHotspot = Vector2.zero;
     [SerializeField] Vector2 clickableHotspot = Vector2.zero;
     [SerializeField] CursorMode cursorMode = CursorMode.ForceSoftware;
+    [SerializeField] bool forceApplyCursorEveryFrame = true;
 
     [Header("World Hover")]
     [SerializeField] Camera targetCamera;
@@ -27,8 +28,27 @@ public sealed class MouseCursorManager : MonoBehaviour
     [SerializeField] bool includeUGuiClickables = true;
     [SerializeField] bool includeUIToolkitElements = true;
     [SerializeField] UIDocument[] uiToolkitDocuments;
+    [SerializeField]
+    string[] clickableUIToolkitClasses =
+    {
+        "asset-tile",
+        "object-library-resize-handle",
+        "object-library-collapse-button",
+        "menu-trigger"
+    };
+    [SerializeField]
+    string[] ignoredUIToolkitClasses =
+    {
+        "object-library",
+        "asset-scroll-view",
+        "asset-grid",
+        "asset-folder",
+        "asset-folder-content",
+        "asset-folder-grid"
+    };
 
     bool isShowingClickableCursor;
+    bool shouldShowClickableCursor;
 
     void Awake()
     {
@@ -52,11 +72,15 @@ public sealed class MouseCursorManager : MonoBehaviour
 
     void Update()
     {
-        bool shouldShowClickable = IsPointerOverClickable();
-        if (shouldShowClickable == isShowingClickableCursor)
+        shouldShowClickableCursor = IsPointerOverClickable();
+    }
+
+    void LateUpdate()
+    {
+        if (!forceApplyCursorEveryFrame && shouldShowClickableCursor == isShowingClickableCursor)
             return;
 
-        if (shouldShowClickable)
+        if (shouldShowClickableCursor)
             ApplyClickableCursor();
         else
             ApplyDefaultCursor();
@@ -67,11 +91,14 @@ public sealed class MouseCursorManager : MonoBehaviour
         if (Mouse.current == null)
             return false;
 
+        if (includeUIToolkitElements && TryGetPointerUIToolkitElement(out VisualElement toolkitElement))
+            return IsToolkitElementClickable(toolkitElement);
+
         if (includeUGuiClickables && IsPointerOverUGuiClickable())
             return true;
 
-        if (includeUIToolkitElements && IsPointerOverUIToolkitElement())
-            return true;
+        if (IsPointerOverAnyUGuiElement())
+            return false;
 
         if (targetCamera == null)
             targetCamera = Camera.main;
@@ -99,6 +126,12 @@ public sealed class MouseCursorManager : MonoBehaviour
             if (hit == null)
                 continue;
 
+            // UIDocuments can surface through EventSystem raycasts as panel handlers.
+            // Let the UI Toolkit whitelist decide those, otherwise the whole document
+            // behaves like a clickable area.
+            if (hit.GetComponentInParent<UIDocument>() != null)
+                continue;
+
             if (hit.GetComponentInParent<Selectable>() != null)
                 return true;
 
@@ -109,8 +142,38 @@ public sealed class MouseCursorManager : MonoBehaviour
         return false;
     }
 
-    bool IsPointerOverUIToolkitElement()
+    bool IsPointerOverAnyUGuiElement()
     {
+        if (EventSystem.current == null)
+            return false;
+
+        PointerEventData pointerData = new(EventSystem.current)
+        {
+            position = Mouse.current.position.ReadValue()
+        };
+
+        List<RaycastResult> results = new();
+        EventSystem.current.RaycastAll(pointerData, results);
+
+        foreach (RaycastResult result in results)
+        {
+            GameObject hit = result.gameObject;
+            if (hit == null)
+                continue;
+
+            if (hit.GetComponentInParent<UIDocument>() != null)
+                continue;
+
+            return true;
+        }
+
+        return false;
+    }
+
+    bool TryGetPointerUIToolkitElement(out VisualElement pickedElement)
+    {
+        pickedElement = null;
+
         UIDocument[] documents = uiToolkitDocuments;
         if (documents == null || documents.Length == 0)
             documents = FindObjectsByType<UIDocument>(FindObjectsInactive.Exclude, FindObjectsSortMode.None);
@@ -130,21 +193,55 @@ public sealed class MouseCursorManager : MonoBehaviour
             if (picked == null || picked == root)
                 continue;
 
-            if (IsToolkitElementClickable(picked))
+            pickedElement = picked;
+            return true;
+        }
+
+        return false;
+    }
+
+    bool IsToolkitElementClickable(VisualElement element)
+    {
+        for (VisualElement current = element; current != null; current = current.parent)
+        {
+            if (HasIgnoredClass(current))
+                return false;
+
+            if (HasClickableClass(current))
                 return true;
         }
 
         return false;
     }
 
-    static bool IsToolkitElementClickable(VisualElement element)
+    bool HasClickableClass(VisualElement element)
     {
-        for (VisualElement current = element; current != null; current = current.parent)
-        {
-            if (current is UnityEngine.UIElements.Button || current is UnityEngine.UIElements.Toggle || current is Foldout || current is TextField)
-                return true;
+        if (element == null || clickableUIToolkitClasses == null)
+            return false;
 
-            if (current.focusable && current.pickingMode == PickingMode.Position)
+        foreach (string className in clickableUIToolkitClasses)
+        {
+            if (string.IsNullOrWhiteSpace(className))
+                continue;
+
+            if (element.ClassListContains(className))
+                return true;
+        }
+
+        return false;
+    }
+
+    bool HasIgnoredClass(VisualElement element)
+    {
+        if (element == null || ignoredUIToolkitClasses == null)
+            return false;
+
+        foreach (string className in ignoredUIToolkitClasses)
+        {
+            if (string.IsNullOrWhiteSpace(className))
+                continue;
+
+            if (element.ClassListContains(className))
                 return true;
         }
 

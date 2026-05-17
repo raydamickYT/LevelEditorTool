@@ -23,6 +23,8 @@ public static class AssetStorageService
     private static readonly string AssetFolder = Path.Combine(RootFolder, "Assets");
 
     private static readonly string SpriteFolder = Path.Combine(AssetFolder, "Sprites");
+    private const string ProjectAssetsFolderName = "ProjectAssets";
+    private const string ProjectAssetSpritesFolderName = "Sprites";
 
     //caching meta data
     private static AssetMetaDataCollection cachedMetaData;
@@ -309,7 +311,74 @@ public static class AssetStorageService
         if (!string.IsNullOrEmpty(dir))
             Directory.CreateDirectory(dir);
 
-        File.WriteAllText(destinationFilePath, JsonUtility.ToJson(cachedMetaData, true), Encoding.UTF8);
+        AssetMetaDataCollection projectSnapshot = new() { Assets = new List<ImportedAssetMetaData>() };
+        foreach (ImportedAssetMetaData asset in cachedMetaData.Assets
+            .Where(a => a != null && !string.IsNullOrWhiteSpace(a.AssetID))
+            .GroupBy(a => a.AssetID)
+            .Select(g => g.First()))
+        {
+            ImportedAssetMetaData clone = CloneMetaData(asset);
+            TryCopyAssetIntoProjectSnapshot(asset, clone, dir);
+            projectSnapshot.Assets.Add(clone);
+        }
+
+        File.WriteAllText(destinationFilePath, JsonUtility.ToJson(projectSnapshot, true), Encoding.UTF8);
+    }
+
+    static ImportedAssetMetaData CloneMetaData(ImportedAssetMetaData asset)
+    {
+        string json = JsonUtility.ToJson(asset);
+        return JsonUtility.FromJson<ImportedAssetMetaData>(json);
+    }
+
+    static bool TryCopyAssetIntoProjectSnapshot(ImportedAssetMetaData sourceAsset, ImportedAssetMetaData snapshotAsset, string projectDirectory)
+    {
+        if (sourceAsset == null || snapshotAsset == null || string.IsNullOrEmpty(projectDirectory))
+            return false;
+
+        string sourcePath = ResolveSnapshotSourcePath(sourceAsset);
+        if (string.IsNullOrEmpty(sourcePath))
+            return false;
+
+        string extension = Path.GetExtension(sourcePath);
+        if (string.IsNullOrEmpty(extension))
+            extension = ".png";
+
+        string relativePath = Path.Combine(ProjectAssetsFolderName, ProjectAssetSpritesFolderName, $"{sourceAsset.AssetID}{extension}")
+            .Replace('\\', '/');
+        string destinationPath = Path.GetFullPath(Path.Combine(projectDirectory, relativePath.Replace('/', Path.DirectorySeparatorChar)));
+
+        string destinationDirectory = Path.GetDirectoryName(destinationPath);
+        if (!string.IsNullOrEmpty(destinationDirectory))
+            Directory.CreateDirectory(destinationDirectory);
+
+        string sourceFullPath = Path.GetFullPath(sourcePath);
+        if (!sourceFullPath.Equals(destinationPath, System.StringComparison.OrdinalIgnoreCase))
+        {
+            byte[] bytes = File.ReadAllBytes(sourceFullPath);
+            File.WriteAllBytes(destinationPath, bytes);
+        }
+
+        snapshotAsset.LocalFilePath = relativePath;
+        return true;
+    }
+
+    static string ResolveSnapshotSourcePath(ImportedAssetMetaData asset)
+    {
+        if (asset == null)
+            return null;
+
+        if (!string.IsNullOrWhiteSpace(asset.LocalFilePath) && File.Exists(asset.LocalFilePath))
+            return Path.GetFullPath(asset.LocalFilePath);
+
+        if (string.Equals(asset.AssetType, ImportedAssetTypes.Sprite, System.StringComparison.OrdinalIgnoreCase)
+            && !string.IsNullOrWhiteSpace(asset.OriginalFilePath)
+            && File.Exists(asset.OriginalFilePath))
+        {
+            return Path.GetFullPath(asset.OriginalFilePath);
+        }
+
+        return null;
     }
 
     /// <summary>Merges a full registry snapshot from a level folder into memory (paths resolved against disk / level folder).</summary>
@@ -330,7 +399,7 @@ public static class AssetStorageService
             if (asset == null || string.IsNullOrWhiteSpace(asset.AssetID))
                 continue;
 
-            string resolved = ResolveRegistryAssetPath(asset.LocalFilePath, levelDirectory);
+            string resolved = ResolveRegistryAssetPath(asset, levelDirectory);
             if (string.IsNullOrEmpty(resolved) || !File.Exists(resolved))
             {
                 Debug.LogWarning($"Project registry: file missing for {asset.AssetID} ({asset.LocalFilePath})");
@@ -351,19 +420,41 @@ public static class AssetStorageService
         AssetRuntimeLoader.ClearCache();
     }
 
-    static string ResolveRegistryAssetPath(string localPath, string levelDirectory)
+    static string ResolveRegistryAssetPath(ImportedAssetMetaData asset, string levelDirectory)
     {
-        if (string.IsNullOrWhiteSpace(localPath))
+        if (asset == null)
             return null;
 
-        if (File.Exists(localPath))
+        string localPath = asset.LocalFilePath;
+        if (string.IsNullOrWhiteSpace(localPath))
+            localPath = null;
+
+        if (!string.IsNullOrWhiteSpace(localPath) && File.Exists(localPath))
             return Path.GetFullPath(localPath);
 
-        if (!string.IsNullOrEmpty(levelDirectory))
+        if (!string.IsNullOrWhiteSpace(localPath) && !string.IsNullOrEmpty(levelDirectory))
         {
             string combined = Path.GetFullPath(Path.Combine(levelDirectory, localPath.Replace('/', Path.DirectorySeparatorChar)));
             if (File.Exists(combined))
                 return combined;
+        }
+
+        // Old project snapshots could point at session-only UserData. For sprite imports we can still
+        // recover from the original Unity project path if that source project is available.
+        if (string.Equals(asset.AssetType, ImportedAssetTypes.Sprite, System.StringComparison.OrdinalIgnoreCase))
+        {
+            if (!string.IsNullOrWhiteSpace(asset.OriginalFilePath) && File.Exists(asset.OriginalFilePath))
+                return Path.GetFullPath(asset.OriginalFilePath);
+
+            if (!string.IsNullOrWhiteSpace(asset.SourceProjectRoot) && !string.IsNullOrWhiteSpace(asset.AssetRelativePath))
+            {
+                string sourceProjectPath = Path.GetFullPath(Path.Combine(
+                    asset.SourceProjectRoot,
+                    asset.AssetRelativePath.Replace('/', Path.DirectorySeparatorChar)));
+
+                if (File.Exists(sourceProjectPath))
+                    return sourceProjectPath;
+            }
         }
 
         return null;

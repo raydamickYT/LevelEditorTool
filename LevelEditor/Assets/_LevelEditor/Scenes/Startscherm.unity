@@ -3742,9 +3742,12 @@ MonoBehaviour:
   gridElementName: asset-grid
   libraryRootElementName: object-library-root
   resizeHandleElementName: object-library-resize-handle
+  collapseButtonElementName: object-library-collapse-button
   dragPreviewSortingOrder: 32767
   minLibraryWidth: 260
   maxLibraryWidth: 900
+  expandedLibraryTop: 300
+  collapsedLibraryHeight: 30
   refreshEntireLibraryFromDiskOnStart: 0
 --- !u!114 &1476075464
 MonoBehaviour:
@@ -4263,10 +4266,12 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 608e36c1bf0b18d4e89dc332d3e9da54, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::MouseCursorManager
-  defaultCursor: {fileID: 2800000, guid: 529c2e849f8428f44a84fac5f2237140, type: 3}
-  clickableCursor: {fileID: 2800000, guid: 02fd2069cd0dcb14bb2718c5097c4317, type: 3}
+  defaultCursor: {fileID: 0}
+  clickableCursor: {fileID: 2800000, guid: a4f5299227dde3249883eb888d57ea56, type: 3}
   defaultHotspot: {x: 0, y: 0}
   clickableHotspot: {x: 0, y: 0}
+  cursorMode: 1
+  forceApplyCursorEveryFrame: 1
   targetCamera: {fileID: 519420031}
   clickableWorldLayers:
     serializedVersion: 2
@@ -4274,6 +4279,20 @@ MonoBehaviour:
   includeUGuiClickables: 1
   includeUIToolkitElements: 1
   uiToolkitDocuments: []
+  clickableUIToolkitClasses:
+  - asset-tile
+  - object-library-resize-handle
+  - object-library-collapse-button
+  - menu-trigger
+  - menu-item
+  - asset-folder
+  - asset-subfolder
+  ignoredUIToolkitClasses:
+  - object-library
+  - asset-scroll-view
+  - asset-grid
+  - asset-folder-content
+  - asset-folder-grid
 --- !u!1 &1637161512
 GameObject:
   m_ObjectHideFlags: 0
