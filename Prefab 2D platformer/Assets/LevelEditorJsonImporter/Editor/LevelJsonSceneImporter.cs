@@ -13,9 +13,6 @@ namespace LevelEditorJsonImporter.Editor
     {
         const string ProjectRegistryFileName = "project_asset_registry.json";
         const string BundledRegistryRelativePath = "BundledAssets/asset_registry.json";
-        const float MinEditorPreviewSize = 0.5f;
-        const float MaxEditorPreviewSize = 4f;
-
         public static GameObject ImportFromPath(
             string levelJsonPath,
             string importRootName,
@@ -247,11 +244,12 @@ namespace LevelEditorJsonImporter.Editor
                 return;
 
             Vector3 targetWorldPosition = prefabInstance.position;
-            Bounds? currentBounds = GetRendererBounds(prefabInstance);
+            Bounds? currentBounds = GetPrefabPreviewBounds(prefabInstance, prefabMetaData);
             if (!currentBounds.HasValue)
                 return;
 
-            float targetLargestSide = GetEditorPreviewLargestSide(prefabMetaData);
+            float targetLargestSide = GetEditorPreviewRawLargestSide(prefabMetaData)
+                * GetLargestAbsXYScale(prefabInstance);
             Bounds bounds = currentBounds.Value;
             float currentLargestSide = Mathf.Max(bounds.size.x, bounds.size.y);
 
@@ -259,7 +257,7 @@ namespace LevelEditorJsonImporter.Editor
             {
                 float scaleMultiplier = targetLargestSide / currentLargestSide;
                 prefabInstance.localScale *= scaleMultiplier;
-                currentBounds = GetRendererBounds(prefabInstance);
+                currentBounds = GetPrefabPreviewBounds(prefabInstance, prefabMetaData);
                 if (!currentBounds.HasValue)
                     return;
 
@@ -267,6 +265,46 @@ namespace LevelEditorJsonImporter.Editor
             }
 
             prefabInstance.position += targetWorldPosition - bounds.center;
+        }
+
+        static Bounds? GetPrefabPreviewBounds(Transform prefabInstance, LevelEditorAssetMetaData prefabMetaData)
+        {
+            SpriteRenderer previewRenderer = FindPreviewSpriteRenderer(prefabInstance, prefabMetaData);
+            if (previewRenderer != null)
+                return previewRenderer.bounds;
+
+            return GetRendererBounds(prefabInstance);
+        }
+
+        static SpriteRenderer FindPreviewSpriteRenderer(Transform prefabInstance, LevelEditorAssetMetaData prefabMetaData)
+        {
+            if (prefabInstance == null || prefabMetaData == null)
+                return null;
+
+            SpriteRenderer[] renderers = prefabInstance.GetComponentsInChildren<SpriteRenderer>(true);
+            if (renderers == null || renderers.Length == 0)
+                return null;
+
+            foreach (SpriteRenderer renderer in renderers)
+            {
+                if (renderer == null || renderer.sprite == null)
+                    continue;
+
+                if (SpriteRectMatches(renderer.sprite.rect, prefabMetaData))
+                    return renderer;
+            }
+
+            return renderers.Length == 1 ? renderers[0] : null;
+        }
+
+        static bool SpriteRectMatches(Rect rect, LevelEditorAssetMetaData metaData)
+        {
+            return metaData.SpriteRectWidth > 0f
+                && metaData.SpriteRectHeight > 0f
+                && Approximately(rect.x, metaData.SpriteRectX)
+                && Approximately(rect.y, metaData.SpriteRectY)
+                && Approximately(rect.width, metaData.SpriteRectWidth)
+                && Approximately(rect.height, metaData.SpriteRectHeight);
         }
 
         static void MatchRootObjectVisualToEditorPreview(
@@ -301,8 +339,9 @@ namespace LevelEditorJsonImporter.Editor
                 return;
 
             Vector3 targetWorldPosition = renderer.transform.position;
-            float targetLargestSide = GetEditorPreviewLargestSide(spriteMetaData);
-            Vector2 currentSize = renderer.sprite.bounds.size;
+            float targetLargestSide = GetEditorPreviewRawLargestSide(spriteMetaData)
+                * GetLargestAbsXYScale(renderer.transform);
+            Vector2 currentSize = renderer.bounds.size;
             float currentLargestSide = Mathf.Max(currentSize.x, currentSize.y);
 
             if (targetLargestSide > 0f && currentLargestSide > 0f)
@@ -339,14 +378,22 @@ namespace LevelEditorJsonImporter.Editor
             return bounds;
         }
 
-        static float GetEditorPreviewLargestSide(LevelEditorAssetMetaData metaData)
+        static float GetEditorPreviewRawLargestSide(LevelEditorAssetMetaData metaData)
         {
             if (metaData == null || metaData.SpriteRectWidth <= 0f || metaData.SpriteRectHeight <= 0f)
                 return 0f;
 
             float pixelsPerUnit = metaData.PixelsPerUnit > 0f ? metaData.PixelsPerUnit : 100f;
-            float rawLargestSide = Mathf.Max(metaData.SpriteRectWidth, metaData.SpriteRectHeight) / pixelsPerUnit;
-            return Mathf.Clamp(rawLargestSide, MinEditorPreviewSize, MaxEditorPreviewSize);
+            return Mathf.Max(metaData.SpriteRectWidth, metaData.SpriteRectHeight) / pixelsPerUnit;
+        }
+
+        static float GetLargestAbsXYScale(Transform transform)
+        {
+            if (transform == null)
+                return 1f;
+
+            Vector3 scale = transform.lossyScale;
+            return Mathf.Max(Mathf.Abs(scale.x), Mathf.Abs(scale.y));
         }
 
         static bool TryResolvePrefab(

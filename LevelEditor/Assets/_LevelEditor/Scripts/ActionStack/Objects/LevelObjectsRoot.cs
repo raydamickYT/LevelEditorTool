@@ -64,7 +64,8 @@ public class LevelObjectsRoot : MonoBehaviour
 
         if (child.GetComponent<LevelObject>())
         {
-            levelObjectsInRoot.Add(child.gameObject);
+            if (!levelObjectsInRoot.Contains(child.gameObject))
+                levelObjectsInRoot.Add(child.gameObject);
             child.transform.SetParent(rootTransform, true);
         }
         else
@@ -78,6 +79,20 @@ public class LevelObjectsRoot : MonoBehaviour
         if (levelObjectsInRoot.Contains(child.gameObject))
         {
             levelObjectsInRoot.Remove(child);
+        }
+    }
+
+    public void RebuildRootObjectsFromTransform()
+    {
+        levelObjectsInRoot.Clear();
+        if (rootTransform == null)
+            return;
+
+        for (int i = 0; i < rootTransform.childCount; i++)
+        {
+            Transform child = rootTransform.GetChild(i);
+            if (child != null && child.TryGetComponent(out LevelObject _))
+                levelObjectsInRoot.Add(child.gameObject);
         }
     }
 

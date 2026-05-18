@@ -141,7 +141,7 @@ public static class LevelProjectService
             {
                 instanceId = idMap[lo],
                 isGroup = lo is LevelObjectGroup,
-                objectName = lo.gameObject.name,
+                objectName = GetStableObjectName(lo.gameObject.name, lo.AssetID),
                 assetId = lo.AssetID ?? string.Empty,
                 prefabGuid = LevelPrefabPathUtil.GetPrefabAssetGuid(lo.PrefabReference)
             };
@@ -342,6 +342,7 @@ public static class LevelProjectService
             if (spawned == null)
                 continue;
 
+            spawned.name = GetStableObjectName(rec.objectName, rec.assetId);
             spawnedById[rec.instanceId] = spawned;
 
             if (parentTransform != null
@@ -357,6 +358,47 @@ public static class LevelProjectService
             if (spawned.TryGetComponent(out SpriteRenderer sr))
                 sr.sortingOrder = rec.sortingOrder;
         }
+    }
+
+    static string GetStableObjectName(string objectName, string assetId)
+    {
+        if (!string.IsNullOrWhiteSpace(objectName) && !IsGeneratedLevelObjectName(objectName))
+            return objectName;
+
+        ImportedAssetMetaData asset = AssetStorageService.GetAssetByID(assetId);
+        string assetName = GetAssetDisplayName(asset);
+        if (!string.IsNullOrWhiteSpace(assetName))
+            return assetName;
+
+        return string.IsNullOrWhiteSpace(objectName)
+            ? "Level Object"
+            : objectName;
+    }
+
+    static bool IsGeneratedLevelObjectName(string objectName)
+    {
+        if (string.IsNullOrWhiteSpace(objectName))
+            return true;
+
+        return objectName.StartsWith("New Game Object", StringComparison.OrdinalIgnoreCase);
+    }
+
+    static string GetAssetDisplayName(ImportedAssetMetaData asset)
+    {
+        if (asset == null)
+            return null;
+
+        string fileName = string.IsNullOrWhiteSpace(asset.FileName)
+            ? asset.AssetRelativePath
+            : asset.FileName;
+
+        if (string.IsNullOrWhiteSpace(fileName))
+            return null;
+
+        string nameWithoutExtension = Path.GetFileNameWithoutExtension(fileName);
+        return string.IsNullOrWhiteSpace(nameWithoutExtension)
+            ? fileName
+            : nameWithoutExtension;
     }
 
     static GameObject CreateEmptyGroup(LevelObjectRecord rec, Transform parentTransform)

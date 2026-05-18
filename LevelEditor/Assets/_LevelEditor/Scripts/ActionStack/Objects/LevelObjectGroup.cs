@@ -55,6 +55,18 @@ public class LevelObjectGroup : LevelObject
         SyncSelectableTargetsFromChildren();
     }
 
+    public void InsertChild(LevelObject child, int siblingIndex)
+    {
+        if (child == null) return;
+        if (levelObjects.Contains(child))
+            levelObjects.Remove(child);
+
+        int index = Mathf.Clamp(siblingIndex, 0, levelObjects.Count);
+        levelObjects.Insert(index, child);
+        child.UpdateParent(this);
+        SyncSelectableTargetsFromChildren();
+    }
+
     /// <summary>Rebuilds <see cref="selectableTargetDatas"/> from current <see cref="LevelObjects"/> (used by <see cref="UpdateCenterWithoutMovingChildren"/>).</summary>
     public void SyncSelectableTargetsFromChildren()
     {

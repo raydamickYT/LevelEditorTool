@@ -1,0 +1,79 @@
+.object-hierarchy {
+    position: absolute;
+    left: 0;
+    top: 250px;
+    bottom: 0;
+    width: 280px;
+    background-color: rgba(214, 214, 214, 0.88);
+    border-right-width: 1px;
+    border-right-color: rgb(140, 140, 140);
+    padding-left: 4px;
+    padding-top: 4px;
+    padding-right: 4px;
+}
+
+.object-hierarchy-group-button {
+    height: 24px;
+    margin-bottom: 4px;
+    -unity-text-align: middle-left;
+    font-size: 12px;
+}
+
+.object-hierarchy-scroll {
+    flex-grow: 1;
+}
+
+.object-hierarchy-content {
+    flex-direction: column;
+    padding-bottom: 8px;
+}
+
+.hierarchy-row {
+    height: 20px;
+    flex-direction: row;
+    align-items: center;
+    background-color: rgba(255, 255, 255, 0.55);
+    border-width: 1px;
+    border-color: rgba(160, 160, 160, 0.45);
+    margin-bottom: 2px;
+    margin-left: 0;
+}
+
+.hierarchy-row:hover {
+    background-color: rgba(230, 238, 255, 0.85);
+}
+
+.hierarchy-row-selected {
+    background-color: rgba(64, 115, 255, 0.45);
+}
+
+.hierarchy-row-dragging {
+    opacity: 0.35;
+    background-color: rgba(90, 130, 210, 0.55);
+}
+
+.hierarchy-row-drag-preview {
+    opacity: 0.95;
+    background-color: rgba(240, 246, 255, 0.98);
+    border-color: rgba(64, 115, 255, 0.9);
+    border-width: 1px;
+}
+
+.hierarchy-indent {
+    width: 4px;
+    flex-shrink: 0;
+}
+
+.hierarchy-foldout-icon {
+    width: 14px;
+    -unity-text-align: middle-center;
+    color: rgb(60, 60, 60);
+}
+
+.hierarchy-name {
+    flex-grow: 1;
+    overflow: hidden;
+    -unity-text-align: middle-left;
+    color: rgb(70, 70, 70);
+    font-size: 12px;
+}
