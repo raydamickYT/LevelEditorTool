@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using System.IO;
 using UnityEngine;
 using UnityEngine.UIElements;
 using GridLayoutGroup = UnityEngine.UI.GridLayoutGroup;
@@ -43,6 +44,7 @@ public class ObjectLibraryManager : MonoBehaviour
     ToolkitImage dragPreview;
     VisualElement dragSource;
     string draggedAssetId;
+    string draggedAssetDisplayName;
     Sprite draggedSprite;
     GameObject draggedSpawnedObject;
     int draggedPointerId = InvalidPointerId;
@@ -157,13 +159,14 @@ public class ObjectLibraryManager : MonoBehaviour
         if (sprite == null)
             return;
 
+        string displayName = GetAssetDisplayName(asset);
         if (ContentObject == null)
             return;
 
         GameObject obj = Instantiate(PreviewPrefab, ContentObject.transform);
         obj.SetActive(true);
         obj.hideFlags = HideFlags.None;
-        obj.name = string.IsNullOrEmpty(asset.FileName) ? asset.AssetID : asset.FileName;
+        obj.name = displayName;
 
         if (obj.TryGetComponent(out UiImage image))
             image.sprite = sprite;
@@ -172,6 +175,7 @@ public class ObjectLibraryManager : MonoBehaviour
         {
             controller.previewSprite = sprite;
             controller.AssetID = asset.AssetID;
+            controller.DisplayName = displayName;
         }
 
         renderedAssetIds.Add(asset.AssetID);
@@ -360,8 +364,9 @@ public class ObjectLibraryManager : MonoBehaviour
             && (string.Equals(asset.AssetType, ImportedAssetTypes.Sprite, StringComparison.OrdinalIgnoreCase)
                 || string.Equals(asset.AssetType, ImportedAssetTypes.Prefab, StringComparison.OrdinalIgnoreCase));
 
+        string displayName = GetAssetDisplayName(asset);
         VisualElement tile = new();
-        tile.name = string.IsNullOrEmpty(asset.FileName) ? asset.AssetID : asset.FileName;
+        tile.name = displayName;
         tile.AddToClassList("asset-tile");
         if (!canDragIntoLevel)
             tile.AddToClassList("asset-tile-disabled");
@@ -381,14 +386,14 @@ public class ObjectLibraryManager : MonoBehaviour
             tile.Add(placeholder);
         }
 
-        Label label = new(string.IsNullOrEmpty(asset.FileName) ? asset.AssetID : asset.FileName);
+        Label label = new(displayName);
         label.AddToClassList("asset-label");
         tile.Add(label);
 
         if (canDragIntoLevel)
         {
             string assetId = asset.AssetID;
-            tile.RegisterCallback<PointerDownEvent>(evt => BeginToolkitDrag(evt, tile, assetId, sprite));
+            tile.RegisterCallback<PointerDownEvent>(evt => BeginToolkitDrag(evt, tile, assetId, displayName, sprite));
             tile.RegisterCallback<PointerMoveEvent>(UpdateToolkitDrag);
             tile.RegisterCallback<PointerUpEvent>(EndToolkitDrag);
             tile.RegisterCallback<PointerCancelEvent>(CancelToolkitDrag);
@@ -470,7 +475,25 @@ public class ObjectLibraryManager : MonoBehaviour
             : assetType + "s";
     }
 
-    void BeginToolkitDrag(PointerDownEvent evt, VisualElement source, string assetId, Sprite sprite)
+    static string GetAssetDisplayName(ImportedAssetMetaData asset)
+    {
+        if (asset == null)
+            return "Asset";
+
+        string fileName = string.IsNullOrWhiteSpace(asset.FileName)
+            ? asset.AssetRelativePath
+            : asset.FileName;
+
+        if (string.IsNullOrWhiteSpace(fileName))
+            return string.IsNullOrWhiteSpace(asset.AssetID) ? "Asset" : asset.AssetID;
+
+        string nameWithoutExtension = Path.GetFileNameWithoutExtension(fileName);
+        return string.IsNullOrWhiteSpace(nameWithoutExtension)
+            ? fileName
+            : nameWithoutExtension;
+    }
+
+    void BeginToolkitDrag(PointerDownEvent evt, VisualElement source, string assetId, string displayName, Sprite sprite)
     {
         if (evt.button != 0 || source == null || sprite == null)
             return;
@@ -479,6 +502,7 @@ public class ObjectLibraryManager : MonoBehaviour
 
         dragSource = source;
         draggedAssetId = assetId;
+        draggedAssetDisplayName = displayName;
         draggedSprite = sprite;
         draggedPointerId = evt.pointerId;
         dragSource.CapturePointer(draggedPointerId);
@@ -541,6 +565,7 @@ public class ObjectLibraryManager : MonoBehaviour
         dragPreview = null;
         dragSource = null;
         draggedAssetId = null;
+        draggedAssetDisplayName = null;
         draggedSprite = null;
         draggedPointerId = InvalidPointerId;
     }
@@ -664,6 +689,8 @@ public class ObjectLibraryManager : MonoBehaviour
             draggedSpawnedObject = Instantiate(GameObjectPrefab, worldPosition, Quaternion.identity);
             draggedSpawnedObject.SetActive(true);
             draggedSpawnedObject.hideFlags = HideFlags.None;
+            if (!string.IsNullOrWhiteSpace(draggedAssetDisplayName))
+                draggedSpawnedObject.name = draggedAssetDisplayName;
             ConfigureSpawnedSprite(draggedSpawnedObject, draggedSprite);
         }
 

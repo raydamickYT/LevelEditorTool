@@ -11,6 +11,7 @@ public class ObjectButtonController : MonoBehaviour, IBeginDragHandler, IEndDrag
 {
     public GameObject ObjectToSpawnPrefab;
     public string AssetID;
+    public string DisplayName;
 
     private GameObject spawnedObject, spawnedPreviewObject;// actual game object; preview object containing a sprite
     public Canvas parentCanvas;
@@ -116,6 +117,8 @@ public class ObjectButtonController : MonoBehaviour, IBeginDragHandler, IEndDrag
         spawnedObject = Instantiate(ObjectToSpawnPrefab, pos, Quaternion.identity);
         spawnedObject.SetActive(true);
         spawnedObject.hideFlags = HideFlags.None;
+        if (!string.IsNullOrWhiteSpace(DisplayName))
+            spawnedObject.name = DisplayName;
 
         SpriteRenderer spriteRenderer = spawnedObject.GetComponent<SpriteRenderer>();
         spriteRenderer.sprite = previewSprite;
