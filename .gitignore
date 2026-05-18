@@ -100,3 +100,5 @@ InitTestScene*.unity*
 LevelEditor/Library
 LevelEditor/Temp
 LevelEditor/UserSettings/EditorUserSettings.asset
+Prefab 2D platformer/Temp
+Prefab 2D platformer/Library
