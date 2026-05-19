@@ -28,7 +28,7 @@ namespace LevelEditorJsonImporter.Editor
         {
             EditorGUILayout.LabelField("Level Editor JSON Importer", EditorStyles.boldLabel);
             EditorGUILayout.HelpBox(
-                "Imports a level.json from the Level Editor Tool into this scene. Prefab assets are resolved through project_asset_registry.json using Assets/... paths, with prefabGuid as fallback.",
+                "Imports a level.json from the Level Editor Tool. Assets resolve via project_asset_registry.json (Assets/... paths), bundled copies, or unity_project_link.json when the source Unity project moved to another PC.",
                 MessageType.Info);
 
             using (new EditorGUILayout.HorizontalScope())

@@ -318,6 +318,7 @@ public static class AssetStorageService
             .Select(g => g.First()))
         {
             ImportedAssetMetaData clone = CloneMetaData(asset);
+            UnityProjectRootResolver.SanitizeAssetPathsForExport(clone, dir);
             TryCopyAssetIntoProjectSnapshot(asset, clone, dir);
             projectSnapshot.Assets.Add(clone);
         }
@@ -394,30 +395,62 @@ public static class AssetStorageService
 
         GetCachedMetaData();
 
+        List<ImportedAssetMetaData> needsExternalLink = new();
+
         foreach (ImportedAssetMetaData asset in fragment.Assets)
         {
             if (asset == null || string.IsNullOrWhiteSpace(asset.AssetID))
                 continue;
 
-            string resolved = ResolveRegistryAssetPath(asset, levelDirectory);
-            if (string.IsNullOrEmpty(resolved) || !File.Exists(resolved))
+            if (!TryMergeRegistryAsset(asset, levelDirectory))
             {
-                Debug.LogWarning($"Project registry: file missing for {asset.AssetID} ({asset.LocalFilePath})");
-                continue;
+                if (UnityProjectRootResolver.NeedsExternalUnityProject(asset))
+                    needsExternalLink.Add(asset);
+                else
+                    Debug.LogWarning($"Project registry: file missing for {asset.AssetID} ({asset.LocalFilePath})");
             }
+        }
 
-            asset.LocalFilePath = resolved;
+        if (needsExternalLink.Count > 0)
+        {
+            string details = string.Join(
+                "\n",
+                needsExternalLink
+                    .Take(8)
+                    .Select(asset => asset.AssetRelativePath));
 
-            int existingIndex = cachedMetaData.Assets.FindIndex(a => a != null && a.AssetID == asset.AssetID);
-            if (existingIndex >= 0)
-                cachedMetaData.Assets[existingIndex] = asset;
-            else
-                cachedMetaData.Assets.Add(asset);
+            if (needsExternalLink.Count > 8)
+                details += $"\n... and {needsExternalLink.Count - 8} more";
 
-            assetLookup[asset.AssetID] = asset;
+            if (UnityProjectRootResolver.TryPromptAndSaveLinkedRoot(levelDirectory, details))
+            {
+                foreach (ImportedAssetMetaData asset in needsExternalLink)
+                {
+                    if (!TryMergeRegistryAsset(asset, levelDirectory))
+                        Debug.LogWarning($"Project registry: still missing after relink for {asset.AssetID} ({asset.AssetRelativePath})");
+                }
+            }
         }
 
         AssetRuntimeLoader.ClearCache();
+    }
+
+    static bool TryMergeRegistryAsset(ImportedAssetMetaData asset, string levelDirectory)
+    {
+        string resolved = ResolveRegistryAssetPath(asset, levelDirectory);
+        if (string.IsNullOrEmpty(resolved) || !File.Exists(resolved))
+            return false;
+
+        asset.LocalFilePath = resolved;
+
+        int existingIndex = cachedMetaData.Assets.FindIndex(a => a != null && a.AssetID == asset.AssetID);
+        if (existingIndex >= 0)
+            cachedMetaData.Assets[existingIndex] = asset;
+        else
+            cachedMetaData.Assets.Add(asset);
+
+        assetLookup[asset.AssetID] = asset;
+        return true;
     }
 
     static string ResolveRegistryAssetPath(ImportedAssetMetaData asset, string levelDirectory)
@@ -439,23 +472,25 @@ public static class AssetStorageService
                 return combined;
         }
 
-        // Old project snapshots could point at session-only UserData. For sprite imports we can still
-        // recover from the original Unity project path if that source project is available.
-        if (string.Equals(asset.AssetType, ImportedAssetTypes.Sprite, System.StringComparison.OrdinalIgnoreCase))
+        if (!string.IsNullOrWhiteSpace(asset.OriginalFilePath))
         {
-            if (!string.IsNullOrWhiteSpace(asset.OriginalFilePath) && File.Exists(asset.OriginalFilePath))
+            if (File.Exists(asset.OriginalFilePath))
                 return Path.GetFullPath(asset.OriginalFilePath);
 
-            if (!string.IsNullOrWhiteSpace(asset.SourceProjectRoot) && !string.IsNullOrWhiteSpace(asset.AssetRelativePath))
+            if (!string.IsNullOrEmpty(levelDirectory) && !Path.IsPathRooted(asset.OriginalFilePath))
             {
-                string sourceProjectPath = Path.GetFullPath(Path.Combine(
-                    asset.SourceProjectRoot,
-                    asset.AssetRelativePath.Replace('/', Path.DirectorySeparatorChar)));
+                string combinedOriginal = Path.GetFullPath(Path.Combine(
+                    levelDirectory,
+                    asset.OriginalFilePath.Replace('/', Path.DirectorySeparatorChar)));
 
-                if (File.Exists(sourceProjectPath))
-                    return sourceProjectPath;
+                if (File.Exists(combinedOriginal))
+                    return combinedOriginal;
             }
         }
+
+        string externalUnityAsset = UnityProjectRootResolver.TryResolveUnityAssetAbsolutePath(levelDirectory, asset);
+        if (!string.IsNullOrEmpty(externalUnityAsset))
+            return externalUnityAsset;
 
         return null;
     }

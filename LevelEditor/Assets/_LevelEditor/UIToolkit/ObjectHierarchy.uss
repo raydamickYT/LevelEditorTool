@@ -1,15 +1,60 @@
 .object-hierarchy {
     position: absolute;
     left: 0;
-    top: 250px;
-    bottom: 0;
-    width: 280px;
+    top: 450px;
+    bottom: 0px;
+    width: 380px;
     background-color: rgba(214, 214, 214, 0.88);
     border-right-width: 1px;
     border-right-color: rgb(140, 140, 140);
     padding-left: 4px;
     padding-top: 4px;
     padding-right: 4px;
+}
+
+.object-hierarchy-header {
+    height: 30px;
+    flex-direction: row;
+    align-items: center;
+    justify-content: space-between;
+    padding-left: 6px;
+    padding-right: 4px;
+    margin-bottom: 4px;
+    border-bottom-width: 1px;
+    border-bottom-color: rgba(140, 140, 140, 0.55);
+    background-color: rgba(205, 205, 205, 0.95);
+}
+
+.object-hierarchy-title {
+    -unity-font-style: bold;
+    font-size: 11px;
+    color: rgb(45, 45, 45);
+}
+
+.object-hierarchy-collapse-button {
+    height: 22px;
+    min-width: 48px;
+    padding-left: 6px;
+    padding-right: 6px;
+    font-size: 10px;
+}
+
+.object-hierarchy-collapsed {
+    padding-top: 0;
+    padding-left: 0;
+    padding-right: 0;
+}
+
+.object-hierarchy-collapsed .object-hierarchy-header {
+    margin-bottom: 0;
+}
+
+.object-hierarchy-collapsed .object-hierarchy-scroll {
+    display: none;
+}
+
+.object-hierarchy-collapsed .object-hierarchy-group-button {
+    display: none;
 }
 
 .object-hierarchy-group-button {
@@ -40,7 +85,7 @@
 }
 
 .hierarchy-row:hover {
-    background-color: rgba(230, 238, 255, 0.85);
+    background-color: rgba(5, 72, 254, 0.68);
 }
 
 .hierarchy-row-selected {

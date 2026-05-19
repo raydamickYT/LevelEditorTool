@@ -25,6 +25,8 @@ public class ObjectHierarchyManager : MonoBehaviour
     [SerializeField] private string toolkitRootName = "object-hierarchy-root";
     [SerializeField] private string toolkitContentName = "object-hierarchy-content";
     [SerializeField] private string toolkitCreateGroupButtonName = "create-group-button";
+    [SerializeField] private string collapseButtonElementName = "object-hierarchy-collapse-button";
+    [SerializeField] private float collapsedHierarchyHeight = 30f;
     [SerializeField] private float toolkitIndentWidth = 24f;
 
     private readonly Dictionary<LevelObject, HierarchyObjectItem> items = new();
@@ -34,6 +36,8 @@ public class ObjectHierarchyManager : MonoBehaviour
     private VisualElement toolkitRoot;
     private VisualElement toolkitContent;
     private Button toolkitCreateGroupButton;
+    private Button collapseButton;
+    private bool isHierarchyCollapsed;
     private ToolkitHierarchyRow draggedToolkitRow;
     private VisualElement toolkitDragPreview;
     private Vector2 toolkitDragPreviewOffset;
@@ -53,6 +57,9 @@ public class ObjectHierarchyManager : MonoBehaviour
     {
         if (toolkitCreateGroupButton != null)
             toolkitCreateGroupButton.clicked -= CreateGroupParentObject;
+
+        if (collapseButton != null)
+            collapseButton.clicked -= ToggleHierarchyCollapsed;
 
         ClearToolkitRows();
     }
@@ -218,6 +225,12 @@ public class ObjectHierarchyManager : MonoBehaviour
         toolkitRoot = root?.Q<VisualElement>(toolkitRootName);
         toolkitContent = root?.Q<VisualElement>(toolkitContentName);
 
+        SetupToolkitCreateGroupButton(root);
+        SetupCollapseButton();
+    }
+
+    void SetupToolkitCreateGroupButton(VisualElement root)
+    {
         Button foundButton = root?.Q<Button>(toolkitCreateGroupButtonName);
         if (foundButton == toolkitCreateGroupButton)
             return;
@@ -228,6 +241,73 @@ public class ObjectHierarchyManager : MonoBehaviour
         toolkitCreateGroupButton = foundButton;
         if (toolkitCreateGroupButton != null)
             toolkitCreateGroupButton.clicked += CreateGroupParentObject;
+    }
+
+    void SetupCollapseButton()
+    {
+        Button foundButton = toolkitRoot?.Q<Button>(collapseButtonElementName);
+        if (foundButton == collapseButton)
+            return;
+
+        if (collapseButton != null)
+            collapseButton.clicked -= ToggleHierarchyCollapsed;
+
+        collapseButton = foundButton;
+        if (collapseButton == null)
+            return;
+
+        collapseButton.clicked += ToggleHierarchyCollapsed;
+        ApplyHierarchyCollapsedState();
+    }
+
+    void ToggleHierarchyCollapsed()
+    {
+        isHierarchyCollapsed = !isHierarchyCollapsed;
+        ApplyHierarchyCollapsedState();
+    }
+
+    void ApplyHierarchyCollapsedState()
+    {
+        if (toolkitRoot == null)
+            return;
+
+        if (isHierarchyCollapsed)
+        {
+            CancelToolkitHierarchyDrag();
+            toolkitRoot.AddToClassList("object-hierarchy-collapsed");
+            toolkitRoot.style.top = StyleKeyword.Auto;
+            toolkitRoot.style.bottom = 0f;
+            toolkitRoot.style.height = collapsedHierarchyHeight;
+        }
+        else
+        {
+            toolkitRoot.RemoveFromClassList("object-hierarchy-collapsed");
+            // Let ObjectHierarchy.uss control layout when expanded (UI Builder / USS edits apply in Play).
+            toolkitRoot.style.top = StyleKeyword.Null;
+            toolkitRoot.style.bottom = StyleKeyword.Null;
+            toolkitRoot.style.height = StyleKeyword.Null;
+        }
+
+        if (collapseButton != null)
+            collapseButton.text = isHierarchyCollapsed ? "Show" : "Hide";
+    }
+
+    void CancelToolkitHierarchyDrag()
+    {
+        if (draggedToolkitRow == null)
+            return;
+
+        if (draggedToolkitPointerId != InvalidPointerId
+            && draggedToolkitRow.Root.HasPointerCapture(draggedToolkitPointerId))
+        {
+            draggedToolkitRow.Root.ReleasePointer(draggedToolkitPointerId);
+        }
+
+        draggedToolkitRow.Root.RemoveFromClassList("hierarchy-row-dragging");
+        RemoveToolkitDragPreview();
+        draggedToolkitRow = null;
+        draggedToolkitPointerId = InvalidPointerId;
+        isDraggingToolkitRow = false;
     }
 
     void RebuildToolkitHierarchyFromScene()

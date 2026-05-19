@@ -54,6 +54,9 @@ public class AssetRegistry : MonoBehaviour
             importedSprites[asset.AssetID] = asset;
         }
 
+        if (LevelProjectSession.HasOpenProject)
+            UnityProjectRootResolver.SaveLinkedRoot(LevelProjectSession.CurrentProjectDirectory, projectFolderPath);
+
         EventManager.Instance.TriggerDelegate(ObjectLibraryManagerEvents.UpdateObjectLibrary, importedAssets);
     }
 

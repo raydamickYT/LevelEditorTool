@@ -1,6 +1,10 @@
 <ui:UXML xmlns:ui="UnityEngine.UIElements" editor-extension-mode="False">
     <Style src="ObjectHierarchy.uss"/>
-    <ui:VisualElement name="object-hierarchy-root" class="object-hierarchy" style="opacity: 1; top: 450px;">
+    <ui:VisualElement name="object-hierarchy-root" class="object-hierarchy">
+        <ui:VisualElement name="object-hierarchy-header" class="object-hierarchy-header">
+            <ui:Label text="Object Hierarchy" class="object-hierarchy-title"/>
+            <ui:Button name="object-hierarchy-collapse-button" text="Hide" class="object-hierarchy-collapse-button"/>
+        </ui:VisualElement>
         <ui:Button name="create-group-button" text="Group Selection" class="object-hierarchy-group-button"/>
         <ui:ScrollView name="object-hierarchy-scroll" mode="Vertical" class="object-hierarchy-scroll">
             <ui:VisualElement name="object-hierarchy-content" class="object-hierarchy-content"/>
