@@ -11,9 +11,9 @@
                 <ui:Button name="item-save" text="Save Project" class="menu-item" />
                 <!-- <ui:Button name="item-export" text="Export" class="menu-item" /> --> <!-- Future feature: does the same as saving right now -->
                 <ui:VisualElement class="menu-separator" />
-                <ui:Button name="item-import-unity-assets" text="Import Unity Assets" class="menu-item" />
+                <ui:Button name="item-import-unity-assets" text="Link Unity Project" class="menu-item" />
                 <!-- <ui:Button name="item-import-folder" text="Import Folder" class="menu-item" /> -->
-                <ui:Button name="item-import-assets" text="Import Assets" class="menu-item" />
+                <ui:Button name="item-import-assets" text="Import Sprites" class="menu-item" />
             </ui:VisualElement>
         </ui:VisualElement>
         <ui:VisualElement name="gizmo-toolbar" class="gizmo-toolbar">

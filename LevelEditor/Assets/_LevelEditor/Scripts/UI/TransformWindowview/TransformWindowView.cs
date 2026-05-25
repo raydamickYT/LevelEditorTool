@@ -23,12 +23,14 @@ public class TransformWindowView : MonoBehaviour
 
     private Button resetButton;
     private Button mirrorScaleHorizontalButton;
+    private Toggle collisionToggle;
 
     private Transform selectedTransform;
     private LevelObject selectedLevelObject;
+    private readonly List<LevelObject> selectedLevelObjects = new();
     private bool isUpdatingUI;
     private bool isCapturingTransformAction;
-    private TransformAction currentTransformAction;
+    private readonly List<TransformAction> currentTransformActions = new();
     private VisualElement transformWindowRoot;
 
     private void Awake()
@@ -50,6 +52,7 @@ public class TransformWindowView : MonoBehaviour
 
         resetButton = root.Q<Button>("reset-transform-button");
         mirrorScaleHorizontalButton = root.Q<Button>("mirror-scale-h-button");
+        collisionToggle = root.Q<Toggle>("collision-toggle");
 
         RegisterCallbacks();
         SetTarget(null);
@@ -72,48 +75,57 @@ public class TransformWindowView : MonoBehaviour
     {
         layerField.RegisterValueChangedCallback(_ => ApplyLayer());
 
-        positionX.RegisterValueChangedCallback(_ => ApplyPosition());
-        positionY.RegisterValueChangedCallback(_ => ApplyPosition());
-        positionZ.RegisterValueChangedCallback(_ => ApplyPosition());
+        positionX.RegisterValueChangedCallback(_ => ApplyPositionAxis(0));
+        positionY.RegisterValueChangedCallback(_ => ApplyPositionAxis(1));
+        positionZ.RegisterValueChangedCallback(_ => ApplyPositionAxis(2));
 
         rotationZ.RegisterValueChangedCallback(_ => ApplyRotation());
 
-        scaleX.RegisterValueChangedCallback(_ => ApplyScale());
-        scaleY.RegisterValueChangedCallback(_ => ApplyScale());
+        scaleX.RegisterValueChangedCallback(_ => ApplyScaleAxis(0));
+        scaleY.RegisterValueChangedCallback(_ => ApplyScaleAxis(1));
 
         resetButton.clicked += ResetTransform;
         mirrorScaleHorizontalButton.clicked += MirrorScaleHorizontal;
+        if (collisionToggle != null)
+            collisionToggle.RegisterValueChangedCallback(_ => ApplyCollision());
     }
 
     //update UI visuals
     public void RefreshUI()
     {
-        if (selectedTransform == null)
+        if (selectedLevelObjects.Count == 0)
             return;
 
         UpdateGizmo();
 
         isUpdatingUI = true;
 
-        if(selectedTransform.TryGetComponent(out SpriteRenderer renderer))
+        SetIntegerFieldSharedValue(layerField, TryGetSharedSortingOrder(out int renderLayer), renderLayer);
+        layerField.SetEnabled(AllSelectedHaveSpriteRenderer());
+
+        bool canToggleCollision = selectedLevelObject != null
+            && !(selectedLevelObject is LevelObjectGroup)
+            && selectedTransform.TryGetComponent(out SpriteRenderer _)
+            && AllSelectedAreSpriteAssets();
+        if (collisionToggle != null)
         {
-            int renderLayer = renderer.sortingOrder;
-            layerField.SetValueWithoutNotify(renderLayer);
-            // this.spriteRenderer = renderer;
+            collisionToggle.SetEnabled(canToggleCollision);
+            bool hasSharedCollision = false;
+            bool hasCollision = false;
+            if (canToggleCollision)
+                hasSharedCollision = TryGetSharedCollisionValue(out hasCollision);
+
+            SetToggleSharedValue(collisionToggle, hasSharedCollision, hasCollision);
         }
 
+        SetFloatFieldSharedValue(positionX, TryGetSharedPositionAxis(0, out float px), px);
+        SetFloatFieldSharedValue(positionY, TryGetSharedPositionAxis(1, out float py), py);
+        SetFloatFieldSharedValue(positionZ, TryGetSharedPositionAxis(2, out float pz), pz);
 
-        Vector3 pos = selectedTransform.position;
-        positionX.SetValueWithoutNotify(pos.x);
-        positionY.SetValueWithoutNotify(pos.y);
-        positionZ.SetValueWithoutNotify(pos.z);
+        SetFloatFieldSharedValue(rotationZ, TryGetSharedRotationZ(out float rz), rz);
 
-        Vector3 rot = selectedTransform.eulerAngles;
-        rotationZ.SetValueWithoutNotify(rot.z);
-
-        Vector3 scale = selectedTransform.localScale;
-        scaleX.SetValueWithoutNotify(scale.x);
-        scaleY.SetValueWithoutNotify(scale.y);
+        SetFloatFieldSharedValue(scaleX, TryGetSharedScaleAxis(0, out float sx), sx);
+        SetFloatFieldSharedValue(scaleY, TryGetSharedScaleAxis(1, out float sy), sy);
         // Debug.Log("scale value" + scaleX.value);
 
         // Debug.Log($"RefreshUI target: {selectedTransform.name}");
@@ -125,29 +137,40 @@ public class TransformWindowView : MonoBehaviour
     public void ActivateWindow(HashSet<SelectableTargetData> selectableTargetDatas)
     {
         // Debug.Log(EditorBlackBoard.HasSelection + " ... " + EditorBlackBoard.HasMultiSelection);
-        if (!EditorBlackBoard.HasSelection || EditorBlackBoard.HasMultiSelection)
+        if (!EditorBlackBoard.HasSelection)
         {
-            SetTarget(null);
+            SetTargets(null);
             return;
         }
 
-        LevelObject selectedLevelObject = EditorBlackBoard.CurrentSelectedLevelObjects.FirstOrDefault();
+        List<LevelObject> selectedObjects = EditorBlackBoard.CurrentSelectedLevelObjects
+            .Where(x => x != null)
+            .ToList();
 
-        if (selectedLevelObject == null)
+        if (selectedObjects.Count == 0)
         {
-            SetTarget(null);
+            SetTargets(null);
             return;
         }
 
-        SetTarget(selectedLevelObject);
+        SetTargets(selectedObjects);
     }
 
     public void SetTarget(LevelObject target)
     {
-        selectedLevelObject = target;
-        selectedTransform = target != null ? target.transform : null;
+        SetTargets(target != null ? new List<LevelObject> { target } : null);
+    }
 
-        bool hasTarget = selectedTransform != null;
+    public void SetTargets(IEnumerable<LevelObject> targets)
+    {
+        selectedLevelObjects.Clear();
+        if (targets != null)
+            selectedLevelObjects.AddRange(targets.Where(x => x != null));
+
+        selectedLevelObject = selectedLevelObjects.FirstOrDefault();
+        selectedTransform = selectedLevelObject != null ? selectedLevelObject.transform : null;
+
+        bool hasTarget = selectedLevelObjects.Count > 0;
 
         if (hasTarget)
         {
@@ -173,83 +196,260 @@ public class TransformWindowView : MonoBehaviour
     }
 
 
-    private void ApplyPosition()
+    private void ApplyPositionAxis(int axis)
     {
-        if (isUpdatingUI || selectedTransform == null)
+        if (isUpdatingUI || selectedLevelObjects.Count == 0)
             return;
 
         BeginTransformAction();
 
-        float clampedZ = Mathf.Max(0f, positionZ.value);
+        FloatField sourceField = axis == 0 ? positionX : axis == 1 ? positionY : positionZ;
+        float value = axis == 2 ? Mathf.Max(0f, sourceField.value) : sourceField.value;
 
-        if (!Mathf.Approximately(positionZ.value, clampedZ))
-            positionZ.value = clampedZ;
+        if (axis == 2 && !Mathf.Approximately(positionZ.value, value))
+            positionZ.value = value;
 
-        selectedTransform.position = new Vector3(
-            positionX.value,
-            positionY.value,
-            positionZ.value
-        );
+        foreach (LevelObject levelObject in selectedLevelObjects)
+        {
+            if (levelObject == null)
+                continue;
+
+            Vector3 position = levelObject.transform.position;
+            position[axis] = value;
+            levelObject.transform.position = position;
+        }
 
         EndTransformAction();
     }
 
     private void ApplyRotation()
     {
-        if (isUpdatingUI || selectedTransform == null)
+        if (isUpdatingUI || selectedLevelObjects.Count == 0)
             return;
 
         BeginTransformAction();
 
+        foreach (LevelObject levelObject in selectedLevelObjects)
+        {
+            if (levelObject == null)
+                continue;
 
-        selectedTransform.eulerAngles = new Vector3(
-            0f,
-            0f,
-            rotationZ.value
-        );
+            levelObject.transform.eulerAngles = new Vector3(0f, 0f, rotationZ.value);
+        }
 
         EndTransformAction();
     }
 
-    private void ApplyScale()
+    private void ApplyScaleAxis(int axis)
     {
-        if (isUpdatingUI || selectedTransform == null)
+        if (isUpdatingUI || selectedLevelObjects.Count == 0)
             return;
 
         BeginTransformAction();
 
-        selectedTransform.localScale = new Vector3(
-            scaleX.value,
-            scaleY.value,
-            1f
-        );
+        float value = axis == 0 ? scaleX.value : scaleY.value;
+        foreach (LevelObject levelObject in selectedLevelObjects)
+        {
+            if (levelObject == null)
+                continue;
+
+            Vector3 scale = levelObject.transform.localScale;
+            scale[axis] = value;
+            scale.z = 1f;
+            levelObject.transform.localScale = scale;
+        }
 
         EndTransformAction();
     }
 
     private void ApplyLayer()
     {
-        if(isUpdatingUI || selectedTransform == null) return;
+        if(isUpdatingUI || selectedLevelObjects.Count == 0) return;
 
-        if(!selectedTransform.TryGetComponent(out SpriteRenderer renderer))
+        foreach (LevelObject levelObject in selectedLevelObjects)
         {
-            Debug.LogWarning($"{selectedTransform.name} has no active sprite renderer");
+            if (levelObject == null)
+                continue;
+
+            if(levelObject.TryGetComponent(out SpriteRenderer renderer))
+                renderer.sortingOrder = layerField.value;
+        }
+    }
+
+    private void ApplyCollision()
+    {
+        if (isUpdatingUI || selectedLevelObjects.Count == 0)
             return;
+
+        foreach (LevelObject levelObject in selectedLevelObjects)
+        {
+            if (IsSpriteAsset(levelObject))
+                levelObject.HasCollision = collisionToggle.value;
+        }
+    }
+
+    private bool IsSpriteAsset(LevelObject levelObject)
+    {
+        if (levelObject == null)
+            return false;
+
+        ImportedAssetMetaData asset = AssetStorageService.GetAssetByID(levelObject.AssetID);
+        return asset != null
+            && string.Equals(asset.AssetType, ImportedAssetTypes.Sprite, StringComparison.OrdinalIgnoreCase);
+    }
+
+    private bool AllSelectedAreSpriteAssets()
+    {
+        return selectedLevelObjects.Count > 0
+            && selectedLevelObjects.All(IsSpriteAsset);
+    }
+
+    private bool AllSelectedHaveSpriteRenderer()
+    {
+        return selectedLevelObjects.Count > 0
+            && selectedLevelObjects.All(levelObject => levelObject != null && levelObject.TryGetComponent(out SpriteRenderer _));
+    }
+
+    private bool TryGetSharedPositionAxis(int axis, out float value)
+    {
+        value = 0f;
+        return TryGetSharedFloat(levelObject => levelObject.transform.position[axis], out value);
+    }
+
+    private bool TryGetSharedScaleAxis(int axis, out float value)
+    {
+        value = 0f;
+        return TryGetSharedFloat(levelObject => levelObject.transform.localScale[axis], out value);
+    }
+
+    private bool TryGetSharedRotationZ(out float value)
+    {
+        value = 0f;
+        return TryGetSharedFloat(levelObject => levelObject.transform.eulerAngles.z, out value);
+    }
+
+    private bool TryGetSharedSortingOrder(out int value)
+    {
+        value = 0;
+        if (!AllSelectedHaveSpriteRenderer())
+            return false;
+
+        bool hasValue = false;
+        foreach (LevelObject levelObject in selectedLevelObjects)
+        {
+            if (levelObject == null || !levelObject.TryGetComponent(out SpriteRenderer renderer))
+                return false;
+
+            if (!hasValue)
+            {
+                value = renderer.sortingOrder;
+                hasValue = true;
+                continue;
+            }
+
+            if (value != renderer.sortingOrder)
+                return false;
         }
 
-        renderer.sortingOrder = layerField.value;
+        return hasValue;
+    }
+
+    private bool TryGetSharedCollisionValue(out bool value)
+    {
+        value = false;
+        if (!AllSelectedAreSpriteAssets())
+            return false;
+
+        bool hasValue = false;
+        foreach (LevelObject levelObject in selectedLevelObjects)
+        {
+            if (levelObject == null)
+                return false;
+
+            if (!hasValue)
+            {
+                value = levelObject.HasCollision;
+                hasValue = true;
+                continue;
+            }
+
+            if (value != levelObject.HasCollision)
+                return false;
+        }
+
+        return hasValue;
+    }
+
+    private bool TryGetSharedFloat(Func<LevelObject, float> getter, out float value)
+    {
+        value = 0f;
+        if (selectedLevelObjects.Count == 0 || getter == null)
+            return false;
+
+        bool hasValue = false;
+        foreach (LevelObject levelObject in selectedLevelObjects)
+        {
+            if (levelObject == null)
+                return false;
+
+            float current = getter(levelObject);
+            if (!hasValue)
+            {
+                value = current;
+                hasValue = true;
+                continue;
+            }
+
+            if (!Mathf.Approximately(value, current))
+                return false;
+        }
+
+        return hasValue;
+    }
+
+    private void SetFloatFieldSharedValue(FloatField field, bool hasSharedValue, float value)
+    {
+        if (field == null)
+            return;
+
+        field.showMixedValue = !hasSharedValue;
+        field.SetValueWithoutNotify(hasSharedValue ? value : 0f);
+    }
+
+    private void SetIntegerFieldSharedValue(IntegerField field, bool hasSharedValue, int value)
+    {
+        if (field == null)
+            return;
+
+        field.showMixedValue = !hasSharedValue;
+        field.SetValueWithoutNotify(hasSharedValue ? value : 0);
+    }
+
+    private void SetToggleSharedValue(Toggle toggle, bool hasSharedValue, bool value)
+    {
+        if (toggle == null)
+            return;
+
+        toggle.showMixedValue = !hasSharedValue;
+        toggle.SetValueWithoutNotify(hasSharedValue && value);
     }
 
     private void ResetTransform()
     {
-        if (selectedTransform == null)
+        if (selectedLevelObjects.Count == 0)
             return;
 
         BeginTransformAction();
 
-        selectedTransform.position = Vector3.zero;
-        selectedTransform.eulerAngles = Vector3.zero;
-        selectedTransform.localScale = Vector3.one;
+        foreach (LevelObject levelObject in selectedLevelObjects)
+        {
+            if (levelObject == null)
+                continue;
+
+            levelObject.transform.position = Vector3.zero;
+            levelObject.transform.eulerAngles = Vector3.zero;
+            levelObject.transform.localScale = Vector3.one;
+        }
 
         RefreshUI();
 
@@ -258,14 +458,20 @@ public class TransformWindowView : MonoBehaviour
 
     private void MirrorScaleHorizontal()
     {
-        if (selectedTransform == null)
+        if (selectedLevelObjects.Count == 0)
             return;
 
         BeginTransformAction();
 
-        Vector3 s = selectedTransform.localScale;
-        s.x = -s.x;
-        selectedTransform.localScale = s;
+        foreach (LevelObject levelObject in selectedLevelObjects)
+        {
+            if (levelObject == null)
+                continue;
+
+            Vector3 s = levelObject.transform.localScale;
+            s.x = -s.x;
+            levelObject.transform.localScale = s;
+        }
 
         RefreshUI();
 
@@ -285,6 +491,8 @@ public class TransformWindowView : MonoBehaviour
 
         resetButton.SetEnabled(enabled);
         mirrorScaleHorizontalButton.SetEnabled(enabled);
+        if (collisionToggle != null)
+            collisionToggle.SetEnabled(enabled);
     }
 
     private void UpdateGizmo()
@@ -294,26 +502,43 @@ public class TransformWindowView : MonoBehaviour
 
     private void BeginTransformAction()
     {
-        if (selectedLevelObject == null || isCapturingTransformAction)
+        if (selectedLevelObjects.Count == 0 || isCapturingTransformAction)
             return;
 
-        currentTransformAction = new TransformAction(selectedLevelObject);
+        currentTransformActions.Clear();
+        foreach (LevelObject levelObject in selectedLevelObjects)
+        {
+            if (levelObject != null)
+                currentTransformActions.Add(new TransformAction(levelObject));
+        }
+
+        if (currentTransformActions.Count == 0)
+            return;
+
         isCapturingTransformAction = true;
     }
 
     private void EndTransformAction()
     {
-        if (!isCapturingTransformAction || currentTransformAction == null)
+        if (!isCapturingTransformAction || currentTransformActions.Count == 0)
             return;
 
-        currentTransformAction.CaptureAfterState();
+        foreach (TransformAction action in currentTransformActions)
+            action.CaptureAfterState();
 
-        if (currentTransformAction.HasChanged())
+        List<TransformAction> changedActions = currentTransformActions
+            .Where(action => action.HasChanged())
+            .ToList();
+
+        if (changedActions.Count == 1)
+            EventManager.Instance.TriggerDelegate(ActionStackEvents.RegisterAction, changedActions[0]);
+        else if (changedActions.Count > 1)
         {
-            EventManager.Instance.TriggerDelegate(ActionStackEvents.RegisterAction, currentTransformAction);
+            var compositeAction = new CompositeAction(changedActions.Cast<IUndoableAction>(), "Transform Multiple Objects");
+            EventManager.Instance.TriggerDelegate(ActionStackEvents.RegisterAction, compositeAction);
         }
 
-        currentTransformAction = null;
+        currentTransformActions.Clear();
         isCapturingTransformAction = false;
     }
 }

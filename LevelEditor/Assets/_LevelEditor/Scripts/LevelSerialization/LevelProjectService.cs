@@ -166,7 +166,10 @@ public static class LevelProjectService
                 rec.parentInstanceId = -1;
 
             if (!rec.isGroup && t.TryGetComponent(out SpriteRenderer sr))
+            {
                 rec.sortingOrder = sr.sortingOrder;
+                rec.hasCollision = lo.HasCollision && IsSpriteAsset(lo.AssetID);
+            }
 
             file.objects.Add(rec);
         }
@@ -193,6 +196,13 @@ public static class LevelProjectService
         children.Sort((a, b) => a.transform.GetSiblingIndex().CompareTo(b.transform.GetSiblingIndex()));
         foreach (LevelObject child in children)
             CollectDepthFirstPreOrder(child, ordered, seen);
+    }
+
+    static bool IsSpriteAsset(string assetId)
+    {
+        ImportedAssetMetaData asset = AssetStorageService.GetAssetByID(assetId);
+        return asset != null
+            && string.Equals(asset.AssetType, ImportedAssetTypes.Sprite, StringComparison.OrdinalIgnoreCase);
     }
 
     static void TryWriteBundledAssets(string levelDirectory, HashSet<string> assetIds)
@@ -344,6 +354,9 @@ public static class LevelProjectService
 
             spawned.name = GetStableObjectName(rec.objectName, rec.assetId);
             spawnedById[rec.instanceId] = spawned;
+
+            if (spawned.TryGetComponent(out LevelObject spawnedLevelObject))
+                spawnedLevelObject.HasCollision = rec.hasCollision;
 
             if (parentTransform != null
                 && parentTransform.TryGetComponent(out LevelObjectGroup parentGroup)

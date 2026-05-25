@@ -15,6 +15,8 @@ using UnityEngine.UIElements;
 public class ObjectHierarchyManager : MonoBehaviour
 {
     const int InvalidPointerId = -1;
+    const float ParentDropXOffset = 42f;
+    const float RowEdgeDropZoneHeight = 5f;
 
     private HashSet<string> existingNames = new();
     [SerializeField] private Transform contentParent;
@@ -25,25 +27,37 @@ public class ObjectHierarchyManager : MonoBehaviour
     [SerializeField] private string toolkitRootName = "object-hierarchy-root";
     [SerializeField] private string toolkitContentName = "object-hierarchy-content";
     [SerializeField] private string toolkitCreateGroupButtonName = "create-group-button";
-    [SerializeField] private string collapseButtonElementName = "object-hierarchy-collapse-button";
-    [SerializeField] private float collapsedHierarchyHeight = 30f;
+    [SerializeField] private string toolkitCollapseButtonName = "object-hierarchy-collapse-button";
     [SerializeField] private float toolkitIndentWidth = 24f;
 
     private readonly Dictionary<LevelObject, HierarchyObjectItem> items = new();
     private readonly Dictionary<LevelObject, HierarchyParentObjectItem> parentItems = new();
     private readonly Dictionary<LevelObject, ToolkitHierarchyRow> toolkitRows = new();
-    private readonly HashSet<LevelObjectGroup> collapsedToolkitGroups = new();
+    private readonly HashSet<LevelObject> collapsedToolkitParents = new();
     private VisualElement toolkitRoot;
     private VisualElement toolkitContent;
     private Button toolkitCreateGroupButton;
-    private Button collapseButton;
-    private bool isHierarchyCollapsed;
+    private Button toolkitCollapseButton;
     private ToolkitHierarchyRow draggedToolkitRow;
+    private readonly List<LevelObject> toolkitDraggedLevelObjects = new();
     private VisualElement toolkitDragPreview;
+    private VisualElement toolkitDropIndicator;
     private Vector2 toolkitDragPreviewOffset;
     private Vector2 toolkitDragStartPosition;
     private int draggedToolkitPointerId = InvalidPointerId;
     private bool isDraggingToolkitRow;
+    private bool isToolkitHierarchyCollapsed;
+    private LevelObject toolkitRangeSelectionAnchor;
+
+    struct ToolkitDropTarget
+    {
+        public bool IsValid;
+        public bool IsChildDrop;
+        public LevelObject Parent;
+        public int SiblingIndex;
+        public ToolkitHierarchyRow IndicatorRow;
+        public bool InsertAfterIndicatorRow;
+    }
 
 
     private void Awake()
@@ -58,8 +72,8 @@ public class ObjectHierarchyManager : MonoBehaviour
         if (toolkitCreateGroupButton != null)
             toolkitCreateGroupButton.clicked -= CreateGroupParentObject;
 
-        if (collapseButton != null)
-            collapseButton.clicked -= ToggleHierarchyCollapsed;
+        if (toolkitCollapseButton != null)
+            toolkitCollapseButton.clicked -= ToggleToolkitHierarchyCollapsed;
 
         ClearToolkitRows();
     }
@@ -225,89 +239,63 @@ public class ObjectHierarchyManager : MonoBehaviour
         toolkitRoot = root?.Q<VisualElement>(toolkitRootName);
         toolkitContent = root?.Q<VisualElement>(toolkitContentName);
 
-        SetupToolkitCreateGroupButton(root);
-        SetupCollapseButton();
-    }
-
-    void SetupToolkitCreateGroupButton(VisualElement root)
-    {
         Button foundButton = root?.Q<Button>(toolkitCreateGroupButtonName);
-        if (foundButton == toolkitCreateGroupButton)
-            return;
+        if (foundButton != toolkitCreateGroupButton)
+        {
+            if (toolkitCreateGroupButton != null)
+                toolkitCreateGroupButton.clicked -= CreateGroupParentObject;
 
-        if (toolkitCreateGroupButton != null)
-            toolkitCreateGroupButton.clicked -= CreateGroupParentObject;
+            toolkitCreateGroupButton = foundButton;
+            if (toolkitCreateGroupButton != null)
+                toolkitCreateGroupButton.clicked += CreateGroupParentObject;
+        }
 
-        toolkitCreateGroupButton = foundButton;
-        if (toolkitCreateGroupButton != null)
-            toolkitCreateGroupButton.clicked += CreateGroupParentObject;
+        SetupToolkitCollapseButton(root);
+        ApplyToolkitHierarchyCollapsedState();
     }
 
-    void SetupCollapseButton()
+    void SetupToolkitCollapseButton(VisualElement documentRoot)
     {
-        Button foundButton = toolkitRoot?.Q<Button>(collapseButtonElementName);
-        if (foundButton == collapseButton)
+        Button foundButton = documentRoot?.Q<Button>(toolkitCollapseButtonName);
+        if (foundButton == toolkitCollapseButton)
             return;
 
-        if (collapseButton != null)
-            collapseButton.clicked -= ToggleHierarchyCollapsed;
+        if (toolkitCollapseButton != null)
+            toolkitCollapseButton.clicked -= ToggleToolkitHierarchyCollapsed;
 
-        collapseButton = foundButton;
-        if (collapseButton == null)
-            return;
-
-        collapseButton.clicked += ToggleHierarchyCollapsed;
-        ApplyHierarchyCollapsedState();
+        toolkitCollapseButton = foundButton;
+        if (toolkitCollapseButton != null)
+            toolkitCollapseButton.clicked += ToggleToolkitHierarchyCollapsed;
     }
 
-    void ToggleHierarchyCollapsed()
+    void ToggleToolkitHierarchyCollapsed()
     {
-        isHierarchyCollapsed = !isHierarchyCollapsed;
-        ApplyHierarchyCollapsedState();
+        isToolkitHierarchyCollapsed = !isToolkitHierarchyCollapsed;
+        ApplyToolkitHierarchyCollapsedState();
     }
 
-    void ApplyHierarchyCollapsedState()
+    void ApplyToolkitHierarchyCollapsedState()
     {
         if (toolkitRoot == null)
             return;
 
-        if (isHierarchyCollapsed)
+        if (isToolkitHierarchyCollapsed)
         {
-            CancelToolkitHierarchyDrag();
+            RemoveToolkitDragPreview();
+            RemoveToolkitDropIndicator();
             toolkitRoot.AddToClassList("object-hierarchy-collapsed");
-            toolkitRoot.style.top = StyleKeyword.Auto;
-            toolkitRoot.style.bottom = 0f;
-            toolkitRoot.style.height = collapsedHierarchyHeight;
+            toolkitRoot.style.bottom = StyleKeyword.Auto;
+            toolkitRoot.style.height = 30f;
         }
         else
         {
             toolkitRoot.RemoveFromClassList("object-hierarchy-collapsed");
-            // Let ObjectHierarchy.uss control layout when expanded (UI Builder / USS edits apply in Play).
-            toolkitRoot.style.top = StyleKeyword.Null;
-            toolkitRoot.style.bottom = StyleKeyword.Null;
-            toolkitRoot.style.height = StyleKeyword.Null;
+            toolkitRoot.style.bottom = 0f;
+            toolkitRoot.style.height = StyleKeyword.Auto;
         }
 
-        if (collapseButton != null)
-            collapseButton.text = isHierarchyCollapsed ? "Show" : "Hide";
-    }
-
-    void CancelToolkitHierarchyDrag()
-    {
-        if (draggedToolkitRow == null)
-            return;
-
-        if (draggedToolkitPointerId != InvalidPointerId
-            && draggedToolkitRow.Root.HasPointerCapture(draggedToolkitPointerId))
-        {
-            draggedToolkitRow.Root.ReleasePointer(draggedToolkitPointerId);
-        }
-
-        draggedToolkitRow.Root.RemoveFromClassList("hierarchy-row-dragging");
-        RemoveToolkitDragPreview();
-        draggedToolkitRow = null;
-        draggedToolkitPointerId = InvalidPointerId;
-        isDraggingToolkitRow = false;
+        if (toolkitCollapseButton != null)
+            toolkitCollapseButton.text = isToolkitHierarchyCollapsed ? "Show" : "Hide";
     }
 
     void RebuildToolkitHierarchyFromScene()
@@ -340,7 +328,9 @@ public class ObjectHierarchyManager : MonoBehaviour
             toolkitContent.Clear();
 
         draggedToolkitRow = null;
+        toolkitDraggedLevelObjects.Clear();
         RemoveToolkitDragPreview();
+        RemoveToolkitDropIndicator();
         draggedToolkitPointerId = InvalidPointerId;
         isDraggingToolkitRow = false;
     }
@@ -354,40 +344,40 @@ public class ObjectHierarchyManager : MonoBehaviour
         existingNames.Add(levelObject.name);
 
         float indentWidth = Mathf.Max(24f, toolkitIndentWidth);
-        bool isCollapsedGroup = levelObject is LevelObjectGroup rowGroup && collapsedToolkitGroups.Contains(rowGroup);
+        if (levelObject is LevelObjectGroup group)
+            group.RebuildChildrenFromTransform();
+
+        List<LevelObject> children = GetDirectLevelObjectChildren(levelObject);
+        bool hasChildren = children.Count > 0;
+        bool isCollapsedParent = hasChildren && collapsedToolkitParents.Contains(levelObject);
         ToolkitHierarchyRow row = new ToolkitHierarchyRow(
             levelObject,
             depth,
             indentWidth,
             SelectToolkitRow,
-            ToggleToolkitGroup,
+            ToggleToolkitParent,
             BeginToolkitRowDrag,
             MoveToolkitRowDrag,
             EndToolkitRowDrag,
-            isCollapsedGroup);
+            hasChildren,
+            isCollapsedParent);
         toolkitRows[levelObject] = row;
         toolkitContent.Add(row.Root);
 
-        if (!(levelObject is LevelObjectGroup group))
+        if (!hasChildren || collapsedToolkitParents.Contains(levelObject))
             return;
 
-        if (group.LevelObjects.ToList().Count == 0)
-            group.RebuildChildrenFromTransform();
-
-        if (collapsedToolkitGroups.Contains(group))
-            return;
-
-        foreach (LevelObject child in group.LevelObjects.ToList())
+        foreach (LevelObject child in children)
             BuildToolkitRowRecursive(child, depth + 1);
     }
 
-    void ToggleToolkitGroup(LevelObjectGroup group)
+    void ToggleToolkitParent(LevelObject parent)
     {
-        if (group == null)
+        if (parent == null)
             return;
 
-        if (!collapsedToolkitGroups.Add(group))
-            collapsedToolkitGroups.Remove(group);
+        if (!collapsedToolkitParents.Add(parent))
+            collapsedToolkitParents.Remove(parent);
 
         RebuildToolkitHierarchyFromScene();
     }
@@ -398,6 +388,8 @@ public class ObjectHierarchyManager : MonoBehaviour
             return;
 
         draggedToolkitRow = row;
+        toolkitDraggedLevelObjects.Clear();
+        toolkitDraggedLevelObjects.AddRange(GetToolkitDraggedLevelObjects(row.LevelObject));
         draggedToolkitPointerId = evt.pointerId;
         toolkitDragStartPosition = ToVector2(evt.position);
         isDraggingToolkitRow = false;
@@ -417,11 +409,12 @@ public class ObjectHierarchyManager : MonoBehaviour
                 return;
 
             isDraggingToolkitRow = true;
-            row.Root.AddToClassList("hierarchy-row-dragging");
+            SetToolkitRowsDragging(true);
             CreateToolkitDragPreview(row, toolkitDragStartPosition);
         }
 
         ShowToolkitDragPreview(ToVector2(evt.position));
+        UpdateToolkitDropIndicator(toolkitDraggedLevelObjects, ToVector2(evt.position));
         evt.StopPropagation();
     }
 
@@ -433,16 +426,19 @@ public class ObjectHierarchyManager : MonoBehaviour
         if (row.Root.HasPointerCapture(evt.pointerId))
             row.Root.ReleasePointer(evt.pointerId);
 
-        row.Root.RemoveFromClassList("hierarchy-row-dragging");
+        SetToolkitRowsDragging(false);
         RemoveToolkitDragPreview();
+        RemoveToolkitDropIndicator();
 
         if (isDraggingToolkitRow)
         {
-            TryDropToolkitRow(row.LevelObject, ToVector2(evt.position));
+            TryDropToolkitRows(toolkitDraggedLevelObjects, ToVector2(evt.position));
+            row.SuppressNextClick();
             evt.StopPropagation();
         }
 
         draggedToolkitRow = null;
+        toolkitDraggedLevelObjects.Clear();
         draggedToolkitPointerId = InvalidPointerId;
         isDraggingToolkitRow = false;
     }
@@ -474,7 +470,7 @@ public class ObjectHierarchyManager : MonoBehaviour
         foldout.AddToClassList("hierarchy-foldout-icon");
         toolkitDragPreview.Add(foldout);
 
-        Label name = new Label(row.LevelObject.name);
+        Label name = new Label(GetToolkitDragPreviewLabel(row.LevelObject));
         name.AddToClassList("hierarchy-name");
         toolkitDragPreview.Add(name);
 
@@ -502,6 +498,66 @@ public class ObjectHierarchyManager : MonoBehaviour
         toolkitDragPreview = null;
     }
 
+    string GetToolkitDragPreviewLabel(LevelObject fallback)
+    {
+        if (toolkitDraggedLevelObjects.Count <= 1)
+            return fallback != null ? fallback.name : "Missing Object";
+
+        return toolkitDraggedLevelObjects.Count + " objects";
+    }
+
+    void UpdateToolkitDropIndicator(List<LevelObject> draggedObjects, Vector2 panelPosition)
+    {
+        ToolkitDropTarget target;
+        if (!TryGetToolkitDropTarget(draggedObjects, panelPosition, out target) || target.IsChildDrop)
+        {
+            RemoveToolkitDropIndicator();
+            return;
+        }
+
+        ShowToolkitDropIndicator(target);
+    }
+
+    void ShowToolkitDropIndicator(ToolkitDropTarget target)
+    {
+        if (toolkitRoot == null || toolkitContent == null)
+            return;
+
+        if (toolkitDropIndicator == null)
+        {
+            toolkitDropIndicator = new VisualElement();
+            toolkitDropIndicator.AddToClassList("hierarchy-drop-indicator");
+            toolkitDropIndicator.pickingMode = PickingMode.Ignore;
+            toolkitDropIndicator.style.position = Position.Absolute;
+            toolkitRoot.Add(toolkitDropIndicator);
+        }
+
+        Rect anchorBounds = target.IndicatorRow != null
+            ? target.IndicatorRow.Root.worldBound
+            : toolkitContent.worldBound;
+
+        float indicatorWorldY = target.InsertAfterIndicatorRow
+            ? anchorBounds.yMax + 1f
+            : anchorBounds.yMin - 1f;
+        float indicatorWorldX = target.IndicatorRow != null
+            ? anchorBounds.xMin
+            : toolkitContent.worldBound.xMin;
+        float indicatorWidth = Mathf.Max(60f, toolkitContent.worldBound.xMax - indicatorWorldX - 4f);
+
+        Vector2 localPosition = new Vector2(indicatorWorldX, indicatorWorldY) - toolkitRoot.worldBound.position;
+        toolkitDropIndicator.style.display = DisplayStyle.Flex;
+        toolkitDropIndicator.style.left = localPosition.x;
+        toolkitDropIndicator.style.top = localPosition.y;
+        toolkitDropIndicator.style.width = indicatorWidth;
+        toolkitDropIndicator.BringToFront();
+    }
+
+    void RemoveToolkitDropIndicator()
+    {
+        toolkitDropIndicator?.RemoveFromHierarchy();
+        toolkitDropIndicator = null;
+    }
+
     static Vector2 ToVector2(Vector3 position)
     {
         return new Vector2(position.x, position.y);
@@ -509,54 +565,151 @@ public class ObjectHierarchyManager : MonoBehaviour
 
     string GetToolkitFoldoutText(LevelObject levelObject)
     {
-        if (!(levelObject is LevelObjectGroup group))
+        if (levelObject == null || GetDirectLevelObjectChildren(levelObject).Count == 0)
             return "";
 
-        return collapsedToolkitGroups.Contains(group) ? ">" : "v";
+        return collapsedToolkitParents.Contains(levelObject) ? ">" : "v";
     }
 
-    void TryDropToolkitRow(LevelObject dragged, Vector2 panelPosition)
+    void TryDropToolkitRows(List<LevelObject> draggedObjects, Vector2 panelPosition)
     {
-        if (dragged == null)
+        if (draggedObjects == null || draggedObjects.Count == 0)
             return;
 
-        ToolkitHierarchyRow targetRow = GetToolkitRowAtPosition(panelPosition, dragged);
+        ToolkitDropTarget dropTarget;
+        if (TryGetToolkitDropTarget(draggedObjects, panelPosition, out dropTarget))
+        {
+            HierarchyReparentAction reparentAction = new HierarchyReparentAction(draggedObjects);
+
+            MoveLevelObjectsToContainer(draggedObjects, dropTarget.Parent, dropTarget.SiblingIndex);
+
+            RegisterHierarchyReparentAction(reparentAction);
+            RebuildToolkitHierarchyFromScene();
+        }
+    }
+
+    void RegisterHierarchyReparentAction(HierarchyReparentAction reparentAction)
+    {
+        if (reparentAction == null)
+            return;
+
+        reparentAction.CaptureAfterState();
+        bool hasChanged = reparentAction.HasChanged();
+        if (hasChanged)
+            EventManager.Instance.TriggerDelegate(ActionStackEvents.RegisterAction, reparentAction);
+    }
+
+    bool TryGetToolkitDropTarget(List<LevelObject> draggedObjects, Vector2 panelPosition, out ToolkitDropTarget dropTarget)
+    {
+        dropTarget = new ToolkitDropTarget();
+
+        if (draggedObjects == null || draggedObjects.Count == 0 || toolkitContent == null)
+            return false;
+
+        ToolkitHierarchyRow targetRow = GetToolkitRowAtPosition(panelPosition, draggedObjects);
         if (targetRow == null)
         {
-            if (toolkitContent != null && toolkitContent.worldBound.Contains(panelPosition))
-                MoveLevelObjectToContainer(dragged, null, LevelObjectsRoot.Instance.RootTransform.childCount);
-
-            RebuildToolkitHierarchyFromScene();
-            return;
+            return TryGetGapDropTarget(draggedObjects, panelPosition, out dropTarget);
         }
 
         LevelObject target = targetRow.LevelObject;
-        if (target == null || target == dragged)
-            return;
+        if (target == null || IsDraggedObject(target, draggedObjects))
+            return false;
 
-        if (target is LevelObjectGroup targetGroup
-            && panelPosition.x > targetRow.Root.worldBound.xMin + 42f
-            && !IsDescendantOf(targetGroup, dragged))
+        if (IsInvalidDropTarget(target, draggedObjects))
+            return false;
+
+        Rect rowBounds = targetRow.Root.worldBound;
+        bool isTopEdge = panelPosition.y <= rowBounds.yMin + RowEdgeDropZoneHeight;
+        bool isBottomEdge = panelPosition.y >= rowBounds.yMax - RowEdgeDropZoneHeight;
+        bool wantsChildDrop = panelPosition.x > rowBounds.xMin + ParentDropXOffset;
+
+        if (wantsChildDrop && !isTopEdge && !isBottomEdge)
         {
-            MoveLevelObjectToContainer(dragged, targetGroup, targetGroup.transform.childCount);
-            RebuildToolkitHierarchyFromScene();
-            return;
+            dropTarget.IsValid = true;
+            dropTarget.IsChildDrop = true;
+            dropTarget.Parent = target;
+            dropTarget.SiblingIndex = target.transform.childCount;
+            return true;
         }
 
-        LevelObjectGroup targetParent = target.levelObjectGroup;
+        LevelObject targetParent = GetLevelObjectParent(target);
         int targetIndex = target.transform.GetSiblingIndex();
-        if (panelPosition.y > targetRow.Root.worldBound.center.y)
+        bool insertAfter = isBottomEdge || (!isTopEdge && panelPosition.y > rowBounds.center.y);
+        if (insertAfter)
             targetIndex++;
 
-        MoveLevelObjectToContainer(dragged, targetParent, targetIndex);
-        RebuildToolkitHierarchyFromScene();
+        dropTarget.IsValid = true;
+        dropTarget.IsChildDrop = false;
+        dropTarget.Parent = targetParent;
+        dropTarget.SiblingIndex = targetIndex;
+        dropTarget.IndicatorRow = targetRow;
+        dropTarget.InsertAfterIndicatorRow = insertAfter;
+        return true;
     }
 
-    ToolkitHierarchyRow GetToolkitRowAtPosition(Vector2 panelPosition, LevelObject dragged)
+    bool TryGetGapDropTarget(List<LevelObject> draggedObjects, Vector2 panelPosition, out ToolkitDropTarget dropTarget)
+    {
+        dropTarget = new ToolkitDropTarget();
+
+        if (draggedObjects == null || draggedObjects.Count == 0 || toolkitContent == null || !toolkitContent.worldBound.Contains(panelPosition))
+            return false;
+
+        ToolkitHierarchyRow nextRow = null;
+        ToolkitHierarchyRow lastRow = null;
+        foreach (ToolkitHierarchyRow row in GetToolkitRowsInVisualOrder())
+        {
+            if (row == null || IsDraggedObject(row.LevelObject, draggedObjects))
+                continue;
+
+            if (lastRow == null || row.Root.worldBound.yMax > lastRow.Root.worldBound.yMax)
+                lastRow = row;
+
+            if (row.Root.worldBound.yMin >= panelPosition.y)
+            {
+                nextRow = row;
+                break;
+            }
+        }
+
+        if (nextRow != null)
+        {
+            LevelObject nextObject = nextRow.LevelObject;
+            if (nextObject == null || IsInvalidDropTarget(nextObject, draggedObjects))
+                return false;
+
+            dropTarget.IsValid = true;
+            dropTarget.IsChildDrop = false;
+            dropTarget.Parent = GetLevelObjectParent(nextObject);
+            dropTarget.SiblingIndex = nextObject.transform.GetSiblingIndex();
+            dropTarget.IndicatorRow = nextRow;
+            dropTarget.InsertAfterIndicatorRow = false;
+            return true;
+        }
+
+        dropTarget.IsValid = true;
+        dropTarget.IsChildDrop = false;
+        dropTarget.Parent = null;
+        dropTarget.SiblingIndex = LevelObjectsRoot.Instance.RootTransform.childCount;
+        dropTarget.IndicatorRow = lastRow;
+        dropTarget.InsertAfterIndicatorRow = true;
+        return true;
+    }
+
+    List<ToolkitHierarchyRow> GetToolkitRowsInVisualOrder()
+    {
+        List<ToolkitHierarchyRow> rows = toolkitRows.Values
+            .Where(x => x != null && x.Root != null)
+            .ToList();
+        rows.Sort((a, b) => a.Root.worldBound.yMin.CompareTo(b.Root.worldBound.yMin));
+        return rows;
+    }
+
+    ToolkitHierarchyRow GetToolkitRowAtPosition(Vector2 panelPosition, List<LevelObject> draggedObjects)
     {
         foreach (ToolkitHierarchyRow row in toolkitRows.Values)
         {
-            if (row == null || row.LevelObject == dragged)
+            if (row == null || IsDraggedObject(row.LevelObject, draggedObjects))
                 continue;
 
             if (row.Root.worldBound.Contains(panelPosition))
@@ -566,16 +719,107 @@ public class ObjectHierarchyManager : MonoBehaviour
         return null;
     }
 
-    void MoveLevelObjectToContainer(LevelObject dragged, LevelObjectGroup newParentGroup, int targetSiblingIndex)
+    List<LevelObject> GetToolkitDraggedLevelObjects(LevelObject draggedObject)
+    {
+        List<LevelObject> visibleSelected = GetToolkitRowsInVisualOrder()
+            .Select(row => row.LevelObject)
+            .Where(levelObject => levelObject != null
+                && EditorBlackBoard.CurrentSelectedLevelObjects.Contains(levelObject))
+            .ToList();
+
+        if (draggedObject == null || !visibleSelected.Contains(draggedObject))
+            return draggedObject != null
+                ? new List<LevelObject> { draggedObject }
+                : new List<LevelObject>();
+
+        HashSet<LevelObject> selectedSet = visibleSelected.ToHashSet();
+        return visibleSelected
+            .Where(levelObject => !HasSelectedAncestor(levelObject, selectedSet))
+            .ToList();
+    }
+
+    void SetToolkitRowsDragging(bool isDragging)
+    {
+        foreach (LevelObject levelObject in toolkitDraggedLevelObjects)
+        {
+            if (levelObject == null || !toolkitRows.TryGetValue(levelObject, out ToolkitHierarchyRow row))
+                continue;
+
+            if (isDragging)
+                row.Root.AddToClassList("hierarchy-row-dragging");
+            else
+                row.Root.RemoveFromClassList("hierarchy-row-dragging");
+        }
+    }
+
+    void MoveLevelObjectsToContainer(List<LevelObject> draggedObjects, LevelObject newParent, int targetSiblingIndex)
+    {
+        if (draggedObjects == null || draggedObjects.Count == 0)
+            return;
+
+        List<LevelObject> orderedObjects = draggedObjects
+            .Where(levelObject => levelObject != null)
+            .ToList();
+
+        int insertIndex = targetSiblingIndex;
+        foreach (LevelObject levelObject in orderedObjects)
+        {
+            MoveLevelObjectToContainer(levelObject, newParent, insertIndex);
+            insertIndex++;
+        }
+    }
+
+    static bool IsDraggedObject(LevelObject levelObject, List<LevelObject> draggedObjects)
+    {
+        return levelObject != null
+            && draggedObjects != null
+            && draggedObjects.Contains(levelObject);
+    }
+
+    static bool IsInvalidDropTarget(LevelObject target, List<LevelObject> draggedObjects)
+    {
+        if (target == null || draggedObjects == null)
+            return true;
+
+        foreach (LevelObject draggedObject in draggedObjects)
+        {
+            if (draggedObject == null)
+                continue;
+
+            if (target == draggedObject || IsDescendantOf(target, draggedObject))
+                return true;
+        }
+
+        return false;
+    }
+
+    static bool HasSelectedAncestor(LevelObject levelObject, HashSet<LevelObject> selectedSet)
+    {
+        if (levelObject == null || selectedSet == null || selectedSet.Count == 0)
+            return false;
+
+        Transform current = levelObject.transform.parent;
+        while (current != null)
+        {
+            if (current.TryGetComponent(out LevelObject parent) && selectedSet.Contains(parent))
+                return true;
+
+            current = current.parent;
+        }
+
+        return false;
+    }
+
+    void MoveLevelObjectToContainer(LevelObject dragged, LevelObject newParent, int targetSiblingIndex)
     {
         if (dragged == null)
             return;
 
-        if (dragged is LevelObjectGroup draggedGroup && newParentGroup != null && IsDescendantOf(newParentGroup, draggedGroup))
+        if (newParent != null && (newParent == dragged || IsDescendantOf(newParent, dragged)))
             return;
 
-        Transform newParentTransform = newParentGroup != null
-            ? newParentGroup.transform
+        Transform newParentTransform = newParent != null
+            ? newParent.transform
             : LevelObjectsRoot.Instance.RootTransform;
         Transform oldParentTransform = dragged.transform.parent;
         int oldSiblingIndex = dragged.transform.GetSiblingIndex();
@@ -589,14 +833,20 @@ public class ObjectHierarchyManager : MonoBehaviour
         else
             LevelObjectsRoot.Instance.RemoveChildFromParent(dragged.gameObject);
 
-        if (newParentGroup != null)
+        LevelObjectGroup newParentGroup = newParent as LevelObjectGroup;
+        if (newParent != null)
         {
             LevelObjectsRoot.Instance.RemoveChildFromParent(dragged.gameObject);
-            dragged.transform.SetParent(newParentGroup.transform, true);
-            targetSiblingIndex = Mathf.Clamp(targetSiblingIndex, 0, newParentGroup.transform.childCount - 1);
+            dragged.transform.SetParent(newParent.transform, true);
+            targetSiblingIndex = Mathf.Clamp(targetSiblingIndex, 0, newParent.transform.childCount - 1);
             dragged.transform.SetSiblingIndex(targetSiblingIndex);
-            newParentGroup.InsertChild(dragged, targetSiblingIndex);
-            newParentGroup.UpdateCenterWithoutMovingChildren();
+            if (newParentGroup != null)
+            {
+                newParentGroup.InsertChild(dragged, targetSiblingIndex);
+                newParentGroup.UpdateCenterWithoutMovingChildren();
+            }
+            else
+                dragged.ClearParent();
         }
         else
         {
@@ -608,6 +858,34 @@ public class ObjectHierarchyManager : MonoBehaviour
 
         if (oldParentGroup != null && oldParentGroup != newParentGroup)
             oldParentGroup.UpdateCenterWithoutMovingChildren();
+    }
+
+    static LevelObject GetLevelObjectParent(LevelObject levelObject)
+    {
+        if (levelObject == null || levelObject.transform.parent == null)
+            return null;
+
+        if (levelObject.transform.parent.TryGetComponent(out LevelObject parent))
+            return parent;
+
+        return null;
+    }
+
+    static List<LevelObject> GetDirectLevelObjectChildren(LevelObject parent)
+    {
+        List<LevelObject> children = new List<LevelObject>();
+        if (parent == null)
+            return children;
+
+        for (int i = 0; i < parent.transform.childCount; i++)
+        {
+            Transform childTransform = parent.transform.GetChild(i);
+            if (childTransform != null && childTransform.TryGetComponent(out LevelObject child))
+                children.Add(child);
+        }
+
+        children.Sort((a, b) => a.transform.GetSiblingIndex().CompareTo(b.transform.GetSiblingIndex()));
+        return children;
     }
 
     static bool IsDescendantOf(LevelObject possibleDescendant, LevelObject possibleAncestor)
@@ -632,6 +910,14 @@ public class ObjectHierarchyManager : MonoBehaviour
         if (levelObject == null)
             return;
 
+        if (IsShiftHeld())
+        {
+            SelectToolkitRange(levelObject);
+            return;
+        }
+
+        toolkitRangeSelectionAnchor = levelObject;
+
         if (levelObject is LevelObjectGroup group)
             group.UpdateCenterWithoutMovingChildren();
 
@@ -642,10 +928,67 @@ public class ObjectHierarchyManager : MonoBehaviour
         EventManager.Instance.TriggerDelegate(SelectionEvents.OnTrySelection, levelObject.gameObject, command);
     }
 
+    void SelectToolkitRange(LevelObject clickedObject)
+    {
+        if (clickedObject == null)
+            return;
+
+        LevelObject anchor = GetValidToolkitRangeAnchor(clickedObject);
+        List<LevelObject> visibleObjects = GetToolkitRowsInVisualOrder()
+            .Select(row => row.LevelObject)
+            .Where(levelObject => levelObject != null)
+            .ToList();
+
+        int anchorIndex = visibleObjects.IndexOf(anchor);
+        int clickedIndex = visibleObjects.IndexOf(clickedObject);
+        if (anchorIndex < 0 || clickedIndex < 0)
+        {
+            toolkitRangeSelectionAnchor = clickedObject;
+            EventManager.Instance.TriggerDelegate(SelectionEvents.OnTrySelection, clickedObject.gameObject, SelectionCommand.Select);
+            return;
+        }
+
+        int start = Mathf.Min(anchorIndex, clickedIndex);
+        int end = Mathf.Max(anchorIndex, clickedIndex);
+        List<GameObject> objectsToSelect = new List<GameObject>();
+        for (int i = start; i <= end; i++)
+        {
+            LevelObject item = visibleObjects[i];
+            if (item != null)
+                objectsToSelect.Add(item.gameObject);
+        }
+
+        EventManager.Instance.TriggerDelegate(SelectionEvents.ReplaceSelectionWithObject, objectsToSelect);
+    }
+
+    LevelObject GetValidToolkitRangeAnchor(LevelObject fallback)
+    {
+        if (toolkitRangeSelectionAnchor != null && toolkitRows.ContainsKey(toolkitRangeSelectionAnchor))
+            return toolkitRangeSelectionAnchor;
+
+        foreach (LevelObject selected in EditorBlackBoard.CurrentSelectedLevelObjects)
+        {
+            if (selected != null && toolkitRows.ContainsKey(selected))
+            {
+                toolkitRangeSelectionAnchor = selected;
+                return selected;
+            }
+        }
+
+        toolkitRangeSelectionAnchor = fallback;
+        return fallback;
+    }
+
     static bool IsCtrlHeld()
     {
         return Keyboard.current != null
             && (Keyboard.current.leftCtrlKey.isPressed || Keyboard.current.rightCtrlKey.isPressed);
+    }
+
+    static bool IsShiftHeld()
+    {
+        return Keyboard.current != null
+            && (Keyboard.current.leftShiftKey.isPressed || Keyboard.current.rightShiftKey.isPressed);
     }
 
     private void AddParent(LevelObjectGroup group, Transform rowParent)
@@ -759,12 +1102,13 @@ public class ObjectHierarchyManager : MonoBehaviour
         readonly LevelObject levelObject;
         readonly SelectableObject selectableObject;
         readonly Action<LevelObject> selectCallback;
-        readonly Action<LevelObjectGroup> toggleGroupCallback;
+        readonly Action<LevelObject> toggleParentCallback;
         readonly Action<ToolkitHierarchyRow, PointerDownEvent> beginDragCallback;
         readonly Action<ToolkitHierarchyRow, PointerMoveEvent> moveDragCallback;
         readonly Action<ToolkitHierarchyRow, PointerUpEvent> endDragCallback;
         readonly Label nameLabel;
         readonly Label foldoutIcon;
+        bool suppressNextClick;
 
         public VisualElement Root { get; }
         public LevelObject LevelObject => levelObject;
@@ -774,15 +1118,16 @@ public class ObjectHierarchyManager : MonoBehaviour
             int depth,
             float indentWidth,
             Action<LevelObject> selectCallback,
-            Action<LevelObjectGroup> toggleGroupCallback,
+            Action<LevelObject> toggleParentCallback,
             Action<ToolkitHierarchyRow, PointerDownEvent> beginDragCallback,
             Action<ToolkitHierarchyRow, PointerMoveEvent> moveDragCallback,
             Action<ToolkitHierarchyRow, PointerUpEvent> endDragCallback,
-            bool isCollapsedGroup)
+            bool hasChildren,
+            bool isCollapsedParent)
         {
             this.levelObject = levelObject;
             this.selectCallback = selectCallback;
-            this.toggleGroupCallback = toggleGroupCallback;
+            this.toggleParentCallback = toggleParentCallback;
             this.beginDragCallback = beginDragCallback;
             this.moveDragCallback = moveDragCallback;
             this.endDragCallback = endDragCallback;
@@ -799,7 +1144,7 @@ public class ObjectHierarchyManager : MonoBehaviour
             indent.AddToClassList("hierarchy-indent");
             Root.Add(indent);
 
-            foldoutIcon = new Label(GetFoldoutText(levelObject, isCollapsedGroup));
+            foldoutIcon = new Label(GetFoldoutText(hasChildren, isCollapsedParent));
             foldoutIcon.AddToClassList("hierarchy-foldout-icon");
             foldoutIcon.RegisterCallback<ClickEvent>(OnFoldoutClick);
             Root.Add(foldoutIcon);
@@ -828,18 +1173,22 @@ public class ObjectHierarchyManager : MonoBehaviour
                 selectableObject.OnSelectionChanged -= UpdateSelectionVisuals;
         }
 
-        static string GetFoldoutText(LevelObject levelObject, bool isCollapsedGroup)
+        public void SuppressNextClick()
         {
-            if (!(levelObject is LevelObjectGroup))
+            suppressNextClick = true;
+        }
+
+        static string GetFoldoutText(bool hasChildren, bool isCollapsedParent)
+        {
+            if (!hasChildren)
                 return "";
 
-            return isCollapsedGroup ? ">" : "v";
+            return isCollapsedParent ? ">" : "v";
         }
 
         void OnFoldoutClick(ClickEvent evt)
         {
-            if (levelObject is LevelObjectGroup group)
-                toggleGroupCallback?.Invoke(group);
+            toggleParentCallback?.Invoke(levelObject);
 
             evt.StopPropagation();
         }
@@ -861,6 +1210,13 @@ public class ObjectHierarchyManager : MonoBehaviour
 
         void OnClick(ClickEvent evt)
         {
+            if (suppressNextClick)
+            {
+                suppressNextClick = false;
+                evt.StopPropagation();
+                return;
+            }
+
             selectCallback?.Invoke(levelObject);
             evt.StopPropagation();
         }

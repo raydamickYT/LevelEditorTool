@@ -25,9 +25,7 @@ namespace LevelEditorJsonImporter.Editor
                 throw new InvalidDataException("Could not parse the selected level JSON.");
 
             string levelDirectory = Path.GetDirectoryName(levelJsonPath);
-            SetActiveLevelDirectory(levelDirectory);
             Dictionary<string, LevelEditorAssetMetaData> assetsById = LoadRegistries(levelDirectory);
-            LevelEditorImportPathResolver.EnsureUnityProjectLinked(levelDirectory, assetsById.Values);
             GameObject root = ImportLevel(level, assetsById, levelJsonPath, importRootName, clearExistingImportRoot);
 
             if (selectImportedRoot && root != null)
@@ -179,7 +177,7 @@ namespace LevelEditorJsonImporter.Editor
             GameObject spriteObject = new GameObject(GetImportedObjectName(record, sprite.name));
             SpriteRenderer renderer = spriteObject.AddComponent<SpriteRenderer>();
             renderer.sprite = sprite;
-            AddSpriteCollider(spriteObject, renderer);
+            AddSpriteColliderIfEnabled(record, spriteObject, renderer);
             return spriteObject;
         }
 
@@ -194,14 +192,17 @@ namespace LevelEditorJsonImporter.Editor
 
             SpriteRenderer renderer = spriteObject.AddComponent<SpriteRenderer>();
             renderer.sprite = sprite;
-            AddSpriteCollider(spriteObject, renderer);
+            AddSpriteColliderIfEnabled(record, spriteObject, renderer);
 
             MatchSpriteVisualToEditorPreview(renderer, spriteMetaData);
             return wrapper;
         }
 
-        static void AddSpriteCollider(GameObject spriteObject, SpriteRenderer renderer)
+        static void AddSpriteColliderIfEnabled(LevelEditorObjectRecord record, GameObject spriteObject, SpriteRenderer renderer)
         {
+            if (record == null || !record.hasCollision)
+                return;
+
             if (spriteObject == null || renderer == null || renderer.sprite == null)
                 return;
 
@@ -408,22 +409,11 @@ namespace LevelEditorJsonImporter.Editor
             prefabMetaData = null;
 
             if (assetsById.TryGetValue(record.assetId ?? "", out LevelEditorAssetMetaData asset)
-                && string.Equals(asset.AssetType, LevelEditorImportedAssetTypes.Prefab, StringComparison.OrdinalIgnoreCase))
+                && string.Equals(asset.AssetType, LevelEditorImportedAssetTypes.Prefab, StringComparison.OrdinalIgnoreCase)
+                && TryLoadAssetAtRelativePath(asset.AssetRelativePath, out prefab))
             {
-                if (TryLoadAssetAtRelativePath(asset.AssetRelativePath, out prefab))
-                {
-                    prefabMetaData = asset;
-                    return true;
-                }
-
-                string levelDirectory = GetActiveLevelDirectory();
-                string externalPrefabPath = LevelEditorImportPathResolver.TryResolveExternalAbsolutePath(levelDirectory, asset);
-                prefab = LevelEditorImportPathResolver.LoadExternalPrefab(externalPrefabPath);
-                if (prefab != null)
-                {
-                    prefabMetaData = asset;
-                    return true;
-                }
+                prefabMetaData = asset;
+                return true;
             }
 
             if (!string.IsNullOrWhiteSpace(record.prefabGuid))
@@ -451,27 +441,9 @@ namespace LevelEditorJsonImporter.Editor
                 return false;
 
             sprite = LoadSpriteAtPath(asset.AssetRelativePath, asset);
-            if (sprite != null)
-            {
-                spriteMetaData = asset;
-                return true;
-            }
-
-            string levelDirectory = GetActiveLevelDirectory();
-            string externalSpritePath = LevelEditorImportPathResolver.TryResolveExternalAbsolutePath(levelDirectory, asset);
-            sprite = LevelEditorImportPathResolver.LoadExternalSprite(externalSpritePath, asset);
             spriteMetaData = asset;
             return sprite != null;
         }
-
-        static string activeLevelDirectory;
-
-        internal static void SetActiveLevelDirectory(string levelDirectory)
-        {
-            activeLevelDirectory = levelDirectory;
-        }
-
-        static string GetActiveLevelDirectory() => activeLevelDirectory ?? "";
 
         static bool TryLoadAssetAtRelativePath<T>(string assetPath, out T asset)
             where T : UnityEngine.Object

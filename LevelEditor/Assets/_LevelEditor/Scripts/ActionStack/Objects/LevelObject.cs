@@ -4,6 +4,7 @@ public class LevelObject : MonoBehaviour
 {
     public int ObjectID;
     public string AssetID;
+    public bool HasCollision;
     public GameObject PrefabReference;
     public HierarchyObjectItem hierarchyObjectItem;
     public Sprite sprite1;

@@ -7,7 +7,7 @@
             <ui:Label text="Transform" class="window-title" />
 
             <ui:VisualElement class="layer-row">
-                <ui:Label text="Layer" class="layer-label" />
+                <ui:Label text="Render Layer" class="layer-label" />
                 <ui:IntegerField name="Object Layer" class="layer-field" />
             </ui:VisualElement>
         </ui:VisualElement>
@@ -50,6 +50,13 @@
                 <ui:Label text="Y" class="axis-label" />
                 <ui:FloatField name="scale-y" class="axis-field" />
 
+            </ui:VisualElement>
+        </ui:VisualElement>
+
+        <ui:VisualElement class="section">
+            <ui:VisualElement class="row">
+                <ui:Label text="Collision" class="collision-label" />
+                <ui:Toggle name="collision-toggle" class="collision-toggle" />
             </ui:VisualElement>
         </ui:VisualElement>
 

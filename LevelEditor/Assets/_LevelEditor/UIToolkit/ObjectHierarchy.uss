@@ -1,9 +1,9 @@
 .object-hierarchy {
     position: absolute;
     left: 0;
-    top: 450px;
-    bottom: 0px;
-    width: 380px;
+    top: 490px;
+    bottom: 0;
+    width: 280px;
     background-color: rgba(214, 214, 214, 0.88);
     border-right-width: 1px;
     border-right-color: rgb(140, 140, 140);
@@ -17,8 +17,11 @@
     flex-direction: row;
     align-items: center;
     justify-content: space-between;
-    padding-left: 6px;
+    padding-left: 8px;
     padding-right: 4px;
+    margin-left: -4px;
+    margin-top: -4px;
+    margin-right: -4px;
     margin-bottom: 4px;
     border-bottom-width: 1px;
     border-bottom-color: rgba(140, 140, 140, 0.55);
@@ -34,27 +37,12 @@
 .object-hierarchy-collapse-button {
     height: 22px;
     min-width: 48px;
+    max-width: 56px;
     padding-left: 6px;
     padding-right: 6px;
     font-size: 10px;
-}
-
-.object-hierarchy-collapsed {
-    padding-top: 0;
-    padding-left: 0;
-    padding-right: 0;
-}
-
-.object-hierarchy-collapsed .object-hierarchy-header {
-    margin-bottom: 0;
-}
-
-.object-hierarchy-collapsed .object-hierarchy-scroll {
-    display: none;
-}
-
-.object-hierarchy-collapsed .object-hierarchy-group-button {
-    display: none;
+    flex-grow: 0;
+    flex-shrink: 0;
 }
 
 .object-hierarchy-group-button {
@@ -66,6 +54,14 @@
 
 .object-hierarchy-scroll {
     flex-grow: 1;
+}
+
+.object-hierarchy-collapsed .object-hierarchy-group-button {
+    display: none;
+}
+
+.object-hierarchy-collapsed .object-hierarchy-scroll {
+    display: none;
 }
 
 .object-hierarchy-content {
@@ -85,7 +81,7 @@
 }
 
 .hierarchy-row:hover {
-    background-color: rgba(5, 72, 254, 0.68);
+    background-color: rgba(230, 238, 255, 0.85);
 }
 
 .hierarchy-row-selected {
@@ -102,6 +98,11 @@
     background-color: rgba(240, 246, 255, 0.98);
     border-color: rgba(64, 115, 255, 0.9);
     border-width: 1px;
+}
+
+.hierarchy-drop-indicator {
+    height: 3px;
+    background-color: rgb(42, 122, 255);
 }
 
 .hierarchy-indent {

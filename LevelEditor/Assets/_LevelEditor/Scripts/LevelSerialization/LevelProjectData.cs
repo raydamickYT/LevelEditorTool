@@ -26,4 +26,5 @@ public class LevelObjectRecord
     public float qx, qy, qz, qw;
     public float sx, sy, sz;
     public int sortingOrder;
+    public bool hasCollision;
 }
