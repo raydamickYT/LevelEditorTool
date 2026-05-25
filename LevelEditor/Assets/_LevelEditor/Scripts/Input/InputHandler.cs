@@ -181,4 +181,12 @@ public class InputHandler : MonoBehaviour, InputSystem_Actions.IUIActions
             triggerCommand(EditorCommand.OpenFile);
         }
     }
+
+    public void OnSnappingShortcut(InputAction.CallbackContext context)
+    {
+        if (context.started)
+        {
+            triggerCommand(EditorCommand.ToggleSnapping);
+        }
+    }
 }

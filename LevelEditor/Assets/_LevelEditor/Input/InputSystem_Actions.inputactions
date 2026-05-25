@@ -88,6 +88,15 @@
                     "initialStateCheck": false
                 },
                 {
+                    "name": "SnappingShortcut",
+                    "type": "Button",
+                    "id": "f490edbe-9170-4b34-bf54-b888df322ad9",
+                    "expectedControlType": "",
+                    "processors": "",
+                    "interactions": "",
+                    "initialStateCheck": false
+                },
+                {
                     "name": "E",
                     "type": "Button",
                     "id": "7b859d70-1f6f-4827-9299-88dad7fc3695",
@@ -518,6 +527,17 @@
                     "processors": "",
                     "groups": "",
                     "action": "W",
+                    "isComposite": false,
+                    "isPartOfComposite": false
+                },
+                {
+                    "name": "",
+                    "id": "99def2b6-8ad8-4cdc-8794-8650cdc0e328",
+                    "path": "<Keyboard>/s",
+                    "interactions": "",
+                    "processors": "",
+                    "groups": "",
+                    "action": "SnappingShortcut",
                     "isComposite": false,
                     "isPartOfComposite": false
                 },

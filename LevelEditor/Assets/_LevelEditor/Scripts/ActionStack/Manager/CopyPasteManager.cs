@@ -44,7 +44,7 @@ public class CopyPasteManager : MonoBehaviour
                 break;
 
             case EditorCommand.ImportAssets:
-                LevelEditorFileMenuCommands.ImportAssets();
+                LevelEditorFileMenuCommands.ImportGameAssets();
                 break;
         }
     }

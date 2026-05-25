@@ -4,11 +4,15 @@ using UnityEngine;
 
 public class GizmoHandler : MonoBehaviour
 {
+    public static GizmoHandler Instance { get; private set; }
+
     [SerializeField] private GizmoController gizmoController;
     public GizmoObject GizmoObject;
 
     private void Awake()
     {
+        Instance = this;
+
         EventManager.Instance.AddDelegateListener(SelectionEvents.OnSelectionChanged, (Action<HashSet<SelectableTargetData>>)HandleGizmoChange);
 
         EventManager.Instance.AddDelegateListener(ShortcutBindingEvents.OnCommandTriggered, (Action<EditorCommand>)HandleGizmoCommand);
@@ -20,6 +24,12 @@ public class GizmoHandler : MonoBehaviour
         }
 
         gizmoController = new GizmoController(GizmoObject);
+    }
+
+    void OnDestroy()
+    {
+        if (Instance == this)
+            Instance = null;
     }
     private void HandleGizmoCommand(EditorCommand editorCommand)
     {
@@ -40,7 +50,15 @@ public class GizmoHandler : MonoBehaviour
     private void HandleGizmoChange(HashSet<SelectableTargetData> data)
      => gizmoController.HandleSelectionChanged(data);
     private void HandleGizmoTypeChanged(GizmoType type)
-        => gizmoController.SetGizmoType(type);
+    {
+        gizmoController.SetGizmoType(type);
+        EventManager.Instance.TriggerDelegate(GimzmoEvents.OnGizmoTypeChanged, type);
+    }
+
+    public GizmoType GetCurrentGizmoType()
+    {
+        return gizmoController != null ? gizmoController.CurrentGizmoType : GizmoType.move;
+    }
 }
 
 public static class GimzmoEvents

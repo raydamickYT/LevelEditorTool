@@ -123,6 +123,8 @@ public class GizmoController
         groupSelectionIsActive = false;
     }
 
+    public GizmoType CurrentGizmoType => currentGizmoType;
+
     public void SetGizmoType(GizmoType newGizmoType)
     {
         if (currentGizmoType == newGizmoType)
@@ -132,7 +134,6 @@ public class GizmoController
 
         gizmoObject?.OnHide();
         gizmoObject?.OnShow(currentGizmoType);
-
     }
 
     public void ClearTempParent()

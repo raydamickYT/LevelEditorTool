@@ -174,6 +174,15 @@ public partial class @InputSystem_Actions: IInputActionCollection2, IDisposable
                     ""initialStateCheck"": false
                 },
                 {
+                    ""name"": ""SnappingShortcut"",
+                    ""type"": ""Button"",
+                    ""id"": ""f490edbe-9170-4b34-bf54-b888df322ad9"",
+                    ""expectedControlType"": """",
+                    ""processors"": """",
+                    ""interactions"": """",
+                    ""initialStateCheck"": false
+                },
+                {
                     ""name"": ""E"",
                     ""type"": ""Button"",
                     ""id"": ""7b859d70-1f6f-4827-9299-88dad7fc3695"",
@@ -604,6 +613,17 @@ public partial class @InputSystem_Actions: IInputActionCollection2, IDisposable
                     ""processors"": """",
                     ""groups"": """",
                     ""action"": ""W"",
+                    ""isComposite"": false,
+                    ""isPartOfComposite"": false
+                },
+                {
+                    ""name"": """",
+                    ""id"": ""99def2b6-8ad8-4cdc-8794-8650cdc0e328"",
+                    ""path"": ""<Keyboard>/s"",
+                    ""interactions"": """",
+                    ""processors"": """",
+                    ""groups"": """",
+                    ""action"": ""SnappingShortcut"",
                     ""isComposite"": false,
                     ""isPartOfComposite"": false
                 },
@@ -1069,6 +1089,7 @@ public partial class @InputSystem_Actions: IInputActionCollection2, IDisposable
         m_UI_MiddleClick = m_UI.FindAction("MiddleClick", throwIfNotFound: true);
         m_UI_ScrollWheel = m_UI.FindAction("ScrollWheel", throwIfNotFound: true);
         m_UI_W = m_UI.FindAction("W", throwIfNotFound: true);
+        m_UI_SnappingShortcut = m_UI.FindAction("SnappingShortcut", throwIfNotFound: true);
         m_UI_E = m_UI.FindAction("E", throwIfNotFound: true);
         m_UI_R = m_UI.FindAction("R", throwIfNotFound: true);
         m_UI_Delete = m_UI.FindAction("Delete", throwIfNotFound: true);
@@ -1173,6 +1194,7 @@ public partial class @InputSystem_Actions: IInputActionCollection2, IDisposable
     private readonly InputAction m_UI_MiddleClick;
     private readonly InputAction m_UI_ScrollWheel;
     private readonly InputAction m_UI_W;
+    private readonly InputAction m_UI_SnappingShortcut;
     private readonly InputAction m_UI_E;
     private readonly InputAction m_UI_R;
     private readonly InputAction m_UI_Delete;
@@ -1235,6 +1257,10 @@ public partial class @InputSystem_Actions: IInputActionCollection2, IDisposable
         /// Provides access to the underlying input action "UI/W".
         /// </summary>
         public InputAction @W => m_Wrapper.m_UI_W;
+        /// <summary>
+        /// Provides access to the underlying input action "UI/SnappingShortcut".
+        /// </summary>
+        public InputAction @SnappingShortcut => m_Wrapper.m_UI_SnappingShortcut;
         /// <summary>
         /// Provides access to the underlying input action "UI/E".
         /// </summary>
@@ -1348,6 +1374,9 @@ public partial class @InputSystem_Actions: IInputActionCollection2, IDisposable
             @W.started += instance.OnW;
             @W.performed += instance.OnW;
             @W.canceled += instance.OnW;
+            @SnappingShortcut.started += instance.OnSnappingShortcut;
+            @SnappingShortcut.performed += instance.OnSnappingShortcut;
+            @SnappingShortcut.canceled += instance.OnSnappingShortcut;
             @E.started += instance.OnE;
             @E.performed += instance.OnE;
             @E.canceled += instance.OnE;
@@ -1431,6 +1460,9 @@ public partial class @InputSystem_Actions: IInputActionCollection2, IDisposable
             @W.started -= instance.OnW;
             @W.performed -= instance.OnW;
             @W.canceled -= instance.OnW;
+            @SnappingShortcut.started -= instance.OnSnappingShortcut;
+            @SnappingShortcut.performed -= instance.OnSnappingShortcut;
+            @SnappingShortcut.canceled -= instance.OnSnappingShortcut;
             @E.started -= instance.OnE;
             @E.performed -= instance.OnE;
             @E.canceled -= instance.OnE;
@@ -1644,6 +1676,13 @@ public partial class @InputSystem_Actions: IInputActionCollection2, IDisposable
         /// <seealso cref="UnityEngine.InputSystem.InputAction.performed" />
         /// <seealso cref="UnityEngine.InputSystem.InputAction.canceled" />
         void OnW(InputAction.CallbackContext context);
+        /// <summary>
+        /// Method invoked when associated input action "SnappingShortcut" is either <see cref="UnityEngine.InputSystem.InputAction.started" />, <see cref="UnityEngine.InputSystem.InputAction.performed" /> or <see cref="UnityEngine.InputSystem.InputAction.canceled" />.
+        /// </summary>
+        /// <seealso cref="UnityEngine.InputSystem.InputAction.started" />
+        /// <seealso cref="UnityEngine.InputSystem.InputAction.performed" />
+        /// <seealso cref="UnityEngine.InputSystem.InputAction.canceled" />
+        void OnSnappingShortcut(InputAction.CallbackContext context);
         /// <summary>
         /// Method invoked when associated input action "E" is either <see cref="UnityEngine.InputSystem.InputAction.started" />, <see cref="UnityEngine.InputSystem.InputAction.performed" /> or <see cref="UnityEngine.InputSystem.InputAction.canceled" />.
         /// </summary>

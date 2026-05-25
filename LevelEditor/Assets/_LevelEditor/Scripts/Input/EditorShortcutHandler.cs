@@ -72,7 +72,8 @@ public enum EditorCommand
     SaveFile,
     OpenFile,
     NewFile,
-    ImportAssets
+    ImportAssets,
+    ToggleSnapping
 }
 
 [Serializable]

@@ -1,0 +1,35 @@
+.editor-options-bar {
+    flex-direction: row;
+    align-items: center;
+    margin-left: auto;
+    padding-right: 8px;
+}
+
+.editor-option-toggle {
+    margin-left: 10px;
+    flex-direction: row-reverse;
+    align-items: center;
+}
+
+.editor-option-toggle > .unity-toggle__input {
+    background-color: rgb(230, 230, 230);
+    border-width: 1px;
+    border-color: rgb(140, 140, 140);
+    border-radius: 2px;
+    width: 16px;
+    height: 16px;
+    margin-left: 6px;
+}
+
+.editor-option-toggle:checked > .unity-toggle__input {
+    background-color: rgb(64, 115, 255);
+    border-color: rgb(40, 80, 180);
+}
+
+.editor-option-toggle > .unity-label {
+    font-size: 11px;
+    color: rgb(45, 45, 45);
+    -unity-font-style: normal;
+    margin-left: 0;
+    margin-right: 0;
+}

@@ -1,29 +1,29 @@
 using UnityEngine;
-using UnityEngine.UI;
 
-public class ToggleSnapping : MonoBehaviour
+/// <summary>
+/// Snapping toggle logic for UI Toolkit (<see cref="EditorTopBarController"/>).
+/// </summary>
+public static class SnappingToggleService
 {
-    private Toggle toggle;
-
-    void Start()
+    public static void ApplySnappingEnabled(bool enabled)
     {
-        if (toggle == null)
-            if (!TryGetComponent<Toggle>(out toggle))
-            {
-                Debug.LogWarning("No toggle found on this gameObject");
-                return;
-            }
-
-        toggle.isOn = false;
-    }
-    public void OnToggleSnapping()
-    {
-        if(toggle == null) return;
-        EventManager.Instance.TriggerDelegate(SnappingEvent.OnToggleSnapping, toggle.isOn);
+        EventManager.Instance?.TriggerDelegate(SnappingEvent.OnToggleSnapping, enabled);
     }
 }
 
 public static class SnappingEvent
 {
     public const string OnToggleSnapping = "OnToggleSnapping";
+}
+
+/// <summary>
+/// Legacy scene component on the old uGUI Snapping toggle. Logic moved to TopBar UI Toolkit.
+/// Kept so existing scene references do not break Unity's script loader.
+/// </summary>
+public class ToggleSnapping : MonoBehaviour
+{
+    void Awake()
+    {
+        enabled = false;
+    }
 }

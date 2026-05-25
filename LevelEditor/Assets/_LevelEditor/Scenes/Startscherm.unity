@@ -3704,6 +3704,7 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::EditorTopBarController
   uiDocument: {fileID: 1791640874}
+  gridRendererObject: {fileID: 781734533}
 --- !u!114 &1791640874
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -4305,7 +4306,7 @@ GameObject:
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
-  m_IsActive: 1
+  m_IsActive: 0
 --- !u!114 &2048723046
 MonoBehaviour:
   m_ObjectHideFlags: 0

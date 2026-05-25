@@ -35,6 +35,9 @@ public sealed class MouseCursorManager : MonoBehaviour
         "object-library-resize-handle",
         "object-library-collapse-button",
         "object-hierarchy-collapse-button",
+        "gizmo-tool-button",
+        "editor-option-toggle",
+        "menu-item",
         "menu-trigger"
     };
     [SerializeField]
