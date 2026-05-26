@@ -12,6 +12,7 @@ GameObject:
   - component: {fileID: 2657842780404226422}
   - component: {fileID: 2778470427055948047}
   - component: {fileID: 6279273472264067407}
+  - component: {fileID: 6127978850313114327}
   m_Layer: 0
   m_Name: CM vcam1
   m_TagString: Untagged
@@ -128,3 +129,15 @@ MonoBehaviour:
     MaxWindowSize: 0
     Padding: 0
   m_LegacyMaxWindowSize: -2
+--- !u!114 &6127978850313114327
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 7378645129304354895}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: d483da8de404de140b3126ea70ea8caf, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::CameraHelper
