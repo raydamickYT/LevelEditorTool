@@ -16,8 +16,8 @@
     border-color: rgb(140, 140, 140);
     border-radius: 2px;
     background-color: rgb(230, 230, 230);
-    -unity-font-style: normal;
-    font-size: 11px;
+    -unity-font-style: bold;
+    font-size: 18px;
 }
 
 .gizmo-tool-button:hover {

@@ -92,16 +92,25 @@ public class GizmoInteractionHandler : MonoBehaviour
     {
         if (cam == null)
             return;
-        if (selectionCommand != SelectionCommand.Select) return;
 
-        if (context.started)
-        {
-            TryBeginDrag();
-        }
-        else if (context.canceled)
+        // Always end drag on mouse up, even when Ctrl changes the selection command to ToggleSelect.
+        if (context.canceled)
         {
             StopDragging();
+            return;
         }
+
+        if (selectionCommand != SelectionCommand.Select)
+            return;
+
+        if (context.started)
+            TryBeginDrag();
+    }
+
+    void Update()
+    {
+        if (isDragging && (Mouse.current == null || !Mouse.current.leftButton.isPressed))
+            StopDragging();
     }
 
     private void OnPoint(InputAction.CallbackContext context)

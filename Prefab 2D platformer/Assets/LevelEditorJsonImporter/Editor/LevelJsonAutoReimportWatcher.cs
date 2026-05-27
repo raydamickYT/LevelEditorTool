@@ -57,7 +57,7 @@ namespace LevelEditorJsonImporter.Editor
                     LevelJsonSceneImporter.ImportFromPath(
                         levelJsonPath,
                         importRootName,
-                        clearExistingImportRoot: true,
+                        clearExistingImportRoot: false,
                         selectImportedRoot: false,
                         logResult: false);
                 }

@@ -101,47 +101,190 @@ namespace LevelEditorJsonImporter.Editor
                 ? "Imported Level"
                 : importRootName.Trim();
 
+            GameObject existingRoot = GameObject.Find(rootName);
             if (clearExistingImportRoot)
             {
-                GameObject existingRoot = GameObject.Find(rootName);
                 if (existingRoot != null)
+                {
                     Undo.DestroyObjectImmediate(existingRoot);
+                    existingRoot = null;
+                }
             }
 
-            GameObject root = new GameObject(rootName);
-            Undo.RegisterCreatedObjectUndo(root, "Import Level JSON");
+            GameObject root = existingRoot;
+            if (root == null)
+            {
+                root = new GameObject(rootName);
+                Undo.RegisterCreatedObjectUndo(root, "Import Level JSON");
+            }
+            else
+            {
+                Undo.RegisterCompleteObjectUndo(root, "Import Level JSON");
+            }
 
-            LevelJsonImportSource importSource = root.AddComponent<LevelJsonImportSource>();
+            LevelJsonImportSource importSource = root.GetComponent<LevelJsonImportSource>();
+            if (importSource == null)
+                importSource = root.AddComponent<LevelJsonImportSource>();
+
             importSource.levelJsonPath = Path.GetFullPath(levelJsonPath);
             importSource.importRootName = rootName;
             importSource.lastImportedUtcTicks = GetLevelJsonUtcTicks(levelJsonPath);
 
-            Dictionary<int, Transform> spawnedById = new Dictionary<int, Transform>();
-            foreach (LevelEditorObjectRecord record in SortRecordsParentBeforeChildren(level.objects))
+            SyncRecordsIntoRoot(root, level.objects, assetsById);
+
+            return root;
+        }
+
+        static void SyncRecordsIntoRoot(
+            GameObject root,
+            List<LevelEditorObjectRecord> records,
+            Dictionary<string, LevelEditorAssetMetaData> assetsById)
+        {
+            Dictionary<int, LevelJsonImportedObject> existingById = root
+                .GetComponentsInChildren<LevelJsonImportedObject>(true)
+                .Where(component => component != null)
+                .GroupBy(component => component.instanceId)
+                .ToDictionary(group => group.Key, group => group.First());
+
+            if (existingById.Count == 0 && root.transform.childCount > 0)
             {
+                // Migration path for roots imported before incremental metadata existed.
+                List<GameObject> rootChildren = new List<GameObject>();
+                for (int i = 0; i < root.transform.childCount; i++)
+                    rootChildren.Add(root.transform.GetChild(i).gameObject);
+
+                foreach (GameObject child in rootChildren)
+                    Undo.DestroyObjectImmediate(child);
+            }
+
+            Dictionary<int, Transform> spawnedById = new Dictionary<int, Transform>();
+            HashSet<int> seenIds = new HashSet<int>();
+            List<LevelEditorObjectRecord> orderedRecords = SortRecordsParentBeforeChildren(records);
+
+            foreach (LevelEditorObjectRecord record in orderedRecords)
+            {
+                if (record == null)
+                    continue;
+
                 Transform parent = root.transform;
                 if (record.parentInstanceId >= 0 && spawnedById.TryGetValue(record.parentInstanceId, out Transform spawnedParent))
                     parent = spawnedParent;
 
                 bool useWrapper = record.parentInstanceId >= 0;
-                GameObject spawned = record.isGroup
-                    ? CreateGroupObject(record)
-                    : CreateLevelObject(record, assetsById, useWrapper);
+                string signature = BuildRecordSignature(record, useWrapper);
+                GameObject spawned;
+
+                if (existingById.TryGetValue(record.instanceId, out LevelJsonImportedObject existingMeta)
+                    && existingMeta != null
+                    && existingMeta.gameObject != null)
+                {
+                    spawned = existingMeta.gameObject;
+
+                    // Rebuild only when structural/asset identity changed; otherwise keep object identity.
+                    if (!string.Equals(existingMeta.recordSignature, signature, StringComparison.Ordinal))
+                        spawned = ReplaceImportedObjectKeepingChildren(existingMeta, record, assetsById, useWrapper);
+                }
+                else
+                {
+                    spawned = CreateImportedObject(record, assetsById, useWrapper);
+                }
 
                 if (spawned == null)
                     continue;
 
-                Undo.RegisterCreatedObjectUndo(spawned, "Import Level JSON");
                 ApplyRecordTransform(spawned.transform, parent, record);
                 if (!record.isGroup && !useWrapper)
                     MatchRootObjectVisualToEditorPreview(spawned, record, assetsById);
 
                 ApplyRecordName(spawned, record);
                 ApplySortingOrder(spawned, record.sortingOrder);
+                EnsureImportMetadata(spawned, record, useWrapper, signature);
+
                 spawnedById[record.instanceId] = spawned.transform;
+                seenIds.Add(record.instanceId);
             }
 
-            return root;
+            foreach (KeyValuePair<int, LevelJsonImportedObject> pair in existingById)
+            {
+                if (seenIds.Contains(pair.Key))
+                    continue;
+
+                LevelJsonImportedObject stale = pair.Value;
+                if (stale != null && stale.gameObject != null)
+                    Undo.DestroyObjectImmediate(stale.gameObject);
+            }
+        }
+
+        static GameObject ReplaceImportedObjectKeepingChildren(
+            LevelJsonImportedObject existingMeta,
+            LevelEditorObjectRecord record,
+            Dictionary<string, LevelEditorAssetMetaData> assetsById,
+            bool useWrapper)
+        {
+            GameObject oldObject = existingMeta.gameObject;
+            Transform oldTransform = oldObject.transform;
+            Transform oldParent = oldTransform.parent;
+
+            GameObject replacement = CreateImportedObject(record, assetsById, useWrapper);
+            if (replacement == null)
+                return oldObject;
+
+            replacement.transform.SetParent(oldParent, false);
+
+            List<Transform> children = new List<Transform>();
+            for (int i = 0; i < oldTransform.childCount; i++)
+                children.Add(oldTransform.GetChild(i));
+
+            foreach (Transform child in children)
+                child.SetParent(replacement.transform, true);
+
+            Undo.DestroyObjectImmediate(oldObject);
+            return replacement;
+        }
+
+        static GameObject CreateImportedObject(
+            LevelEditorObjectRecord record,
+            Dictionary<string, LevelEditorAssetMetaData> assetsById,
+            bool useWrapper)
+        {
+            GameObject spawned = record.isGroup
+                ? CreateGroupObject(record)
+                : CreateLevelObject(record, assetsById, useWrapper);
+
+            if (spawned != null)
+                Undo.RegisterCreatedObjectUndo(spawned, "Import Level JSON");
+
+            return spawned;
+        }
+
+        static void EnsureImportMetadata(
+            GameObject gameObject,
+            LevelEditorObjectRecord record,
+            bool useWrapper,
+            string signature)
+        {
+            LevelJsonImportedObject metadata = gameObject.GetComponent<LevelJsonImportedObject>();
+            if (metadata == null)
+                metadata = gameObject.AddComponent<LevelJsonImportedObject>();
+
+            metadata.instanceId = record.instanceId;
+            metadata.parentInstanceId = record.parentInstanceId;
+            metadata.isGroup = record.isGroup;
+            metadata.usesWrapper = useWrapper;
+            metadata.assetId = record.assetId ?? "";
+            metadata.prefabGuid = record.prefabGuid ?? "";
+            metadata.hasCollision = record.hasCollision;
+            metadata.recordSignature = signature ?? "";
+        }
+
+        static string BuildRecordSignature(LevelEditorObjectRecord record, bool useWrapper)
+        {
+            return string.Join("|",
+                record.isGroup ? "1" : "0",
+                useWrapper ? "1" : "0",
+                record.assetId ?? "",
+                record.prefabGuid ?? "",
+                record.hasCollision ? "1" : "0");
         }
 
         static GameObject CreateGroupObject(LevelEditorObjectRecord record)

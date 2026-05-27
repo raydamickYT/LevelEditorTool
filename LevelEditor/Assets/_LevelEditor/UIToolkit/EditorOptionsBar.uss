@@ -27,9 +27,9 @@
 }
 
 .editor-option-toggle > .unity-label {
-    font-size: 11px;
+    font-size: 14px;
     color: rgb(45, 45, 45);
-    -unity-font-style: normal;
+    -unity-font-style: bold;
     margin-left: 0;
     margin-right: 0;
 }
