@@ -159,7 +159,8 @@
     height: 32px;
     max-width: 96px;
     -unity-text-align: middle-center;
-    font-size: 9px;
+    -unity-font-style: bold;
+    font-size: 11px;
     color: rgb(55, 55, 55);
     overflow: hidden;
 }

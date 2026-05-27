@@ -23,6 +23,13 @@ namespace Platformer.Mechanics
         void OnEnable()
         {
             Instance = this;
+            if (model.player == null)
+            {
+                var playerController = FindAnyObjectByType<PlayerController>();
+                model.player = playerController;
+                var spawnPoint = playerController.transform;
+                model.spawnPoint = spawnPoint;
+            }
         }
 
         void OnDisable()

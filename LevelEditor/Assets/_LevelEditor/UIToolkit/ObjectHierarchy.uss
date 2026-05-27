@@ -1,9 +1,9 @@
 .object-hierarchy {
     position: absolute;
     left: 0;
-    top: 490px;
+    top: 520px;
     bottom: 0;
-    width: 280px;
+    width: 290px;
     background-color: rgba(214, 214, 214, 0.88);
     border-right-width: 1px;
     border-right-color: rgb(140, 140, 140);
