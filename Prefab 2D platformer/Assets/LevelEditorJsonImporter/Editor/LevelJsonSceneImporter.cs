@@ -200,7 +200,7 @@ namespace LevelEditorJsonImporter.Editor
 
                 ApplyRecordName(spawned, record);
                 ApplySortingOrder(spawned, record.sortingOrder);
-                SyncSpriteCollider(spawned, record, useWrapper);
+                SyncSpriteCollider(spawned, record, useWrapper, assetsById);
                 EnsureImportMetadata(spawned, record, useWrapper, signature);
 
                 spawnedById[record.instanceId] = spawned.transform;
@@ -361,13 +361,17 @@ namespace LevelEditorJsonImporter.Editor
             SpritePhysicsColliderUtility.TryAddSpritePhysicsCollider(spriteObject, renderer.sprite);
         }
 
-        static void SyncSpriteCollider(GameObject spawned, LevelEditorObjectRecord record, bool useWrapper)
+        static void SyncSpriteCollider(
+            GameObject spawned,
+            LevelEditorObjectRecord record,
+            bool useWrapper,
+            Dictionary<string, LevelEditorAssetMetaData> assetsById = null)
         {
-            if (record == null || record.isGroup || spawned == null)
+            if (!ShouldManageImportedSpriteColliders(spawned, record, assetsById))
                 return;
 
             GameObject colliderHost = GetSpriteColliderHost(spawned, useWrapper);
-            if (colliderHost == null)
+            if (colliderHost == null || PrefabUtility.IsPartOfPrefabInstance(colliderHost))
                 return;
 
             RemoveSpriteColliders(colliderHost);
@@ -379,6 +383,28 @@ namespace LevelEditorJsonImporter.Editor
                 return;
 
             SpritePhysicsColliderUtility.TryAddSpritePhysicsCollider(colliderHost, renderer.sprite);
+        }
+
+        static bool ShouldManageImportedSpriteColliders(
+            GameObject spawned,
+            LevelEditorObjectRecord record,
+            Dictionary<string, LevelEditorAssetMetaData> assetsById)
+        {
+            if (record == null || record.isGroup || spawned == null)
+                return false;
+
+            if (PrefabUtility.IsPartOfPrefabInstance(spawned))
+                return false;
+
+            if (!string.IsNullOrWhiteSpace(record.prefabGuid))
+                return false;
+
+            if (assetsById != null
+                && assetsById.TryGetValue(record.assetId ?? "", out LevelEditorAssetMetaData asset)
+                && string.Equals(asset.AssetType, LevelEditorImportedAssetTypes.Prefab, StringComparison.OrdinalIgnoreCase))
+                return false;
+
+            return true;
         }
 
         static GameObject GetSpriteColliderHost(GameObject spawned, bool useWrapper)
@@ -776,7 +802,9 @@ namespace LevelEditorJsonImporter.Editor
                 LevelEditorObjectRecord record = new LevelEditorObjectRecord
                 {
                     isGroup = imported.isGroup,
-                    hasCollision = imported.hasCollision
+                    hasCollision = imported.hasCollision,
+                    assetId = imported.assetId,
+                    prefabGuid = imported.prefabGuid
                 };
 
                 SyncSpriteCollider(imported.gameObject, record, imported.usesWrapper);
