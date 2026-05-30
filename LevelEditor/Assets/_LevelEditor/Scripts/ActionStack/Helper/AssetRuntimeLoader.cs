@@ -54,11 +54,9 @@ public static class AssetRuntimeLoader
         }
 
         byte[] fileBytes = File.ReadAllBytes(localFilePath);
+        Texture2D texture = LoadTextureForMetadata(metaData, fileBytes);
 
-        Texture2D texture = new Texture2D(2, 2);
-        bool loaded = texture.LoadImage(fileBytes);
-
-        if (!loaded)
+        if (texture == null)
         {
             Debug.LogWarning($"Failed to load image: {localFilePath}");
             return null;
@@ -78,6 +76,27 @@ public static class AssetRuntimeLoader
             : metaData.FileName;
 
         return sprite;
+    }
+
+    static Texture2D LoadTextureForMetadata(ImportedAssetMetaData metaData, byte[] fileBytes)
+    {
+        bool hasSpriteSheetRect = metaData != null
+            && metaData.SpriteRectWidth > 0f
+            && metaData.SpriteRectHeight > 0f;
+
+        if (hasSpriteSheetRect)
+        {
+            Texture2D texture = new(2, 2);
+            if (!texture.LoadImage(fileBytes))
+            {
+                Object.Destroy(texture);
+                return null;
+            }
+
+            return texture;
+        }
+
+        return ImageLoadUtility.LoadTextureFromBytes(fileBytes);
     }
 
     static Rect GetSpriteRect(ImportedAssetMetaData metaData, Texture2D texture)

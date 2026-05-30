@@ -200,6 +200,7 @@ namespace LevelEditorJsonImporter.Editor
 
                 ApplyRecordName(spawned, record);
                 ApplySortingOrder(spawned, record.sortingOrder);
+                SyncSpriteCollider(spawned, record, useWrapper);
                 EnsureImportMetadata(spawned, record, useWrapper, signature);
 
                 spawnedById[record.instanceId] = spawned.transform;
@@ -357,9 +358,48 @@ namespace LevelEditorJsonImporter.Editor
             if (spriteObject == null || renderer == null || renderer.sprite == null)
                 return;
 
-            BoxCollider2D collider = spriteObject.AddComponent<BoxCollider2D>();
-            collider.size = renderer.sprite.bounds.size;
-            collider.offset = renderer.sprite.bounds.center;
+            SpritePhysicsColliderUtility.TryAddSpritePhysicsCollider(spriteObject, renderer.sprite);
+        }
+
+        static void SyncSpriteCollider(GameObject spawned, LevelEditorObjectRecord record, bool useWrapper)
+        {
+            if (record == null || record.isGroup || spawned == null)
+                return;
+
+            GameObject colliderHost = GetSpriteColliderHost(spawned, useWrapper);
+            if (colliderHost == null)
+                return;
+
+            RemoveSpriteColliders(colliderHost);
+
+            if (!record.hasCollision)
+                return;
+
+            if (!colliderHost.TryGetComponent(out SpriteRenderer renderer) || renderer.sprite == null)
+                return;
+
+            SpritePhysicsColliderUtility.TryAddSpritePhysicsCollider(colliderHost, renderer.sprite);
+        }
+
+        static GameObject GetSpriteColliderHost(GameObject spawned, bool useWrapper)
+        {
+            if (!useWrapper)
+                return spawned.GetComponent<SpriteRenderer>() != null ? spawned : null;
+
+            SpriteRenderer[] renderers = spawned.GetComponentsInChildren<SpriteRenderer>(true);
+            if (renderers == null || renderers.Length != 1)
+                return null;
+
+            return renderers[0].gameObject;
+        }
+
+        static void RemoveSpriteColliders(GameObject gameObject)
+        {
+            foreach (BoxCollider2D box in gameObject.GetComponents<BoxCollider2D>())
+                Undo.DestroyObjectImmediate(box);
+
+            foreach (PolygonCollider2D polygon in gameObject.GetComponents<PolygonCollider2D>())
+                Undo.DestroyObjectImmediate(polygon);
         }
 
         static GameObject CreatePrefabWrapper(LevelEditorObjectRecord record, GameObject prefab, LevelEditorAssetMetaData prefabMetaData)
@@ -720,6 +760,30 @@ namespace LevelEditorJsonImporter.Editor
             }
 
             return ordered;
+        }
+
+        [MenuItem("Tools/Level Editor JSON/Refresh Sprite Colliders In Scene")]
+        public static void RefreshSpriteCollidersInScene()
+        {
+            LevelJsonImportedObject[] importedObjects = UnityEngine.Object.FindObjectsByType<LevelJsonImportedObject>(FindObjectsSortMode.None);
+            int refreshed = 0;
+
+            foreach (LevelJsonImportedObject imported in importedObjects)
+            {
+                if (imported == null || imported.gameObject == null || imported.isGroup)
+                    continue;
+
+                LevelEditorObjectRecord record = new LevelEditorObjectRecord
+                {
+                    isGroup = imported.isGroup,
+                    hasCollision = imported.hasCollision
+                };
+
+                SyncSpriteCollider(imported.gameObject, record, imported.usesWrapper);
+                refreshed++;
+            }
+
+            Debug.Log($"Refreshed sprite colliders on {refreshed} imported object(s).");
         }
     }
 }

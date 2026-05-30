@@ -19,12 +19,12 @@ public static class SpriteAssetLoader
 
         byte[] fileBytes = File.ReadAllBytes(localFilePath);
 
-        Texture2D texture = new Texture2D(2, 2);
-        bool loaded = texture.LoadImage(fileBytes);
+        Texture2D texture = ImageLoadUtility.LoadTextureFromBytes(fileBytes);
 
-        if (!loaded)
+        if (texture == null)
         {
             Debug.LogWarning($"Failed to load image from {localFilePath}");
+            return null;
         }
 
         Sprite sprite = Sprite.Create(

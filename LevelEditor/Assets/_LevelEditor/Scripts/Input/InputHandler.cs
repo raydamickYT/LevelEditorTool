@@ -184,9 +184,19 @@ public class InputHandler : MonoBehaviour, InputSystem_Actions.IUIActions
 
     public void OnSnappingShortcut(InputAction.CallbackContext context)
     {
-        if (context.started)
-        {
-            triggerCommand(EditorCommand.ToggleSnapping);
-        }
+        if (!context.started || HasBlockingModifierHeld())
+            return;
+
+        triggerCommand(EditorCommand.ToggleSnapping);
+    }
+
+    static bool HasBlockingModifierHeld()
+    {
+        if (Keyboard.current == null)
+            return false;
+
+        return Keyboard.current.shiftKey.isPressed
+            || Keyboard.current.ctrlKey.isPressed
+            || Keyboard.current.altKey.isPressed;
     }
 }

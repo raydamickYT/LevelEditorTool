@@ -2,7 +2,8 @@ using UnityEngine;
 using UnityEngine.UIElements;
 
 /// <summary>
-/// UI Toolkit popup for user-facing import/save/load warnings. Add this to a GameObject with a UIDocument using PopupWindow.uxml.
+/// UI Toolkit notifications: blocking popups for warnings/errors and a lightweight toast for frequent feedback (e.g. save).
+/// Add this to a GameObject with a UIDocument using PopupWindow.uxml.
 /// </summary>
 [RequireComponent(typeof(UIDocument))]
 public sealed class EditorPopupService : MonoBehaviour
@@ -11,6 +12,7 @@ public sealed class EditorPopupService : MonoBehaviour
 
     [SerializeField] UIDocument uiDocument;
     [SerializeField] int sortingOrder = 32000;
+    [SerializeField] float defaultToastDurationSeconds = 2.5f;
 
     VisualElement overlay;
     Label icon;
@@ -19,6 +21,9 @@ public sealed class EditorPopupService : MonoBehaviour
     ScrollView detailsScroll;
     Label details;
     Button okButton;
+    VisualElement toastRoot;
+    Label toastLabel;
+    IVisualElementScheduledItem toastHideSchedule;
 
     public static void ShowInfo(string title, string message, string details = null)
         => Show(PopupSeverity.Info, title, message, details);
@@ -28,6 +33,17 @@ public sealed class EditorPopupService : MonoBehaviour
 
     public static void ShowError(string title, string message, string details = null)
         => Show(PopupSeverity.Error, title, message, details);
+
+    public static void ShowToast(string message, float durationSeconds = -1f)
+    {
+        if (Instance == null)
+        {
+            Debug.LogWarning($"Toast requested before EditorPopupService exists: {message}");
+            return;
+        }
+
+        Instance.ShowToastInternal(message, durationSeconds);
+    }
 
     static void Show(PopupSeverity severity, string title, string message, string details)
     {
@@ -66,12 +82,16 @@ public sealed class EditorPopupService : MonoBehaviour
 
     void OnDisable()
     {
+        CancelToastHideSchedule();
+
         if (okButton != null)
             okButton.clicked -= Hide;
     }
 
     void OnDestroy()
     {
+        CancelToastHideSchedule();
+
         if (Instance == this)
             Instance = null;
     }
@@ -89,9 +109,48 @@ public sealed class EditorPopupService : MonoBehaviour
         detailsScroll = root.Q<ScrollView>("popup-details-scroll");
         details = root.Q<Label>("popup-details");
         okButton = root.Q<Button>("popup-ok-button");
+        toastRoot = root.Q<VisualElement>("status-toast");
+        toastLabel = root.Q<Label>("status-toast-label");
 
         if (overlay != null)
             overlay.style.display = DisplayStyle.None;
+
+        if (toastRoot != null)
+            toastRoot.style.display = DisplayStyle.None;
+    }
+
+    void ShowToastInternal(string messageText, float durationSeconds)
+    {
+        BindElements();
+
+        if (toastRoot == null || toastLabel == null)
+        {
+            Debug.LogWarning($"Toast UXML is missing status-toast: {messageText}");
+            return;
+        }
+
+        CancelToastHideSchedule();
+
+        toastLabel.text = string.IsNullOrWhiteSpace(messageText) ? "Saved" : messageText;
+        toastRoot.style.display = DisplayStyle.Flex;
+        toastRoot.BringToFront();
+
+        float duration = durationSeconds > 0f ? durationSeconds : defaultToastDurationSeconds;
+        toastHideSchedule = toastRoot.schedule.Execute(HideToast).StartingIn((long)(duration * 1000f));
+    }
+
+    void HideToast()
+    {
+        CancelToastHideSchedule();
+
+        if (toastRoot != null)
+            toastRoot.style.display = DisplayStyle.None;
+    }
+
+    void CancelToastHideSchedule()
+    {
+        toastHideSchedule?.Pause();
+        toastHideSchedule = null;
     }
 
     void ShowInternal(PopupSeverity severity, string titleText, string messageText, string detailsText)

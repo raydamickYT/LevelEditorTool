@@ -158,7 +158,6 @@ namespace LevelEditorJsonImporter.Editor
 
             float pixelsPerUnit = asset != null && asset.PixelsPerUnit > 0f ? asset.PixelsPerUnit : 100f;
 
-            importer.textureType = TextureImporterType.Sprite;
             importer.spriteImportMode = SpriteImportMode.Single;
             importer.filterMode = FilterMode.Point;
             importer.textureCompression = TextureImporterCompression.Uncompressed;
@@ -166,6 +165,7 @@ namespace LevelEditorJsonImporter.Editor
             importer.alphaIsTransparency = true;
             importer.mipmapEnabled = false;
 
+            SpriteTextureImporterUtility.ApplyPhysicsShapeImportSettings(importer);
             importer.SaveAndReimport();
         }
     }

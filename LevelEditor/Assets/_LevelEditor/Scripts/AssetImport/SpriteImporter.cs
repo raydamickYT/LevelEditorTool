@@ -21,10 +21,9 @@ public class SpriteImporter : IAssetImporter
 
         byte[] fileBytes = File.ReadAllBytes(filePath);
 
-        Texture2D texture = new Texture2D(2, 2);
-        bool loaded = texture.LoadImage(fileBytes);
+        Texture2D texture = ImageLoadUtility.LoadTextureFromBytes(fileBytes);
 
-        if (!loaded)
+        if (texture == null)
         {
             Debug.LogWarning($"Failed to load image: {filePath}");
             return null;

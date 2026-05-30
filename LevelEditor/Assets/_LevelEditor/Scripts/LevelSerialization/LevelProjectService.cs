@@ -46,6 +46,12 @@ public static class LevelProjectService
         }
 
         LevelProjectSession.SetCurrentLevelJsonPath(Path.GetFullPath(levelJsonFilePath));
+
+        string toastMessage = "Saved";
+        if (!string.IsNullOrEmpty(directory))
+            toastMessage = $"Saved · {Path.GetFileName(directory.TrimEnd(Path.DirectorySeparatorChar, Path.AltDirectorySeparatorChar))}";
+
+        EditorPopupService.ShowToast(toastMessage);
     }
 
     public static void LoadLevelFromPath(string levelJsonFilePath)
