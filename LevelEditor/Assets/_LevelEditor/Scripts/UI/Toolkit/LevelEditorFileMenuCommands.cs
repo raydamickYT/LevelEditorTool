@@ -57,7 +57,7 @@ public static class LevelEditorFileMenuCommands
             return;
         }
 
-        // New project: user picks a filename — we create a folder with that name and write level.json inside.
+        // New project: user picks a filename; we create a folder with that name and write level.json inside.
         string picked = StandaloneFileBrowser.SaveFilePanel(
             "Save new project",
             "",

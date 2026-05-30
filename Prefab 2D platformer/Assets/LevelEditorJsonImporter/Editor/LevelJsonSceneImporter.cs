@@ -26,7 +26,7 @@ namespace LevelEditorJsonImporter.Editor
 
             string levelDirectory = Path.GetDirectoryName(levelJsonPath);
             Dictionary<string, LevelEditorAssetMetaData> assetsById = LoadRegistries(levelDirectory);
-            GameObject root = ImportLevel(level, assetsById, levelJsonPath, importRootName, clearExistingImportRoot);
+            GameObject root = ImportLevel(level, assetsById, levelDirectory, levelJsonPath, importRootName, clearExistingImportRoot);
 
             if (selectImportedRoot && root != null)
                 Selection.activeGameObject = root;
@@ -93,6 +93,7 @@ namespace LevelEditorJsonImporter.Editor
         static GameObject ImportLevel(
             LevelEditorProjectFile level,
             Dictionary<string, LevelEditorAssetMetaData> assetsById,
+            string levelDirectory,
             string levelJsonPath,
             string importRootName,
             bool clearExistingImportRoot)
@@ -130,7 +131,7 @@ namespace LevelEditorJsonImporter.Editor
             importSource.importRootName = rootName;
             importSource.lastImportedUtcTicks = GetLevelJsonUtcTicks(levelJsonPath);
 
-            SyncRecordsIntoRoot(root, level.objects, assetsById);
+            SyncRecordsIntoRoot(root, level.objects, assetsById, levelDirectory);
 
             return root;
         }
@@ -138,7 +139,8 @@ namespace LevelEditorJsonImporter.Editor
         static void SyncRecordsIntoRoot(
             GameObject root,
             List<LevelEditorObjectRecord> records,
-            Dictionary<string, LevelEditorAssetMetaData> assetsById)
+            Dictionary<string, LevelEditorAssetMetaData> assetsById,
+            string levelDirectory)
         {
             Dictionary<int, LevelJsonImportedObject> existingById = root
                 .GetComponentsInChildren<LevelJsonImportedObject>(true)
@@ -182,11 +184,11 @@ namespace LevelEditorJsonImporter.Editor
 
                     // Rebuild only when structural/asset identity changed; otherwise keep object identity.
                     if (!string.Equals(existingMeta.recordSignature, signature, StringComparison.Ordinal))
-                        spawned = ReplaceImportedObjectKeepingChildren(existingMeta, record, assetsById, useWrapper);
+                        spawned = ReplaceImportedObjectKeepingChildren(existingMeta, record, assetsById, levelDirectory, useWrapper);
                 }
                 else
                 {
-                    spawned = CreateImportedObject(record, assetsById, useWrapper);
+                    spawned = CreateImportedObject(record, assetsById, levelDirectory, useWrapper);
                 }
 
                 if (spawned == null)
@@ -219,13 +221,14 @@ namespace LevelEditorJsonImporter.Editor
             LevelJsonImportedObject existingMeta,
             LevelEditorObjectRecord record,
             Dictionary<string, LevelEditorAssetMetaData> assetsById,
+            string levelDirectory,
             bool useWrapper)
         {
             GameObject oldObject = existingMeta.gameObject;
             Transform oldTransform = oldObject.transform;
             Transform oldParent = oldTransform.parent;
 
-            GameObject replacement = CreateImportedObject(record, assetsById, useWrapper);
+            GameObject replacement = CreateImportedObject(record, assetsById, levelDirectory, useWrapper);
             if (replacement == null)
                 return oldObject;
 
@@ -245,11 +248,12 @@ namespace LevelEditorJsonImporter.Editor
         static GameObject CreateImportedObject(
             LevelEditorObjectRecord record,
             Dictionary<string, LevelEditorAssetMetaData> assetsById,
+            string levelDirectory,
             bool useWrapper)
         {
             GameObject spawned = record.isGroup
                 ? CreateGroupObject(record)
-                : CreateLevelObject(record, assetsById, useWrapper);
+                : CreateLevelObject(record, assetsById, levelDirectory, useWrapper);
 
             if (spawned != null)
                 Undo.RegisterCreatedObjectUndo(spawned, "Import Level JSON");
@@ -292,14 +296,18 @@ namespace LevelEditorJsonImporter.Editor
             return new GameObject(string.IsNullOrWhiteSpace(record.objectName) ? "Group" : record.objectName);
         }
 
-        static GameObject CreateLevelObject(LevelEditorObjectRecord record, Dictionary<string, LevelEditorAssetMetaData> assetsById, bool useWrapper)
+        static GameObject CreateLevelObject(
+            LevelEditorObjectRecord record,
+            Dictionary<string, LevelEditorAssetMetaData> assetsById,
+            string levelDirectory,
+            bool useWrapper)
         {
             if (TryResolvePrefab(record, assetsById, out GameObject prefab, out LevelEditorAssetMetaData prefabMetaData))
                 return useWrapper
                     ? CreatePrefabWrapper(record, prefab, prefabMetaData)
                     : CreatePrefabInstance(record, prefab);
 
-            if (TryResolveSprite(record, assetsById, out Sprite sprite, out LevelEditorAssetMetaData spriteMetaData))
+            if (TryResolveSprite(record, assetsById, levelDirectory, out Sprite sprite, out LevelEditorAssetMetaData spriteMetaData))
                 return useWrapper
                     ? CreateSpriteWrapper(record, sprite, spriteMetaData)
                     : CreateSpriteObject(record, sprite);
@@ -572,6 +580,7 @@ namespace LevelEditorJsonImporter.Editor
         static bool TryResolveSprite(
             LevelEditorObjectRecord record,
             Dictionary<string, LevelEditorAssetMetaData> assetsById,
+            string levelDirectory,
             out Sprite sprite,
             out LevelEditorAssetMetaData spriteMetaData)
         {
@@ -580,12 +589,25 @@ namespace LevelEditorJsonImporter.Editor
             if (!assetsById.TryGetValue(record.assetId ?? "", out LevelEditorAssetMetaData asset))
                 return false;
 
-            if (string.IsNullOrWhiteSpace(asset.AssetRelativePath))
+            if (!string.Equals(asset.AssetType, LevelEditorImportedAssetTypes.Sprite, StringComparison.OrdinalIgnoreCase))
                 return false;
 
-            sprite = LoadSpriteAtPath(asset.AssetRelativePath, asset);
+            if (!string.IsNullOrWhiteSpace(asset.AssetRelativePath))
+            {
+                sprite = LoadSpriteAtPath(asset.AssetRelativePath, asset);
+                if (sprite != null)
+                {
+                    spriteMetaData = asset;
+                    return true;
+                }
+            }
+
+            sprite = LevelEditorBundledSpriteImporter.ImportOrLoadSprite(levelDirectory, asset);
+            if (sprite == null)
+                return false;
+
             spriteMetaData = asset;
-            return sprite != null;
+            return true;
         }
 
         static bool TryLoadAssetAtRelativePath<T>(string assetPath, out T asset)
@@ -599,7 +621,7 @@ namespace LevelEditorJsonImporter.Editor
             return asset != null;
         }
 
-        static Sprite LoadSpriteAtPath(string assetPath, LevelEditorAssetMetaData asset)
+        internal static Sprite LoadSpriteAtPath(string assetPath, LevelEditorAssetMetaData asset)
         {
             string normalizedPath = assetPath.Replace('\\', '/');
             Sprite directSprite = AssetDatabase.LoadAssetAtPath<Sprite>(normalizedPath);
