@@ -271,8 +271,7 @@ public class TransformWindowView : MonoBehaviour
             if (levelObject == null)
                 continue;
 
-            if(levelObject.TryGetComponent(out SpriteRenderer renderer))
-                renderer.sortingOrder = layerField.value;
+            levelObject.ApplySortingOrder(layerField.value);
         }
     }
 
@@ -284,10 +283,7 @@ public class TransformWindowView : MonoBehaviour
         foreach (LevelObject levelObject in selectedLevelObjects)
         {
             if (IsSpriteAsset(levelObject))
-            {
                 levelObject.HasCollision = collisionToggle.value;
-                levelObject.ApplyCollisionState();
-            }
         }
     }
 
@@ -310,7 +306,9 @@ public class TransformWindowView : MonoBehaviour
     private bool AllSelectedHaveSpriteRenderer()
     {
         return selectedLevelObjects.Count > 0
-            && selectedLevelObjects.All(levelObject => levelObject != null && levelObject.TryGetComponent(out SpriteRenderer _));
+            && selectedLevelObjects.All(levelObject =>
+                levelObject != null
+                && levelObject.GetComponentsInChildren<SpriteRenderer>(true).Length > 0);
     }
 
     private bool TryGetSharedPositionAxis(int axis, out float value)
@@ -340,18 +338,25 @@ public class TransformWindowView : MonoBehaviour
         bool hasValue = false;
         foreach (LevelObject levelObject in selectedLevelObjects)
         {
-            if (levelObject == null || !levelObject.TryGetComponent(out SpriteRenderer renderer))
+            if (levelObject == null || levelObject.GetComponentsInChildren<SpriteRenderer>(true).Length == 0)
                 return false;
 
-            if (!hasValue)
+            SpriteRenderer[] renderers = levelObject.GetComponentsInChildren<SpriteRenderer>(true);
+            for (int i = 0; i < renderers.Length; i++)
             {
-                value = renderer.sortingOrder;
-                hasValue = true;
-                continue;
-            }
+                if (renderers[i] == null)
+                    continue;
 
-            if (value != renderer.sortingOrder)
-                return false;
+                if (!hasValue)
+                {
+                    value = renderers[i].sortingOrder;
+                    hasValue = true;
+                    continue;
+                }
+
+                if (value != renderers[i].sortingOrder)
+                    return false;
+            }
         }
 
         return hasValue;

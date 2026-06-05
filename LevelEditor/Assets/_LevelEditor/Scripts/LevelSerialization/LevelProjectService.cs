@@ -194,9 +194,9 @@ public static class LevelProjectService
             else
                 rec.parentInstanceId = -1;
 
-            if (!rec.isGroup && t.TryGetComponent(out SpriteRenderer sr))
+            if (!rec.isGroup)
             {
-                rec.sortingOrder = sr.sortingOrder;
+                rec.sortingOrder = GetPrimarySortingOrder(t);
                 rec.hasCollision = lo.HasCollision && IsSpriteAsset(lo.AssetID);
             }
 
@@ -338,7 +338,7 @@ public static class LevelProjectService
 
     static void RefreshEditorPickColliders()
     {
-        LevelObject[] levelObjects = UnityEngine.Object.FindObjectsByType<LevelObject>(FindObjectsSortMode.None);
+        LevelObject[] levelObjects = Object.FindObjectsByType<LevelObject>(FindObjectsSortMode.None);
         foreach (LevelObject levelObject in levelObjects)
         {
             if (levelObject == null || levelObject.IsGroup)
@@ -409,6 +409,7 @@ public static class LevelProjectService
             {
                 spawnedLevelObject.HasCollision = rec.hasCollision;
                 spawnedLevelObject.ApplyCollisionState();
+                spawnedLevelObject.ApplySortingOrder(rec.sortingOrder);
             }
 
             if (parentTransform != null
@@ -420,10 +421,26 @@ public static class LevelProjectService
 
             if (spawned.TryGetComponent(out LevelObject loNotify))
                 LevelObjectSpawner.NotifyHierarchyForSpawned(loNotify, false);
-
-            if (spawned.TryGetComponent(out SpriteRenderer sr))
-                sr.sortingOrder = rec.sortingOrder;
         }
+    }
+
+    static int GetPrimarySortingOrder(Transform transform)
+    {
+        if (transform == null)
+            return 0;
+
+        SpriteRenderer[] renderers = transform.GetComponentsInChildren<SpriteRenderer>(true);
+        if (renderers == null || renderers.Length == 0)
+            return 0;
+
+        int sortingOrder = renderers[0].sortingOrder;
+        for (int i = 1; i < renderers.Length; i++)
+        {
+            if (renderers[i].sortingOrder > sortingOrder)
+                sortingOrder = renderers[i].sortingOrder;
+        }
+
+        return sortingOrder;
     }
 
     static string GetStableObjectName(string objectName, string assetId)

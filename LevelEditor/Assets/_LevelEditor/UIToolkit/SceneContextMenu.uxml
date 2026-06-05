@@ -1,6 +1,6 @@
 <ui:UXML xmlns:ui="UnityEngine.UIElements" editor-extension-mode="False">
     <Style src="SceneContextMenu.uss" />
     <ui:VisualElement name="scene-context-menu" class="scene-context-menu" picking-mode="Position" style="display: none;">
-        <ui:Toggle name="toggle-show-all-collision-boxes" label="Show all selecteable areas" class="scene-context-menu-item" />
+        <ui:Toggle name="toggle-show-all-collision-boxes" label="Show all collision boxes" class="scene-context-menu-item" />
     </ui:VisualElement>
 </ui:UXML>

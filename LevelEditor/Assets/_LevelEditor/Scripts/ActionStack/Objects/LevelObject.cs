@@ -44,11 +44,28 @@ public class LevelObject : MonoBehaviour
             ObjectName = t != null ? t.gameObject.name : string.Empty;
             if (t != null && t.TryGetComponent(out LevelObject levelObject))
                 HasCollision = levelObject.HasCollision;
-            if (t != null && t.TryGetComponent(out SpriteRenderer spriteRenderer))
+
+            HasSortingOrder = TryGetPrimarySortingOrder(t, out SortingOrder);
+        }
+
+        static bool TryGetPrimarySortingOrder(Transform transform, out int sortingOrder)
+        {
+            sortingOrder = 0;
+            if (transform == null)
+                return false;
+
+            SpriteRenderer[] renderers = transform.GetComponentsInChildren<SpriteRenderer>(true);
+            if (renderers == null || renderers.Length == 0)
+                return false;
+
+            sortingOrder = renderers[0].sortingOrder;
+            for (int i = 1; i < renderers.Length; i++)
             {
-                SortingOrder = spriteRenderer.sortingOrder;
-                HasSortingOrder = true;
+                if (renderers[i].sortingOrder > sortingOrder)
+                    sortingOrder = renderers[i].sortingOrder;
             }
+
+            return true;
         }
 
         /// <summary>For level load / tooling: build a memento without a live Transform.</summary>
@@ -154,14 +171,17 @@ public class LevelObject : MonoBehaviour
         if (m == null || !m.HasSortingOrder)
             return;
 
-        if (TryGetComponent(out SpriteRenderer spriteRenderer))
-            spriteRenderer.sortingOrder = m.SortingOrder;
+        ApplySortingOrder(m.SortingOrder);
     }
 
     public void ApplySortingOrder(int sortingOrder)
     {
-        if (TryGetComponent(out SpriteRenderer spriteRenderer))
-            spriteRenderer.sortingOrder = sortingOrder;
+        SpriteRenderer[] renderers = GetComponentsInChildren<SpriteRenderer>(true);
+        for (int i = 0; i < renderers.Length; i++)
+        {
+            if (renderers[i] != null)
+                renderers[i].sortingOrder = sortingOrder;
+        }
     }
 
     public void ApplyCollisionState()
