@@ -121,6 +121,7 @@ public static class LevelProjectService
         ObjectRegistry.ClearAllForNewLevel();
 
         InstantiateFromRecords(file.objects);
+        RefreshEditorPickColliders();
 
         EventManager.Instance.TriggerDelegate(ObjectHierarchyEvents.RebuildEntireHierarchy);
 
@@ -333,6 +334,18 @@ public static class LevelProjectService
         }
 
         return ordered;
+    }
+
+    static void RefreshEditorPickColliders()
+    {
+        LevelObject[] levelObjects = UnityEngine.Object.FindObjectsByType<LevelObject>(FindObjectsSortMode.None);
+        foreach (LevelObject levelObject in levelObjects)
+        {
+            if (levelObject == null || levelObject.IsGroup)
+                continue;
+
+            levelObject.ApplyCollisionState();
+        }
     }
 
     static void InstantiateFromRecords(List<LevelObjectRecord> records)

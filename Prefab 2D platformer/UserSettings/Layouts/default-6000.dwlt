@@ -615,7 +615,7 @@ MonoBehaviour:
     m_LockTracker:
       m_IsLocked: 0
     m_CurrentSortingName: TransformSorting
-  m_WindowGUID: 118f1b4607b4c8540b995e1ef00dd2a6
+  m_WindowGUID: a5377963c74da9a4f964d75930a83dd1
 --- !u!114 &14
 MonoBehaviour:
   m_ObjectHideFlags: 52
@@ -1535,7 +1535,7 @@ MonoBehaviour:
         overlayData: []
     m_OverlaysVisible: 1
     m_DynamicPanelBehavior: 0
-  m_WindowGUID: 07bd17a516e01224d9e26e41955243fd
+  m_WindowGUID: 563a4ff3517ea8e42bdb4a3c5d37889a
   m_Gizmos: 1
   m_OverrideSceneCullingMask: 6917529027641081856
   m_SceneIsLit: 1

@@ -28,7 +28,11 @@ namespace LevelEditorJsonImporter.Editor
             if (meshType != null)
                 meshType.intValue = (int)SpriteMeshType.Tight;
 
+#if UNITY_2021_2_OR_NEWER
             serializedImporter.ApplyModifiedPropertiesWithoutUndo();
+#else
+            serializedImporter.ApplyModifiedProperties();
+#endif
         }
     }
 

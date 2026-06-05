@@ -851,7 +851,7 @@ namespace LevelEditorJsonImporter.Editor
         [MenuItem("Tools/Level Editor JSON/Refresh Sprite Colliders In Scene")]
         public static void RefreshSpriteCollidersInScene()
         {
-            LevelJsonImportedObject[] importedObjects = UnityEngine.Object.FindObjectsByType<LevelJsonImportedObject>(FindObjectsSortMode.None);
+            LevelJsonImportedObject[] importedObjects = EditorObjectUtility.FindObjectsInOpenScenes<LevelJsonImportedObject>();
             int refreshed = 0;
 
             foreach (LevelJsonImportedObject imported in importedObjects)

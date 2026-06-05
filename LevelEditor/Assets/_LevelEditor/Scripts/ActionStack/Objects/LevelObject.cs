@@ -172,13 +172,11 @@ public class LevelObject : MonoBehaviour
         if (!TryGetComponent(out BoxCollider2D boxCollider))
             boxCollider = gameObject.AddComponent<BoxCollider2D>();
 
-        boxCollider.enabled = HasCollision;
-        if (!HasCollision)
-            return;
-
         Bounds bounds = spriteRenderer.sprite.bounds;
         boxCollider.size = bounds.size;
         boxCollider.offset = bounds.center;
+        // Editor selection uses Physics2D overlap on this collider. HasCollision only controls level export.
+        boxCollider.enabled = true;
     }
 
     public void UpdateParent(LevelObjectGroup levelObjectGroup)

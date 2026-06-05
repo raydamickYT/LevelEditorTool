@@ -7,7 +7,7 @@ using UnityEngine.InputSystem;
 /// <summary>
 /// this class manages whatever is selected at that point in time, it will communicate this by sending out events for any class to read.
 /// 
-/// 25/03: it is currently only able to select single targets
+/// Click-pick uses sorting order (front to back) and cycles through stacked objects on repeated clicks.
 /// </summary>
 public class selectionController
 {
@@ -20,6 +20,10 @@ public class selectionController
     private bool startedOnGizmo, isPointerDown, isBoxDragging;
     private float _dragThreshold = 10f;
     private SelectionCommand currentSelectionCommand = SelectionCommand.Select;
+
+    const float SelectionCycleScreenEpsilon = 5f;
+    Vector2 _lastCycleScreenPosition;
+    readonly List<GameObject> _lastCycleCandidates = new();
 
 
     //undo
@@ -72,18 +76,27 @@ public class selectionController
             return;
         }
 
-        if (RaycastHelper.TryGetPointerHit2D(cam, LayerMask.GetMask("Selectable"), out RaycastHit2D hit)) //then we get to the selection logic, if we hit something with the selectable layer, we try to select it
+        List<GameObject> pickCandidates = SelectionPickUtility.GetSelectableHitsOrderedFrontToBack(
+            cam,
+            LayerMask.GetMask("Selectable"),
+            selectableGameObjectsInSceneDict.ContainsKey);
+
+        if (pickCandidates.Count > 0)
         {
+            Vector2 screenPosition = Mouse.current.position.ReadValue();
+            GameObject pickedObject = ResolvePickWithCycle(pickCandidates, screenPosition);
+
             if (currentSelectionCommand == SelectionCommand.ToggleSelect)
-                TryToggleSelection(hit.collider.gameObject);
+                TryToggleSelection(pickedObject);
             else
-                TrySelect(hit.collider.gameObject);
+                TrySelect(pickedObject);
+
             return;
         }
-        else if (!UIHelper.IsPointerOverUI())
-        {
+
+        ResetSelectionCycle();
+        if (!UIHelper.IsPointerOverUI())
             TryClearSelectionWithUndo();
-        }
 
         currentSelectionCommand = SelectionCommand.Select;
     }
@@ -165,6 +178,8 @@ public class selectionController
 
     public void SelectInRect(Rect screenRect)
     {
+        ResetSelectionCycle();
+
         List<int> beforeSelection = GetSelectedObjectIDs();
         List<int> afterSelection = new();
 
@@ -217,6 +232,58 @@ public class selectionController
         Rect objectScreenRect = Rect.MinMaxRect(minX, minY, maxX, maxY);
 
         return screenRect.Overlaps(objectScreenRect, true);
+    }
+
+    GameObject ResolvePickWithCycle(List<GameObject> candidates, Vector2 screenPosition)
+    {
+        if (candidates == null || candidates.Count == 0)
+            return null;
+
+        if (currentSelectionCommand == SelectionCommand.ToggleSelect || candidates.Count == 1)
+        {
+            ResetSelectionCycle();
+            return candidates[0];
+        }
+
+        GameObject soleSelected = GetSoleSelectedGameObject();
+        bool sameScreenSpot = Vector2.Distance(screenPosition, _lastCycleScreenPosition) <= SelectionCycleScreenEpsilon;
+        bool sameCandidateStack = SelectionPickUtility.ListsMatchInOrder(_lastCycleCandidates, candidates);
+        bool canCycle = sameScreenSpot
+            && sameCandidateStack
+            && soleSelected != null
+            && candidates.Contains(soleSelected);
+
+        if (canCycle)
+        {
+            int currentIndex = candidates.IndexOf(soleSelected);
+            int nextIndex = (currentIndex + 1) % candidates.Count;
+            return candidates[nextIndex];
+        }
+
+        _lastCycleScreenPosition = screenPosition;
+        _lastCycleCandidates.Clear();
+        _lastCycleCandidates.AddRange(candidates);
+        return candidates[0];
+    }
+
+    GameObject GetSoleSelectedGameObject()
+    {
+        if (_selectedGameObjects.Count != 1)
+            return null;
+
+        foreach (SelectableTargetData selected in _selectedGameObjects)
+        {
+            if (selected?.BaseObject != null)
+                return selected.BaseObject;
+        }
+
+        return null;
+    }
+
+    void ResetSelectionCycle()
+    {
+        _lastCycleCandidates.Clear();
+        _lastCycleScreenPosition = default;
     }
 
     public void TrySelect(GameObject selectedObject)
@@ -339,6 +406,7 @@ public class selectionController
         }
 
         _selectedGameObjects.Clear();
+        ResetSelectionCycle();
     }
 
     public void TryClearSelectionWithUndo()

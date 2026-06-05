@@ -61,7 +61,8 @@ public static class GizmoSnapToEdgeUtility
                     planeDelta,
                     context.SelectionBoundsWorldAtDragStart,
                     s_OtherBoundsScratch,
-                    s.edgeSnapThreshold);
+                    s.edgeSnapThreshold,
+                    s.moveSnapSize);
 
                 if (Mathf.Abs(edgeCorrection.x) > 1e-5f)
                     usedEdgeX = true;
@@ -99,12 +100,18 @@ public static class GizmoSnapToEdgeUtility
         Vector2 translation,
         Bounds selectionAtDragStart,
         List<Bounds> others,
-        float threshold)
+        float threshold,
+        float proximityRange)
     {
         float minX = selectionAtDragStart.min.x + translation.x;
         float maxX = selectionAtDragStart.max.x + translation.x;
         float minY = selectionAtDragStart.min.y + translation.y;
         float maxY = selectionAtDragStart.max.y + translation.y;
+
+        Bounds selectionBounds = new Bounds();
+        selectionBounds.SetMinMax(
+            new Vector3(minX, minY, selectionAtDragStart.min.z),
+            new Vector3(maxX, maxY, selectionAtDragStart.max.z));
 
         float bestDx = 0f;
         float bestAbsDx = threshold + 1f;
@@ -114,6 +121,9 @@ public static class GizmoSnapToEdgeUtility
         for (int i = 0; i < others.Count; i++)
         {
             Bounds o = others[i];
+            if (!IsWithinEdgeSnapProximity(selectionBounds, o, proximityRange))
+                continue;
+
             float ominX = o.min.x;
             float omaxX = o.max.x;
             float ominY = o.min.y;
@@ -137,6 +147,31 @@ public static class GizmoSnapToEdgeUtility
             total.y = bestDy;
 
         return total;
+    }
+
+    /// <summary>
+    /// True when <paramref name="other"/> is within one tile on both axes
+    /// (touching, overlapping, or separated by at most <paramref name="range"/>).
+    /// </summary>
+    static bool IsWithinEdgeSnapProximity(Bounds selection, Bounds other, float range)
+    {
+        if (range <= 0f)
+            return false;
+
+        float gapX = GetAxisSeparation(selection.min.x, selection.max.x, other.min.x, other.max.x);
+        float gapY = GetAxisSeparation(selection.min.y, selection.max.y, other.min.y, other.max.y);
+        return gapX <= range && gapY <= range;
+    }
+
+    static float GetAxisSeparation(float minA, float maxA, float minB, float maxB)
+    {
+        if (maxA < minB)
+            return minB - maxA;
+
+        if (maxB < minA)
+            return minA - maxB;
+
+        return 0f;
     }
 
     static void ConsiderDx(float dx, ref float bestDx, ref float bestAbsDx, float threshold)
