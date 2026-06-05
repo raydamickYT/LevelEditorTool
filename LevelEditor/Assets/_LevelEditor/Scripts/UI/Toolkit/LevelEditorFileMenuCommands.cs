@@ -31,13 +31,21 @@ public static class LevelEditorFileMenuCommands
 
     public static void OpenLevel()
     {
-        ExtensionFilter[] filters = { new ExtensionFilter("Level JSON", "json") };
-        string[] paths = StandaloneFileBrowser.OpenFilePanel("Open level", "", filters, false);
+        string[] paths = StandaloneFileBrowser.OpenFolderPanel("Open project folder", "", false);
         if (paths == null || paths.Length == 0 || string.IsNullOrEmpty(paths[0]))
             return;
 
-        string full = Path.GetFullPath(paths[0]);
-        LevelProjectService.LoadLevelFromPath(full);
+        string projectDirectory = Path.GetFullPath(paths[0]);
+        if (!LevelProjectService.TryGetLevelJsonPath(projectDirectory, out string levelJsonPath))
+        {
+            EditorPopupService.ShowWarning(
+                "Project not found",
+                $"Select a folder that contains {LevelProjectService.DefaultLevelFileName}.",
+                projectDirectory);
+            return;
+        }
+
+        LevelProjectService.LoadLevelFromPath(levelJsonPath);
     }
 
     public static void SaveLevel()
@@ -57,25 +65,16 @@ public static class LevelEditorFileMenuCommands
             return;
         }
 
-        // New project: user picks a filename; we create a folder with that name and write level.json inside.
-        string picked = StandaloneFileBrowser.SaveFilePanel(
-            "Save new project",
-            "",
-            "MyLevel",
-            "json");
-
-        if (string.IsNullOrEmpty(picked))
+        // New project: user picks a folder; we write level.json inside it.
+        string[] paths = StandaloneFileBrowser.OpenFolderPanel("Select project folder", "", false);
+        if (paths == null || paths.Length == 0 || string.IsNullOrEmpty(paths[0]))
             return;
 
-        string projectName = Path.GetFileNameWithoutExtension(picked);
-        string parentDir = Path.GetDirectoryName(picked);
-        if (string.IsNullOrEmpty(parentDir) || string.IsNullOrEmpty(projectName))
-            return;
-
-        string projectRoot = Path.Combine(parentDir, projectName);
+        string projectRoot = Path.GetFullPath(paths[0]);
         Directory.CreateDirectory(projectRoot);
 
         string jsonPath = Path.Combine(projectRoot, LevelProjectService.DefaultLevelFileName);
+        string projectName = Path.GetFileName(projectRoot.TrimEnd(Path.DirectorySeparatorChar, Path.AltDirectorySeparatorChar));
         LevelProjectService.SaveLevelToPath(jsonPath, projectName);
     }
 

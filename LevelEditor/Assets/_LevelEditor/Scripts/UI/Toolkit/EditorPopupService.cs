@@ -1,4 +1,6 @@
+using System.Collections;
 using UnityEngine;
+using UnityEngine.InputSystem;
 using UnityEngine.UIElements;
 
 /// <summary>
@@ -24,6 +26,7 @@ public sealed class EditorPopupService : MonoBehaviour
     VisualElement toastRoot;
     Label toastLabel;
     IVisualElementScheduledItem toastHideSchedule;
+    Coroutine subscribeInputRoutine;
 
     public static void ShowInfo(string title, string message, string details = null)
         => Show(PopupSeverity.Info, title, message, details);
@@ -78,14 +81,53 @@ public sealed class EditorPopupService : MonoBehaviour
 
         if (okButton != null)
             okButton.clicked += Hide;
+
+        if (overlay != null)
+        {
+            overlay.focusable = true;
+            overlay.RegisterCallback<KeyDownEvent>(OnPopupKeyDown);
+        }
+
+        subscribeInputRoutine = StartCoroutine(WaitForInputHandler());
+    }
+
+    IEnumerator WaitForInputHandler()
+    {
+        yield return new WaitUntil(() => InputHandler.Instance != null);
+
+        InputHandler.Instance.OnCancelEvent += OnDismissInput;
+        InputHandler.Instance.onSubmitEvent += OnDismissInput;
+    }
+
+    void OnDismissInput(InputAction.CallbackContext context)
+    {
+        if (!context.started || !IsPopupVisible())
+            return;
+
+        Hide();
     }
 
     void OnDisable()
     {
         CancelToastHideSchedule();
 
+        if (subscribeInputRoutine != null)
+        {
+            StopCoroutine(subscribeInputRoutine);
+            subscribeInputRoutine = null;
+        }
+
+        if (InputHandler.Instance != null)
+        {
+            InputHandler.Instance.OnCancelEvent -= OnDismissInput;
+            InputHandler.Instance.onSubmitEvent -= OnDismissInput;
+        }
+
         if (okButton != null)
             okButton.clicked -= Hide;
+
+        if (overlay != null)
+            overlay.UnregisterCallback<KeyDownEvent>(OnPopupKeyDown);
     }
 
     void OnDestroy()
@@ -180,6 +222,26 @@ public sealed class EditorPopupService : MonoBehaviour
 
         overlay.style.display = DisplayStyle.Flex;
         overlay.BringToFront();
+        okButton?.Focus();
+    }
+
+    void OnPopupKeyDown(KeyDownEvent evt)
+    {
+        if (!IsPopupVisible())
+            return;
+
+        if (evt.keyCode == KeyCode.Escape
+            || evt.keyCode == KeyCode.Return
+            || evt.keyCode == KeyCode.KeypadEnter)
+        {
+            Hide();
+            evt.StopPropagation();
+        }
+    }
+
+    bool IsPopupVisible()
+    {
+        return overlay != null && overlay.style.display == DisplayStyle.Flex;
     }
 
     void Hide()

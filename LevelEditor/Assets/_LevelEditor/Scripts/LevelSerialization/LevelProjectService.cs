@@ -15,6 +15,28 @@ public static class LevelProjectService
     /// <summary>Full workspace asset registry snapshot next to <see cref="DefaultLevelFileName"/> (merged on load before bundled overrides).</summary>
     public const string ProjectAssetRegistryFileName = "project_asset_registry.json";
 
+    public static bool TryGetLevelJsonPath(string projectDirectory, out string levelJsonPath)
+    {
+        levelJsonPath = null;
+        if (string.IsNullOrWhiteSpace(projectDirectory) || !Directory.Exists(projectDirectory))
+            return false;
+
+        levelJsonPath = Path.Combine(Path.GetFullPath(projectDirectory), DefaultLevelFileName);
+        return File.Exists(levelJsonPath);
+    }
+
+    public static void LoadLevelFromProjectDirectory(string projectDirectory)
+    {
+        if (!TryGetLevelJsonPath(projectDirectory, out string levelJsonPath))
+        {
+            Debug.LogError(
+                $"Project folder does not contain {DefaultLevelFileName}: {projectDirectory}");
+            return;
+        }
+
+        LoadLevelFromPath(levelJsonPath);
+    }
+
     public static void SaveLevelToPath(string levelJsonFilePath, string levelDisplayName = "")
     {
         if (string.IsNullOrWhiteSpace(levelJsonFilePath))

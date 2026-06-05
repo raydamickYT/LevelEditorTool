@@ -6,6 +6,9 @@ using UnityEngine;
 
 public class AssetImportService
 {
+    // Temporary: prefab skip popups are noisy during full Unity project imports.
+    const bool ShowPrefabImportSkipPopups = false;
+
     private List<IAssetImporter> importers = new List<IAssetImporter>
     {
         new SpriteImporter()
@@ -134,10 +137,13 @@ public class AssetImportService
         if (spriteReference == null || string.IsNullOrEmpty(spriteReference.AssetPath) || !CanImportFile(spriteReference.AssetPath))
         {
             Debug.LogWarning($"Prefab import skipped: '{relativePath}' has no supported SpriteRenderer sprite.");
-            EditorPopupService.ShowWarning(
-                "Prefab skipped",
-                "A prefab was skipped because it has no supported SpriteRenderer sprite.",
-                relativePath);
+            if (ShowPrefabImportSkipPopups)
+            {
+                EditorPopupService.ShowWarning(
+                    "Prefab skipped",
+                    "A prefab was skipped because it has no supported SpriteRenderer sprite.",
+                    relativePath);
+            }
             return null;
         }
 
@@ -145,10 +151,13 @@ public class AssetImportService
         if (previewSprite == null)
         {
             Debug.LogWarning($"Prefab import skipped: could not load preview sprite for '{relativePath}'.");
-            EditorPopupService.ShowWarning(
-                "Prefab skipped",
-                "A prefab was skipped because its preview sprite could not be loaded.",
-                relativePath);
+            if (ShowPrefabImportSkipPopups)
+            {
+                EditorPopupService.ShowWarning(
+                    "Prefab skipped",
+                    "A prefab was skipped because its preview sprite could not be loaded.",
+                    relativePath);
+            }
             return null;
         }
 

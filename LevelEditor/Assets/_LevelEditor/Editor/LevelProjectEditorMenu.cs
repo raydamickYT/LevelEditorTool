@@ -42,11 +42,20 @@ public static class LevelProjectEditorMenu
         if (!System.IO.Directory.Exists(startDir))
             startDir = Application.dataPath;
 
-        string path = EditorUtility.OpenFilePanel("Select level.json (inside an exported level folder)", startDir, "json");
+        string path = EditorUtility.OpenFolderPanel("Select project folder", startDir, "");
         if (string.IsNullOrEmpty(path))
             return;
 
-        LevelProjectService.LoadLevelFromPath(path);
-        EditorUtility.DisplayDialog("Level import", "Level loaded from:\n" + path, "OK");
+        if (!LevelProjectService.TryGetLevelJsonPath(path, out string levelJsonPath))
+        {
+            EditorUtility.DisplayDialog(
+                "Import level",
+                $"This folder does not contain {LevelProjectService.DefaultLevelFileName}.",
+                "OK");
+            return;
+        }
+
+        LevelProjectService.LoadLevelFromPath(levelJsonPath);
+        EditorUtility.DisplayDialog("Level import", "Level loaded from:\n" + levelJsonPath, "OK");
     }
 }
