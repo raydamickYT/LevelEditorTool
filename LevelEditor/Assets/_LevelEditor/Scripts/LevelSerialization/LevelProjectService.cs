@@ -375,7 +375,16 @@ public static class LevelProjectService
             Quaternion rot = new Quaternion(rec.qx, rec.qy, rec.qz, rec.qw);
             Vector3 scale = new Vector3(rec.sx, rec.sy, rec.sz);
 
-            LevelObject.Memento memento = new LevelObject.Memento(pos, rot, scale, prefab, rec.assetId, null, null);
+            LevelObject.Memento memento = new LevelObject.Memento(
+                pos,
+                rot,
+                scale,
+                prefab,
+                rec.assetId,
+                null,
+                null,
+                rec.objectName,
+                rec.hasCollision);
             GameObject spawned = LevelObjectSpawner.Spawn(memento, false, parentTransform, false, deferHierarchyNotification: true);
             if (spawned == null)
                 continue;
@@ -384,7 +393,10 @@ public static class LevelProjectService
             spawnedById[rec.instanceId] = spawned;
 
             if (spawned.TryGetComponent(out LevelObject spawnedLevelObject))
+            {
                 spawnedLevelObject.HasCollision = rec.hasCollision;
+                spawnedLevelObject.ApplyCollisionState();
+            }
 
             if (parentTransform != null
                 && parentTransform.TryGetComponent(out LevelObjectGroup parentGroup)

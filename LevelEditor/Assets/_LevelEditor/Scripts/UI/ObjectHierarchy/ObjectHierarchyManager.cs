@@ -14,6 +14,8 @@ using UnityEngine.UIElements;
 /// </summary>
 public class ObjectHierarchyManager : MonoBehaviour
 {
+    public static ObjectHierarchyManager Instance { get; private set; }
+
     const int InvalidPointerId = -1;
     const float ParentDropXOffset = 42f;
     const float RowEdgeDropZoneHeight = 5f;
@@ -60,11 +62,49 @@ public class ObjectHierarchyManager : MonoBehaviour
     }
 
 
+    private bool hierarchyRebuildScheduled;
+
+
     private void Awake()
     {
+        Instance = this;
         SetupToolkitReferences();
         EventManager.Instance.AddDelegateListener(ObjectHierarchyEvents.RefreshMenu, (Action<IEnumerable<HierarchyChange>>)Refresh);
         EventManager.Instance.AddDelegateListener(ObjectHierarchyEvents.RebuildEntireHierarchy, (Action)RebuildEntireHierarchyFromScene);
+        EventManager.Instance.AddDelegateListener(ObjectHierarchyEvents.ScheduleRebuildEntireHierarchy, (Action)ScheduleRebuildEntireHierarchyInternal);
+    }
+
+    void OnDestroy()
+    {
+        if (Instance == this)
+            Instance = null;
+    }
+
+    public static void ScheduleRebuildEntireHierarchy()
+    {
+        if (Instance == null)
+        {
+            EventManager.Instance?.TriggerDelegate(ObjectHierarchyEvents.RebuildEntireHierarchy);
+            return;
+        }
+
+        Instance.ScheduleRebuildEntireHierarchyInternal();
+    }
+
+    void ScheduleRebuildEntireHierarchyInternal()
+    {
+        if (hierarchyRebuildScheduled)
+            return;
+
+        hierarchyRebuildScheduled = true;
+        StartCoroutine(RebuildEntireHierarchyNextFrame());
+    }
+
+    System.Collections.IEnumerator RebuildEntireHierarchyNextFrame()
+    {
+        yield return null;
+        hierarchyRebuildScheduled = false;
+        RebuildEntireHierarchyFromScene();
     }
 
     void OnDisable()
@@ -340,13 +380,13 @@ public class ObjectHierarchyManager : MonoBehaviour
         if (levelObject == null || toolkitContent == null || toolkitRows.ContainsKey(levelObject))
             return;
 
+        if (levelObject.gameObject == null)
+            return;
+
         levelObject.name = GetUniqueHierarchyName(levelObject.name);
         existingNames.Add(levelObject.name);
 
         float indentWidth = Mathf.Max(24f, toolkitIndentWidth);
-        if (levelObject is LevelObjectGroup group)
-            group.RebuildChildrenFromTransform();
-
         List<LevelObject> children = GetDirectLevelObjectChildren(levelObject);
         bool hasChildren = children.Count > 0;
         bool isCollapsedParent = hasChildren && collapsedToolkitParents.Contains(levelObject);
@@ -877,10 +917,27 @@ public class ObjectHierarchyManager : MonoBehaviour
         if (parent == null)
             return children;
 
+        if (parent is LevelObjectGroup group)
+        {
+            foreach (LevelObject child in group.LevelObjects)
+            {
+                if (child == null || child.gameObject == null)
+                    continue;
+
+                children.Add(child);
+            }
+
+            children.Sort((a, b) => a.transform.GetSiblingIndex().CompareTo(b.transform.GetSiblingIndex()));
+            return children;
+        }
+
         for (int i = 0; i < parent.transform.childCount; i++)
         {
             Transform childTransform = parent.transform.GetChild(i);
-            if (childTransform != null && childTransform.TryGetComponent(out LevelObject child))
+            if (childTransform == null || childTransform.gameObject == null)
+                continue;
+
+            if (childTransform.TryGetComponent(out LevelObject child))
                 children.Add(child);
         }
 
@@ -1237,6 +1294,9 @@ public static class ObjectHierarchyEvents
 
     /// <summary>Parameterless: rebuild the whole hierarchy list from the scene.</summary>
     public const string RebuildEntireHierarchy = "RebuildEntireHierarchy";
+
+    /// <summary>Deferred rebuild after destroy/spawn so Unity removes objects first.</summary>
+    public const string ScheduleRebuildEntireHierarchy = "ScheduleRebuildEntireHierarchy";
 }
 
 

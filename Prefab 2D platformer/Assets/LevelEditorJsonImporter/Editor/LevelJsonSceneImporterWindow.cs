@@ -248,11 +248,13 @@ namespace LevelEditorJsonImporter.Editor
 
         static void ApplyRecordTransform(Transform transform, Transform parent, LevelEditorObjectRecord record)
         {
-            transform.SetParent(parent, false);
-            transform.SetPositionAndRotation(
-                new Vector3(record.px, record.py, record.pz),
-                new Quaternion(record.qx, record.qy, record.qz, record.qw));
-            transform.localScale = new Vector3(record.sx, record.sy, record.sz);
+            Vector3 worldPosition = new Vector3(record.px, record.py, record.pz);
+            Quaternion worldRotation = new Quaternion(record.qx, record.qy, record.qz, record.qw);
+            Vector3 localScale = new Vector3(record.sx, record.sy, record.sz);
+
+            transform.SetPositionAndRotation(worldPosition, worldRotation);
+            transform.localScale = localScale;
+            transform.SetParent(parent, true);
         }
 
         static void ApplyRecordName(GameObject gameObject, LevelEditorObjectRecord record)

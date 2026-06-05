@@ -5,22 +5,20 @@ using UnityEngine;
 public static class LevelObjectSpawner
 {
     /// <summary>Spawns a root memento and any nested group children (clipboard / undo / paste).</summary>
-    public static GameObject SpawnMementoWithDescendants(LevelObject.Memento memento, bool preserveObjectId)
+    public static GameObject SpawnMementoWithDescendants(LevelObject.Memento memento, bool preserveObjectId, bool deferHierarchyNotification = false)
     {
-        // Undo delete / paste redo: restore transform + LevelObject parent links from the captured memento.
-        // First-time paste / cut clipboard: preserveObjectId is false — ignore stored parent so copies land at root.
         LevelObjectGroup parentGroup = null;
         Transform parentTransform = null;
-        if (preserveObjectId && memento != null && memento.LevelObjectGroup != null)
+        if (memento != null && memento.LevelObjectGroup != null)
         {
             parentGroup = memento.LevelObjectGroup;
             parentTransform = parentGroup.transform;
         }
 
-        return SpawnRecursive(memento, parentTransform, parentGroup, preserveObjectId);
+        return SpawnRecursive(memento, parentTransform, parentGroup, preserveObjectId, deferHierarchyNotification);
     }
 
-    static GameObject SpawnRecursive(LevelObject.Memento memento, Transform parentTransform, LevelObjectGroup parentGroup, bool preserveObjectId)
+    static GameObject SpawnRecursive(LevelObject.Memento memento, Transform parentTransform, LevelObjectGroup parentGroup, bool preserveObjectId, bool deferHierarchyNotification)
     {
         if (memento == null)
             return null;
@@ -37,12 +35,13 @@ public static class LevelObjectSpawner
         if (parentGroup != null && !ReferenceEquals(levelObject, parentGroup))
             parentGroup.AddChild(levelObject);
 
-        NotifyHierarchyForSpawned(levelObject, isParent);
+        if (!deferHierarchyNotification)
+            NotifyHierarchyForSpawned(levelObject, isParent);
 
         if (memento is LevelObjectGroup.GroupMemento gm && levelObject is LevelObjectGroup childGroup && gm.ChildMementos != null)
         {
             foreach (LevelObject.Memento childMem in gm.ChildMementos)
-                SpawnRecursive(childMem, childGroup.transform, childGroup, preserveObjectId);
+                SpawnRecursive(childMem, childGroup.transform, childGroup, preserveObjectId, deferHierarchyNotification);
         }
 
         return go;
@@ -112,12 +111,6 @@ public static class LevelObjectSpawner
             if (spriteToUse != null && spawnedObject.TryGetComponent(out SpriteRenderer spriteRenderer))
             {
                 spriteRenderer.sprite = spriteToUse;
-
-                spawnedObject.TryGetComponent(out BoxCollider2D boxCollider2D);
-
-                Bounds bounds = spriteRenderer.sprite.bounds;
-                boxCollider2D.size = bounds.size;
-                boxCollider2D.offset = bounds.center;
             }
             else if (!spawnedObject.TryGetComponent(out SpriteRenderer _))
             {
@@ -132,10 +125,17 @@ public static class LevelObjectSpawner
             return spawnedObject;
         }
 
+        if (!string.IsNullOrEmpty(memento.ObjectName))
+            spawnedObject.name = memento.ObjectName;
+
         levelObject.PrefabReference = isGroupMemento ? spawnedObject : memento.PrefabReference;
 
         if (!string.IsNullOrEmpty(memento.AssetID))
             levelObject.AssetID = memento.AssetID;
+
+        levelObject.HasCollision = memento.HasCollision;
+        levelObject.ApplyCollisionState();
+        levelObject.ApplySortingOrder(memento);
 
         if (preserveObjectID)
         {
@@ -155,7 +155,8 @@ public static class LevelObjectSpawner
 
     static GameObject CreateGroupShellFromMemento(LevelObjectGroup.GroupMemento gm, Transform parent)
     {
-        GameObject go = new GameObject("EmptyParent");
+        string groupName = string.IsNullOrWhiteSpace(gm.ObjectName) ? "EmptyParent" : gm.ObjectName;
+        GameObject go = new GameObject(groupName);
         go.AddComponent<LevelObjectGroup>();
         go.AddComponent<SelectableObject>();
 
@@ -179,7 +180,7 @@ public static class LevelObjectSpawner
         return go;
     }
 
-    public static void Despawn(GameObject obj)
+    public static void Despawn(GameObject obj, bool scheduleHierarchyRebuild = true)
     {
         if (obj == null)
             return;
@@ -192,14 +193,14 @@ public static class LevelObjectSpawner
             if (lo == null)
                 continue;
 
-            var change = new HierarchyChange(lo, HierarchyChangeType.Removed);
-            EventManager.Instance.TriggerDelegate(ObjectHierarchyEvents.RefreshMenu, new List<HierarchyChange> { change });
             ObjectRegistry.DeregisterObject(lo);
         }
 
         LevelObjectsRoot.Instance.RemoveChildFromParent(obj);
-
         Object.Destroy(obj);
+
+        if (scheduleHierarchyRebuild)
+            ObjectHierarchyManager.ScheduleRebuildEntireHierarchy();
     }
 
     static int GetTransformDepth(Transform t)

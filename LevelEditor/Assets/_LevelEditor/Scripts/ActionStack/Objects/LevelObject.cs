@@ -24,6 +24,10 @@ public class LevelObject : MonoBehaviour
         public string AssetID;
         public Sprite Sprite;
         public LevelObjectGroup LevelObjectGroup;
+        public string ObjectName;
+        public bool HasCollision;
+        public int SortingOrder;
+        public bool HasSortingOrder;
         public virtual bool HasParent => LevelObjectGroup != null ? true : false;
 
         public Memento(Transform t, GameObject obj, int id, Sprite sprite, string assetID, LevelObjectGroup levelObjectGroup)
@@ -37,10 +41,27 @@ public class LevelObject : MonoBehaviour
             Sprite = sprite;
             AssetID = assetID;
             LevelObjectGroup = levelObjectGroup;
+            ObjectName = t != null ? t.gameObject.name : string.Empty;
+            if (t != null && t.TryGetComponent(out LevelObject levelObject))
+                HasCollision = levelObject.HasCollision;
+            if (t != null && t.TryGetComponent(out SpriteRenderer spriteRenderer))
+            {
+                SortingOrder = spriteRenderer.sortingOrder;
+                HasSortingOrder = true;
+            }
         }
 
         /// <summary>For level load / tooling: build a memento without a live Transform.</summary>
-        public Memento(Vector3 position, Quaternion rotation, Vector3 localScale, GameObject prefabReference, string assetID, Sprite sprite, LevelObjectGroup levelObjectGroup = null)
+        public Memento(
+            Vector3 position,
+            Quaternion rotation,
+            Vector3 localScale,
+            GameObject prefabReference,
+            string assetID,
+            Sprite sprite,
+            LevelObjectGroup levelObjectGroup = null,
+            string objectName = null,
+            bool hasCollision = false)
         {
             Position = position;
             Rotation = rotation;
@@ -51,6 +72,8 @@ public class LevelObject : MonoBehaviour
             Sprite = sprite;
             AssetID = assetID ?? string.Empty;
             LevelObjectGroup = levelObjectGroup;
+            ObjectName = objectName ?? string.Empty;
+            HasCollision = hasCollision;
         }
     }
     void OnEnable()
@@ -117,6 +140,45 @@ public class LevelObject : MonoBehaviour
 
         if (!string.IsNullOrEmpty(m.AssetID))
             AssetID = m.AssetID;
+
+        if (!string.IsNullOrEmpty(m.ObjectName))
+            gameObject.name = m.ObjectName;
+
+        HasCollision = m.HasCollision;
+        ApplyCollisionState();
+        ApplySortingOrder(m);
+    }
+
+    public void ApplySortingOrder(Memento m)
+    {
+        if (m == null || !m.HasSortingOrder)
+            return;
+
+        if (TryGetComponent(out SpriteRenderer spriteRenderer))
+            spriteRenderer.sortingOrder = m.SortingOrder;
+    }
+
+    public void ApplySortingOrder(int sortingOrder)
+    {
+        if (TryGetComponent(out SpriteRenderer spriteRenderer))
+            spriteRenderer.sortingOrder = sortingOrder;
+    }
+
+    public void ApplyCollisionState()
+    {
+        if (!TryGetComponent(out SpriteRenderer spriteRenderer) || spriteRenderer.sprite == null)
+            return;
+
+        if (!TryGetComponent(out BoxCollider2D boxCollider))
+            boxCollider = gameObject.AddComponent<BoxCollider2D>();
+
+        boxCollider.enabled = HasCollision;
+        if (!HasCollision)
+            return;
+
+        Bounds bounds = spriteRenderer.sprite.bounds;
+        boxCollider.size = bounds.size;
+        boxCollider.offset = bounds.center;
     }
 
     public void UpdateParent(LevelObjectGroup levelObjectGroup)

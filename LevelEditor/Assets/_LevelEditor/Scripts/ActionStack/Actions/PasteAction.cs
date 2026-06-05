@@ -50,7 +50,7 @@ public class PasteAction : IUndoableAction, IEditorCommand
 
         foreach (LevelObject.Memento item in statesToSpawn)
         {
-            GameObject instantiatedGameObject = LevelObjectSpawner.SpawnMementoWithDescendants(item, isRedo);
+            GameObject instantiatedGameObject = LevelObjectSpawner.SpawnMementoWithDescendants(item, isRedo, deferHierarchyNotification: true);
             if (instantiatedGameObject == null)
                 continue;
 
@@ -64,6 +64,8 @@ public class PasteAction : IUndoableAction, IEditorCommand
             }
         }
 
+        EventManager.Instance.TriggerDelegate(ObjectHierarchyEvents.ScheduleRebuildEntireHierarchy);
+
 
         EventManager.Instance.TriggerDelegate(SelectionEvents.ReplaceSelectionWithObject, instantiatedGameObjects);
     }
@@ -76,9 +78,9 @@ public class PasteAction : IUndoableAction, IEditorCommand
     public void Undo()
     {
         foreach (var item in instantiatedGameObjects)
-        {
-            LevelObjectSpawner.Despawn(item);
-        }
+            LevelObjectSpawner.Despawn(item, scheduleHierarchyRebuild: false);
+
+        ObjectHierarchyManager.ScheduleRebuildEntireHierarchy();
 
         EventManager.Instance.TriggerDelegate(SelectionEvents.ReplaceSelectionWithObject, previousSelection); //reset the selection to earlier selected Items.
 

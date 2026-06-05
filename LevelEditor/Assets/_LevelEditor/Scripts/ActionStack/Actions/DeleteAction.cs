@@ -37,8 +37,10 @@ public class DeleteAction : IUndoableAction, IEditorCommand
                 continue;
             }
 
-            LevelObjectSpawner.Despawn(target.gameObject);
+            LevelObjectSpawner.Despawn(target.gameObject, scheduleHierarchyRebuild: false);
         }
+
+        ObjectHierarchyManager.ScheduleRebuildEntireHierarchy();
 
         instantiatedGameObjects.Clear();
     }
@@ -53,10 +55,12 @@ public class DeleteAction : IUndoableAction, IEditorCommand
         instantiatedGameObjects.Clear();
         foreach (LevelObject.Memento state in beforeState)
         {
-            GameObject go = LevelObjectSpawner.SpawnMementoWithDescendants(state, true);
+            GameObject go = LevelObjectSpawner.SpawnMementoWithDescendants(state, true, deferHierarchyNotification: true);
             if (go != null)
                 instantiatedGameObjects.Add(go);
         }
+
+        ObjectHierarchyManager.ScheduleRebuildEntireHierarchy();
 
         EventManager.Instance.TriggerDelegate(SelectionEvents.ReplaceSelectionWithObject, new List<GameObject>(instantiatedGameObjects)); //reset the selection to earlier selected Items.
     }

@@ -21,16 +21,21 @@ public class LevelObjectGroup : LevelObject
         public GroupMemento(LevelObjectGroup thisObject)
             : base(thisObject.transform, thisObject.PrefabReference, thisObject.ObjectID, null, null, thisObject.levelObjectGroup) //there's two nulls because this object does not need a sprite nor an assetID
         {
+            thisObject.SyncChildrenFromTransform();
+
             ChildMementos = new List<Memento>();
             foreach (LevelObject child in thisObject.levelObjects)
             {
                 if (child == null)
                     continue;
 
-                if (child is LevelObjectGroup childGroup)
-                    ChildMementos.Add(new GroupMemento(childGroup));
-                else
-                    ChildMementos.Add(child.Save());
+                Memento childMemento = child is LevelObjectGroup childGroup
+                    ? new GroupMemento(childGroup)
+                    : child.Save();
+
+                // Duplicated / pasted children should follow the new group, not the source group.
+                childMemento.LevelObjectGroup = null;
+                ChildMementos.Add(childMemento);
             }
         }
     }
@@ -46,9 +51,11 @@ public class LevelObjectGroup : LevelObject
     public void AddChild(LevelObject child)
     {
         if (child == null) return;
-        if (child.HasParent) return;
+        if (child.HasParent && child.levelObjectGroup != this) return;
         if (levelObjects.Contains(child)) return;
 
+        if (child.transform.parent != transform)
+            child.transform.SetParent(transform, true);
 
         levelObjects.Add(child);
         child.UpdateParent(this);
@@ -61,8 +68,12 @@ public class LevelObjectGroup : LevelObject
         if (levelObjects.Contains(child))
             levelObjects.Remove(child);
 
+        if (child.transform.parent != transform)
+            child.transform.SetParent(transform, true);
+
         int index = Mathf.Clamp(siblingIndex, 0, levelObjects.Count);
         levelObjects.Insert(index, child);
+        child.transform.SetSiblingIndex(index);
         child.UpdateParent(this);
         SyncSelectableTargetsFromChildren();
     }
@@ -146,11 +157,14 @@ public class LevelObjectGroup : LevelObject
         }
     }
 
-    public void RebuildChildrenFromTransform()
+    public void SyncChildrenFromTransform()
     {
-        ClearChildren();
+        List<LevelObject> nextChildren = new();
         foreach (Transform childTransform in transform)
         {
+            if (childTransform == null || childTransform.gameObject == null)
+                continue;
+
             if (!childTransform.TryGetComponent(out LevelObject component))
                 continue;
 
@@ -159,11 +173,30 @@ public class LevelObjectGroup : LevelObject
             if (!ObjectRegistry.IsGameObjectRegistered(component.gameObject))
                 ObjectRegistry.OnObjectCreated(component);
 
-            levelObjects.Add(component);
-            component.UpdateParent(this);
+            nextChildren.Add(component);
+        }
+
+        foreach (LevelObject previousChild in levelObjects)
+        {
+            if (previousChild == null || nextChildren.Contains(previousChild))
+                continue;
+
+            previousChild.ClearParent();
+        }
+
+        levelObjects.Clear();
+        foreach (LevelObject child in nextChildren)
+        {
+            levelObjects.Add(child);
+            child.UpdateParent(this);
         }
 
         SyncSelectableTargetsFromChildren();
+    }
+
+    public void RebuildChildrenFromTransform()
+    {
+        SyncChildrenFromTransform();
     }
 
     public void SaveSelectableTargetData(IEnumerable<SelectableTargetData> data)

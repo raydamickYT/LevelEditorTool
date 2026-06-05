@@ -284,7 +284,10 @@ public class TransformWindowView : MonoBehaviour
         foreach (LevelObject levelObject in selectedLevelObjects)
         {
             if (IsSpriteAsset(levelObject))
+            {
                 levelObject.HasCollision = collisionToggle.value;
+                levelObject.ApplyCollisionState();
+            }
         }
     }
 

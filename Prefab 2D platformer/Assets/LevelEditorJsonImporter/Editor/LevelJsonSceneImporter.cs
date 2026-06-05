@@ -172,7 +172,9 @@ namespace LevelEditorJsonImporter.Editor
                 if (record.parentInstanceId >= 0 && spawnedById.TryGetValue(record.parentInstanceId, out Transform spawnedParent))
                     parent = spawnedParent;
 
-                bool useWrapper = record.parentInstanceId >= 0;
+                // JSON already stores final world transforms from the level editor.
+                // Wrapper + preview rematch skewed incremental reimports from build exports.
+                const bool useWrapper = false;
                 string signature = BuildRecordSignature(record, useWrapper);
                 GameObject spawned;
 
@@ -195,9 +197,6 @@ namespace LevelEditorJsonImporter.Editor
                     continue;
 
                 ApplyRecordTransform(spawned.transform, parent, record);
-                if (!record.isGroup && !useWrapper)
-                    MatchRootObjectVisualToEditorPreview(spawned, record, assetsById);
-
                 ApplyRecordName(spawned, record);
                 ApplySortingOrder(spawned, record.sortingOrder);
                 SyncSpriteCollider(spawned, record, useWrapper, assetsById);
@@ -345,8 +344,6 @@ namespace LevelEditorJsonImporter.Editor
             SpriteRenderer renderer = spriteObject.AddComponent<SpriteRenderer>();
             renderer.sprite = sprite;
             AddSpriteColliderIfEnabled(record, spriteObject, renderer);
-
-            MatchSpriteVisualToEditorPreview(renderer, spriteMetaData);
             return wrapper;
         }
 
@@ -438,7 +435,6 @@ namespace LevelEditorJsonImporter.Editor
             instance.transform.localRotation = Quaternion.identity;
             instance.transform.localScale = Vector3.one;
 
-            MatchPrefabVisualToEditorPreview(instance.transform, prefabMetaData);
             return wrapper;
         }
 
@@ -719,11 +715,13 @@ namespace LevelEditorJsonImporter.Editor
 
         static void ApplyRecordTransform(Transform transform, Transform parent, LevelEditorObjectRecord record)
         {
-            transform.SetParent(parent, false);
-            transform.SetPositionAndRotation(
-                new Vector3(record.px, record.py, record.pz),
-                new Quaternion(record.qx, record.qy, record.qz, record.qw));
-            transform.localScale = new Vector3(record.sx, record.sy, record.sz);
+            Vector3 worldPosition = new Vector3(record.px, record.py, record.pz);
+            Quaternion worldRotation = new Quaternion(record.qx, record.qy, record.qz, record.qw);
+            Vector3 localScale = new Vector3(record.sx, record.sy, record.sz);
+
+            transform.SetPositionAndRotation(worldPosition, worldRotation);
+            transform.localScale = localScale;
+            transform.SetParent(parent, true);
         }
 
         static void ApplyRecordName(GameObject gameObject, LevelEditorObjectRecord record)
