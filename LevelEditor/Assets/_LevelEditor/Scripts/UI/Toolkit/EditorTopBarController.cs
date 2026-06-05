@@ -133,9 +133,10 @@ public sealed class EditorTopBarController : MonoBehaviour
 
         if (_snappingToggle != null)
         {
-            _snappingToggle.SetValueWithoutNotify(false);
+            _snappingToggle.SetValueWithoutNotify(true);
             _snappingToggle.RegisterValueChangedCallback(OnSnappingToggleChanged);
-            RegisterShortcutTooltip(_snappingToggle, "Shortcut: S");
+            SnappingToggleService.ApplySnappingEnabled(true);
+            RegisterShortcutTooltip(_snappingToggle, "Shortcut: S · Hold Shift while dragging to edge snap");
         }
     }
 

@@ -1,5 +1,6 @@
 using System.Collections.Generic;
 using UnityEngine;
+using UnityEngine.InputSystem;
 
 public static class GizmoSnapToEdgeUtility
 {
@@ -7,8 +8,8 @@ public static class GizmoSnapToEdgeUtility
     static readonly HashSet<GameObject> s_ExcludeScratch = new();
 
     /// <summary>
-    /// Applies edge alignment (within threshold) then grid snapping. Edge snap wins per axis when applied;
-    /// otherwise that axis uses the grid.
+    /// Grid snap is always used when snapping is enabled. Hold Shift during a move drag for edge snap
+    /// (within threshold) on nearby objects; edge snap wins per axis when applied.
     /// </summary>
     public static Vector3 ResolveSnappedMoveWorldPosition(
         Vector3 rawWorldPosition,
@@ -37,7 +38,8 @@ public static class GizmoSnapToEdgeUtility
         bool usedEdgeY = false;
         Vector2 edgeCorrection = Vector2.zero;
 
-        if (context.HasSelectionBoundsWorld
+        if (IsEdgeSnapModifierHeld()
+            && context.HasSelectionBoundsWorld
             && s.edgeSnapThreshold > 0f
             && LevelObjectsRoot.Instance != null
             && gizmoObject != null
@@ -192,5 +194,11 @@ public static class GizmoSnapToEdgeUtility
             bestAbsDy = ay;
             bestDy = dy;
         }
+    }
+
+    static bool IsEdgeSnapModifierHeld()
+    {
+        return Keyboard.current != null
+            && (Keyboard.current.leftShiftKey.isPressed || Keyboard.current.rightShiftKey.isPressed);
     }
 }

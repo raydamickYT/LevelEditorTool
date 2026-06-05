@@ -12,7 +12,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 8ce111f6d2ba3c746ab308694056369c, type: 3}
   m_Name: SnappingSettings
   m_EditorClassIdentifier: Assembly-CSharp::SnappingSettings
-  snappingEnabled: 0
+  snappingEnabled: 1
   moveSnapSize: 1
   rotateSnapAngle: 15
   scaleSnapSize: 0.25
