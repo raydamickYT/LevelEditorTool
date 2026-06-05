@@ -177,6 +177,16 @@ public class LevelObject : MonoBehaviour
         boxCollider.offset = bounds.center;
         // Editor selection uses Physics2D overlap on this collider. HasCollision only controls level export.
         boxCollider.enabled = true;
+        EnsurePickColliderOutline();
+    }
+
+    void EnsurePickColliderOutline()
+    {
+        PickColliderOutline outline = GetComponent<PickColliderOutline>();
+        if (outline == null)
+            outline = gameObject.AddComponent<PickColliderOutline>();
+
+        outline.Refresh();
     }
 
     public void UpdateParent(LevelObjectGroup levelObjectGroup)

@@ -1,0 +1,18 @@
+.scene-context-menu {
+    position: absolute;
+    min-width: 220px;
+    padding-top: 4px;
+    padding-bottom: 4px;
+    background-color: rgb(56, 56, 56);
+    border-width: 1px;
+    border-color: rgb(25, 25, 25);
+    border-radius: 4px;
+}
+
+.scene-context-menu-item {
+    margin-left: 8px;
+    margin-right: 8px;
+    margin-top: 2px;
+    margin-bottom: 2px;
+    color: rgb(230, 230, 230);
+}

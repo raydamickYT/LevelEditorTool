@@ -125,13 +125,8 @@ public class ObjectButtonController : MonoBehaviour, IBeginDragHandler, IEndDrag
 
         ClampSpawnedObjectSize(spriteRenderer);
 
-        BoxCollider2D boxCollider = spawnedObject.GetComponent<BoxCollider2D>();
-
-        if (boxCollider != null && spriteRenderer.sprite != null)
-        {
-            boxCollider.size = spriteRenderer.sprite.bounds.size;
-            boxCollider.offset = spriteRenderer.sprite.bounds.center;
-        }
+        if (spawnedObject.TryGetComponent(out LevelObject levelObject))
+            levelObject.ApplyCollisionState();
     }
 
     private void ClampSpawnedObjectSize(SpriteRenderer spriteRenderer)

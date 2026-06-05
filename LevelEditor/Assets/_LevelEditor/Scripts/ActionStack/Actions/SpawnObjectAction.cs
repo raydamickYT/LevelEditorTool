@@ -40,6 +40,8 @@ public class SpawnObjectAction : IUndoableAction, IEditorCommand
         if (!string.IsNullOrEmpty(assetID))
             levelObject.AssetID = assetID;
 
+        levelObject.ApplyCollisionState();
+
         spawnedState = levelObject?.Save();
 
         LevelObjectsRoot.Instance.AddObjectToLevelObjectRoot(spawnedObject);

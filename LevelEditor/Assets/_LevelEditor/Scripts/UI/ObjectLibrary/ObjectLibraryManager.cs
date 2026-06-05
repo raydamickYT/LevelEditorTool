@@ -722,12 +722,8 @@ public class ObjectLibraryManager : MonoBehaviour
             ClampSpawnedObjectSize(spriteRenderer);
         }
 
-        BoxCollider2D boxCollider = spawnedObject.GetComponent<BoxCollider2D>();
-        if (boxCollider != null && spriteRenderer != null && spriteRenderer.sprite != null)
-        {
-            boxCollider.size = spriteRenderer.sprite.bounds.size;
-            boxCollider.offset = spriteRenderer.sprite.bounds.center;
-        }
+        if (spawnedObject.TryGetComponent(out LevelObject levelObject))
+            levelObject.ApplyCollisionState();
     }
 
     void RemoveDraggedSpawnedObject()
