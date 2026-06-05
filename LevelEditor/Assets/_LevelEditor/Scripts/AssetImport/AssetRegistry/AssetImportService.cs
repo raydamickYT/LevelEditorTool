@@ -121,6 +121,9 @@ public class AssetImportService
         importedAsset.AssetRelativePath = relativePath;
         importedAsset.FolderPath = folderPath;
 
+        if (UnityAssetMetaReader.TryGetSpritePixelsPerUnit(filePath, out float pixelsPerUnit))
+            importedAsset.PixelsPerUnit = pixelsPerUnit;
+
         AssetStorageService.SaveMetaData(importedAsset);
         return importedAsset;
     }
@@ -147,7 +150,10 @@ public class AssetImportService
             return null;
         }
 
-        Sprite previewSprite = LoadSpritePreview(spriteReference.AssetPath, spriteReference.FileId, out Rect spriteRect);
+        float pixelsPerUnit = 100f;
+        UnityAssetMetaReader.TryGetSpritePixelsPerUnit(spriteReference.AssetPath, out pixelsPerUnit);
+
+        Sprite previewSprite = LoadSpritePreview(spriteReference.AssetPath, spriteReference.FileId, pixelsPerUnit, out Rect spriteRect);
         if (previewSprite == null)
         {
             Debug.LogWarning($"Prefab import skipped: could not load preview sprite for '{relativePath}'.");
@@ -174,7 +180,8 @@ public class AssetImportService
             SpriteRectX = spriteRect.x,
             SpriteRectY = spriteRect.y,
             SpriteRectWidth = spriteRect.width,
-            SpriteRectHeight = spriteRect.height
+            SpriteRectHeight = spriteRect.height,
+            PixelsPerUnit = pixelsPerUnit
         };
 
         AssetStorageService.SaveLocalCopy(spriteReference.AssetPath, prefab, ImportedAssetTypes.Prefab);
@@ -188,6 +195,7 @@ public class AssetImportService
         prefab.SpriteRectY = spriteRect.y;
         prefab.SpriteRectWidth = spriteRect.width;
         prefab.SpriteRectHeight = spriteRect.height;
+        prefab.PixelsPerUnit = pixelsPerUnit;
         AssetStorageService.SaveMetaData(prefab);
         return prefab;
     }
@@ -239,7 +247,7 @@ public class AssetImportService
         return lookup;
     }
 
-    static Sprite LoadSpritePreview(string filePath, long fileId, out Rect spriteRect)
+    static Sprite LoadSpritePreview(string filePath, long fileId, float pixelsPerUnit, out Rect spriteRect)
     {
         byte[] fileBytes = File.ReadAllBytes(filePath);
         Texture2D texture = new(2, 2);
@@ -259,7 +267,7 @@ public class AssetImportService
             texture,
             spriteRect,
             new Vector2(0.5f, 0.5f),
-            100f);
+            pixelsPerUnit > 0f ? pixelsPerUnit : 100f);
 
         sprite.name = Path.GetFileNameWithoutExtension(filePath);
         return sprite;

@@ -13,6 +13,7 @@ namespace LevelEditorJsonImporter.Editor
     {
         const string ProjectRegistryFileName = "project_asset_registry.json";
         const string BundledRegistryRelativePath = "BundledAssets/asset_registry.json";
+        const float DefaultEditorDisplayPixelsPerUnit = 100f;
         public static GameObject ImportFromPath(
             string levelJsonPath,
             string importRootName,
@@ -197,6 +198,7 @@ namespace LevelEditorJsonImporter.Editor
                     continue;
 
                 ApplyRecordTransform(spawned.transform, parent, record);
+                AlignImportedSpriteWorldSizeToEditor(spawned, record, assetsById);
                 ApplyRecordName(spawned, record);
                 ApplySortingOrder(spawned, record.sortingOrder);
                 SyncSpriteCollider(spawned, record, useWrapper, assetsById);
@@ -722,6 +724,66 @@ namespace LevelEditorJsonImporter.Editor
             transform.SetPositionAndRotation(worldPosition, worldRotation);
             transform.localScale = localScale;
             transform.SetParent(parent, true);
+        }
+
+        static void AlignImportedSpriteWorldSizeToEditor(
+            GameObject spawned,
+            LevelEditorObjectRecord record,
+            Dictionary<string, LevelEditorAssetMetaData> assetsById)
+        {
+            if (spawned == null || record == null || record.isGroup)
+                return;
+
+            if (string.IsNullOrWhiteSpace(record.assetId)
+                || !assetsById.TryGetValue(record.assetId, out LevelEditorAssetMetaData metaData)
+                || !string.Equals(metaData.AssetType, LevelEditorImportedAssetTypes.Sprite, StringComparison.OrdinalIgnoreCase))
+            {
+                return;
+            }
+
+            SpriteRenderer renderer = spawned.GetComponent<SpriteRenderer>();
+            if (renderer == null || renderer.sprite == null)
+                return;
+
+            float rectLargestSide = GetRecordSpriteLargestSide(metaData, renderer.sprite);
+            if (rectLargestSide <= 0f)
+                return;
+
+            float editorPixelsPerUnit = metaData.PixelsPerUnit > 0f
+                ? metaData.PixelsPerUnit
+                : DefaultEditorDisplayPixelsPerUnit;
+            float savedAbsScale = Mathf.Max(
+                Mathf.Abs(record.sx),
+                Mathf.Abs(record.sy),
+                1e-6f);
+            float intendedWorldLargestSide = rectLargestSide / editorPixelsPerUnit * savedAbsScale;
+
+            Vector2 currentSize = renderer.bounds.size;
+            float currentWorldLargestSide = Mathf.Max(currentSize.x, currentSize.y);
+            if (currentWorldLargestSide <= 0f
+                || Mathf.Approximately(intendedWorldLargestSide, currentWorldLargestSide))
+            {
+                return;
+            }
+
+            float scaleMultiplier = intendedWorldLargestSide / currentWorldLargestSide;
+            renderer.transform.localScale *= scaleMultiplier;
+        }
+
+        static float GetRecordSpriteLargestSide(LevelEditorAssetMetaData metaData, Sprite sprite)
+        {
+            if (metaData != null
+                && metaData.SpriteRectWidth > 0f
+                && metaData.SpriteRectHeight > 0f)
+            {
+                return Mathf.Max(metaData.SpriteRectWidth, metaData.SpriteRectHeight);
+            }
+
+            if (sprite == null)
+                return 0f;
+
+            Rect rect = sprite.rect;
+            return Mathf.Max(rect.width, rect.height);
         }
 
         static void ApplyRecordName(GameObject gameObject, LevelEditorObjectRecord record)

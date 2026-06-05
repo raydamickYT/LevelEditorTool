@@ -1,7 +1,9 @@
 using System;
 using System.Collections.Generic;
+using System.Globalization;
 using System.IO;
 using System.Linq;
+using System.Text.RegularExpressions;
 using LevelEditorJsonImporter;
 using UnityEditor;
 using UnityEngine;
@@ -156,7 +158,7 @@ namespace LevelEditorJsonImporter.Editor
             if (importer == null)
                 return;
 
-            float pixelsPerUnit = asset != null && asset.PixelsPerUnit > 0f ? asset.PixelsPerUnit : 100f;
+            float pixelsPerUnit = ResolvePixelsPerUnit(asset);
 
             importer.spriteImportMode = SpriteImportMode.Single;
             importer.filterMode = FilterMode.Point;
@@ -167,6 +169,42 @@ namespace LevelEditorJsonImporter.Editor
 
             SpriteTextureImporterUtility.ApplyPhysicsShapeImportSettings(importer);
             importer.SaveAndReimport();
+        }
+
+        static float ResolvePixelsPerUnit(LevelEditorAssetMetaData asset)
+        {
+            if (asset != null
+                && !string.IsNullOrWhiteSpace(asset.SourceProjectRoot)
+                && !string.IsNullOrWhiteSpace(asset.AssetRelativePath))
+            {
+                string sourceAssetPath = Path.Combine(asset.SourceProjectRoot, asset.AssetRelativePath);
+                if (TryReadPixelsPerUnitFromMeta(sourceAssetPath + ".meta", out float sourcePixelsPerUnit))
+                    return sourcePixelsPerUnit;
+            }
+
+            return asset != null && asset.PixelsPerUnit > 0f ? asset.PixelsPerUnit : 100f;
+        }
+
+        static bool TryReadPixelsPerUnitFromMeta(string metaPath, out float pixelsPerUnit)
+        {
+            pixelsPerUnit = 100f;
+            if (string.IsNullOrWhiteSpace(metaPath) || !File.Exists(metaPath))
+                return false;
+
+            Match match = Regex.Match(
+                File.ReadAllText(metaPath),
+                @"spritePixelsToUnits:\s*(\d+(?:\.\d+)?)",
+                RegexOptions.CultureInvariant);
+
+            if (!match.Success
+                || !float.TryParse(match.Groups[1].Value, NumberStyles.Float, CultureInfo.InvariantCulture, out float parsed)
+                || parsed <= 0f)
+            {
+                return false;
+            }
+
+            pixelsPerUnit = parsed;
+            return true;
         }
     }
 }

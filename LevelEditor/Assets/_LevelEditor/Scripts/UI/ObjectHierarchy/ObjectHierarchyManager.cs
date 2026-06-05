@@ -1113,20 +1113,66 @@ public class ObjectHierarchyManager : MonoBehaviour
 
     private string GetUniqueHierarchyName(string baseName)
     {
+        if (string.IsNullOrWhiteSpace(baseName))
+            baseName = "New Game Object";
+
         if (!existingNames.Contains(baseName))
             return baseName;
 
-        int index = 1;
+        string rootName = GetHierarchyNameRoot(baseName);
+        int index = GetNextHierarchyNameIndex(rootName);
         string candidateName;
 
         do
         {
-            candidateName = $"{baseName} ({index})";
+            candidateName = $"{rootName} ({index})";
             index++;
         }
         while (existingNames.Contains(candidateName));
 
         return candidateName;
+    }
+
+    static string GetHierarchyNameRoot(string name)
+    {
+        if (string.IsNullOrWhiteSpace(name))
+            return "New Game Object";
+
+        if (name.Length < 4 || name[name.Length - 1] != ')')
+            return name;
+
+        int openParen = name.LastIndexOf(" (", StringComparison.Ordinal);
+        if (openParen < 0)
+            return name;
+
+        string numberPart = name.Substring(openParen + 2, name.Length - openParen - 3);
+        if (!int.TryParse(numberPart, out _))
+            return name;
+
+        return name.Substring(0, openParen);
+    }
+
+    int GetNextHierarchyNameIndex(string rootName)
+    {
+        int maxIndex = 0;
+
+        foreach (string existing in existingNames)
+        {
+            if (string.Equals(existing, rootName, StringComparison.Ordinal))
+            {
+                maxIndex = Mathf.Max(maxIndex, 1);
+                continue;
+            }
+
+            if (!existing.StartsWith(rootName + " (", StringComparison.Ordinal) || existing[existing.Length - 1] != ')')
+                continue;
+
+            string suffix = existing.Substring(rootName.Length + 2, existing.Length - rootName.Length - 3);
+            if (int.TryParse(suffix, out int index))
+                maxIndex = Mathf.Max(maxIndex, index);
+        }
+
+        return maxIndex + 1;
     }
 
     private HierarchyObjectItem GetOrCreateChild(LevelObject levelObject, Transform parent)
