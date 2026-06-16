@@ -388,7 +388,9 @@ public sealed class EditorPopupService : MonoBehaviour
 
         saveProjectOverlay.style.display = DisplayStyle.Flex;
         saveProjectOverlay.BringToFront();
-        saveProjectNameField.Focus();
+
+        // Focus after the shortcut key is released so Ctrl+S does not type "s" into the field.
+        saveProjectNameField.schedule.Execute(() => saveProjectNameField.Focus()).StartingIn(50);
     }
 
     void ShowConfirmDialogInternal(

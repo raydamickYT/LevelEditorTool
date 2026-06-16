@@ -178,6 +178,15 @@
                     "initialStateCheck": false
                 },
                 {
+                    "name": "SaveAs",
+                    "type": "Button",
+                    "id": "0bdc9cb0-7ff0-4a03-87c5-78bff75a5442",
+                    "expectedControlType": "",
+                    "processors": "",
+                    "interactions": "",
+                    "initialStateCheck": false
+                },
+                {
                     "name": "Import Assets",
                     "type": "Button",
                     "id": "ae1f44a5-c7f4-4103-a39c-40d237080834",
@@ -925,6 +934,50 @@
                     "action": "Cut",
                     "isComposite": false,
                     "isPartOfComposite": true
+                },
+                {
+                    "name": "Two Modifiers",
+                    "id": "bcb02338-bdee-468a-8f5f-4ef6565338f1",
+                    "path": "TwoModifiers",
+                    "interactions": "",
+                    "processors": "",
+                    "groups": "",
+                    "action": "SaveAs",
+                    "isComposite": true,
+                    "isPartOfComposite": false
+                },
+                {
+                    "name": "modifier1",
+                    "id": "6a7e6369-a03b-4b6a-9372-da65b5005235",
+                    "path": "<Keyboard>/shift",
+                    "interactions": "",
+                    "processors": "",
+                    "groups": "",
+                    "action": "SaveAs",
+                    "isComposite": false,
+                    "isPartOfComposite": true
+                },
+                {
+                    "name": "modifier2",
+                    "id": "f3dddc59-3173-42a3-9180-66c4d40ae90f",
+                    "path": "<Keyboard>/ctrl",
+                    "interactions": "",
+                    "processors": "",
+                    "groups": "",
+                    "action": "SaveAs",
+                    "isComposite": false,
+                    "isPartOfComposite": true
+                },
+                {
+                    "name": "binding",
+                    "id": "8f9e3fea-0404-4f31-b757-1bd81e2dbf5c",
+                    "path": "<Keyboard>/s",
+                    "interactions": "",
+                    "processors": "",
+                    "groups": "",
+                    "action": "SaveAs",
+                    "isComposite": false,
+                    "isPartOfComposite": true
                 }
             ]
         },
@@ -1098,6 +1151,15 @@
                     "name": "Save",
                     "type": "Button",
                     "id": "75a79e80-0ac7-42b6-a4a7-c99474a54c9d",
+                    "expectedControlType": "",
+                    "processors": "",
+                    "interactions": "",
+                    "initialStateCheck": false
+                },
+                {
+                    "name": "SaveAs",
+                    "type": "Button",
+                    "id": "c2031d75-11bc-4b8e-befa-a1f0da3646f0",
                     "expectedControlType": "",
                     "processors": "",
                     "interactions": "",
@@ -1651,6 +1713,50 @@
                     "processors": "",
                     "groups": "",
                     "action": "Save",
+                    "isComposite": false,
+                    "isPartOfComposite": true
+                },
+                {
+                    "name": "Two Modifiers",
+                    "id": "c30bb7dd-56db-40e5-8ff5-d237194ae22e",
+                    "path": "TwoModifiers",
+                    "interactions": "",
+                    "processors": "",
+                    "groups": "",
+                    "action": "SaveAs",
+                    "isComposite": true,
+                    "isPartOfComposite": false
+                },
+                {
+                    "name": "modifier1",
+                    "id": "869c0bbf-2c32-4e8c-b5f9-adfdbdea6041",
+                    "path": "<Keyboard>/shift",
+                    "interactions": "",
+                    "processors": "",
+                    "groups": "",
+                    "action": "SaveAs",
+                    "isComposite": false,
+                    "isPartOfComposite": true
+                },
+                {
+                    "name": "modifier2",
+                    "id": "d6d86002-aa65-45e7-be25-3f55df9ea736",
+                    "path": "<Keyboard>/capsLock",
+                    "interactions": "",
+                    "processors": "",
+                    "groups": "",
+                    "action": "SaveAs",
+                    "isComposite": false,
+                    "isPartOfComposite": true
+                },
+                {
+                    "name": "binding",
+                    "id": "cfea009b-6361-4e22-85e0-97a7d5eebe3b",
+                    "path": "<Keyboard>/s",
+                    "interactions": "",
+                    "processors": "",
+                    "groups": "",
+                    "action": "SaveAs",
                     "isComposite": false,
                     "isPartOfComposite": true
                 },

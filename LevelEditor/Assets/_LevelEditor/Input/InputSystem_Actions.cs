@@ -264,6 +264,15 @@ public partial class @InputSystem_Actions: IInputActionCollection2, IDisposable
                     ""initialStateCheck"": false
                 },
                 {
+                    ""name"": ""SaveAs"",
+                    ""type"": ""Button"",
+                    ""id"": ""0bdc9cb0-7ff0-4a03-87c5-78bff75a5442"",
+                    ""expectedControlType"": """",
+                    ""processors"": """",
+                    ""interactions"": """",
+                    ""initialStateCheck"": false
+                },
+                {
                     ""name"": ""Import Assets"",
                     ""type"": ""Button"",
                     ""id"": ""ae1f44a5-c7f4-4103-a39c-40d237080834"",
@@ -1011,6 +1020,50 @@ public partial class @InputSystem_Actions: IInputActionCollection2, IDisposable
                     ""action"": ""Cut"",
                     ""isComposite"": false,
                     ""isPartOfComposite"": true
+                },
+                {
+                    ""name"": ""Two Modifiers"",
+                    ""id"": ""bcb02338-bdee-468a-8f5f-4ef6565338f1"",
+                    ""path"": ""TwoModifiers"",
+                    ""interactions"": """",
+                    ""processors"": """",
+                    ""groups"": """",
+                    ""action"": ""SaveAs"",
+                    ""isComposite"": true,
+                    ""isPartOfComposite"": false
+                },
+                {
+                    ""name"": ""modifier1"",
+                    ""id"": ""6a7e6369-a03b-4b6a-9372-da65b5005235"",
+                    ""path"": ""<Keyboard>/shift"",
+                    ""interactions"": """",
+                    ""processors"": """",
+                    ""groups"": """",
+                    ""action"": ""SaveAs"",
+                    ""isComposite"": false,
+                    ""isPartOfComposite"": true
+                },
+                {
+                    ""name"": ""modifier2"",
+                    ""id"": ""f3dddc59-3173-42a3-9180-66c4d40ae90f"",
+                    ""path"": ""<Keyboard>/ctrl"",
+                    ""interactions"": """",
+                    ""processors"": """",
+                    ""groups"": """",
+                    ""action"": ""SaveAs"",
+                    ""isComposite"": false,
+                    ""isPartOfComposite"": true
+                },
+                {
+                    ""name"": ""binding"",
+                    ""id"": ""8f9e3fea-0404-4f31-b757-1bd81e2dbf5c"",
+                    ""path"": ""<Keyboard>/s"",
+                    ""interactions"": """",
+                    ""processors"": """",
+                    ""groups"": """",
+                    ""action"": ""SaveAs"",
+                    ""isComposite"": false,
+                    ""isPartOfComposite"": true
                 }
             ]
         },
@@ -1184,6 +1237,15 @@ public partial class @InputSystem_Actions: IInputActionCollection2, IDisposable
                     ""name"": ""Save"",
                     ""type"": ""Button"",
                     ""id"": ""75a79e80-0ac7-42b6-a4a7-c99474a54c9d"",
+                    ""expectedControlType"": """",
+                    ""processors"": """",
+                    ""interactions"": """",
+                    ""initialStateCheck"": false
+                },
+                {
+                    ""name"": ""SaveAs"",
+                    ""type"": ""Button"",
+                    ""id"": ""c2031d75-11bc-4b8e-befa-a1f0da3646f0"",
                     ""expectedControlType"": """",
                     ""processors"": """",
                     ""interactions"": """",
@@ -1741,6 +1803,50 @@ public partial class @InputSystem_Actions: IInputActionCollection2, IDisposable
                     ""isPartOfComposite"": true
                 },
                 {
+                    ""name"": ""Two Modifiers"",
+                    ""id"": ""c30bb7dd-56db-40e5-8ff5-d237194ae22e"",
+                    ""path"": ""TwoModifiers"",
+                    ""interactions"": """",
+                    ""processors"": """",
+                    ""groups"": """",
+                    ""action"": ""SaveAs"",
+                    ""isComposite"": true,
+                    ""isPartOfComposite"": false
+                },
+                {
+                    ""name"": ""modifier1"",
+                    ""id"": ""869c0bbf-2c32-4e8c-b5f9-adfdbdea6041"",
+                    ""path"": ""<Keyboard>/shift"",
+                    ""interactions"": """",
+                    ""processors"": """",
+                    ""groups"": """",
+                    ""action"": ""SaveAs"",
+                    ""isComposite"": false,
+                    ""isPartOfComposite"": true
+                },
+                {
+                    ""name"": ""modifier2"",
+                    ""id"": ""d6d86002-aa65-45e7-be25-3f55df9ea736"",
+                    ""path"": ""<Keyboard>/capsLock"",
+                    ""interactions"": """",
+                    ""processors"": """",
+                    ""groups"": """",
+                    ""action"": ""SaveAs"",
+                    ""isComposite"": false,
+                    ""isPartOfComposite"": true
+                },
+                {
+                    ""name"": ""binding"",
+                    ""id"": ""cfea009b-6361-4e22-85e0-97a7d5eebe3b"",
+                    ""path"": ""<Keyboard>/s"",
+                    ""interactions"": """",
+                    ""processors"": """",
+                    ""groups"": """",
+                    ""action"": ""SaveAs"",
+                    ""isComposite"": false,
+                    ""isPartOfComposite"": true
+                },
+                {
                     ""name"": ""One Modifier"",
                     ""id"": ""a9b73c97-a9c8-4a43-b3af-63cd8cef17ee"",
                     ""path"": ""OneModifier"",
@@ -2025,6 +2131,7 @@ public partial class @InputSystem_Actions: IInputActionCollection2, IDisposable
         m_UI_Redo = m_UI.FindAction("Redo", throwIfNotFound: true);
         m_UI_Copy = m_UI.FindAction("Copy", throwIfNotFound: true);
         m_UI_Save = m_UI.FindAction("Save", throwIfNotFound: true);
+        m_UI_SaveAs = m_UI.FindAction("SaveAs", throwIfNotFound: true);
         m_UI_ImportAssets = m_UI.FindAction("Import Assets", throwIfNotFound: true);
         m_UI_NewProject = m_UI.FindAction("New Project", throwIfNotFound: true);
         m_UI_OpenProject = m_UI.FindAction("Open Project", throwIfNotFound: true);
@@ -2052,6 +2159,7 @@ public partial class @InputSystem_Actions: IInputActionCollection2, IDisposable
         m_UI_Editor_Redo = m_UI_Editor.FindAction("Redo", throwIfNotFound: true);
         m_UI_Editor_Copy = m_UI_Editor.FindAction("Copy", throwIfNotFound: true);
         m_UI_Editor_Save = m_UI_Editor.FindAction("Save", throwIfNotFound: true);
+        m_UI_Editor_SaveAs = m_UI_Editor.FindAction("SaveAs", throwIfNotFound: true);
         m_UI_Editor_ImportAssets = m_UI_Editor.FindAction("Import Assets", throwIfNotFound: true);
         m_UI_Editor_NewProject = m_UI_Editor.FindAction("New Project", throwIfNotFound: true);
         m_UI_Editor_OpenProject = m_UI_Editor.FindAction("Open Project", throwIfNotFound: true);
@@ -2158,6 +2266,7 @@ public partial class @InputSystem_Actions: IInputActionCollection2, IDisposable
     private readonly InputAction m_UI_Redo;
     private readonly InputAction m_UI_Copy;
     private readonly InputAction m_UI_Save;
+    private readonly InputAction m_UI_SaveAs;
     private readonly InputAction m_UI_ImportAssets;
     private readonly InputAction m_UI_NewProject;
     private readonly InputAction m_UI_OpenProject;
@@ -2251,6 +2360,10 @@ public partial class @InputSystem_Actions: IInputActionCollection2, IDisposable
         /// Provides access to the underlying input action "UI/Save".
         /// </summary>
         public InputAction @Save => m_Wrapper.m_UI_Save;
+        /// <summary>
+        /// Provides access to the underlying input action "UI/SaveAs".
+        /// </summary>
+        public InputAction @SaveAs => m_Wrapper.m_UI_SaveAs;
         /// <summary>
         /// Provides access to the underlying input action "UI/ImportAssets".
         /// </summary>
@@ -2358,6 +2471,9 @@ public partial class @InputSystem_Actions: IInputActionCollection2, IDisposable
             @Save.started += instance.OnSave;
             @Save.performed += instance.OnSave;
             @Save.canceled += instance.OnSave;
+            @SaveAs.started += instance.OnSaveAs;
+            @SaveAs.performed += instance.OnSaveAs;
+            @SaveAs.canceled += instance.OnSaveAs;
             @ImportAssets.started += instance.OnImportAssets;
             @ImportAssets.performed += instance.OnImportAssets;
             @ImportAssets.canceled += instance.OnImportAssets;
@@ -2444,6 +2560,9 @@ public partial class @InputSystem_Actions: IInputActionCollection2, IDisposable
             @Save.started -= instance.OnSave;
             @Save.performed -= instance.OnSave;
             @Save.canceled -= instance.OnSave;
+            @SaveAs.started -= instance.OnSaveAs;
+            @SaveAs.performed -= instance.OnSaveAs;
+            @SaveAs.canceled -= instance.OnSaveAs;
             @ImportAssets.started -= instance.OnImportAssets;
             @ImportAssets.performed -= instance.OnImportAssets;
             @ImportAssets.canceled -= instance.OnImportAssets;
@@ -2518,6 +2637,7 @@ public partial class @InputSystem_Actions: IInputActionCollection2, IDisposable
     private readonly InputAction m_UI_Editor_Redo;
     private readonly InputAction m_UI_Editor_Copy;
     private readonly InputAction m_UI_Editor_Save;
+    private readonly InputAction m_UI_Editor_SaveAs;
     private readonly InputAction m_UI_Editor_ImportAssets;
     private readonly InputAction m_UI_Editor_NewProject;
     private readonly InputAction m_UI_Editor_OpenProject;
@@ -2611,6 +2731,10 @@ public partial class @InputSystem_Actions: IInputActionCollection2, IDisposable
         /// Provides access to the underlying input action "UI_Editor/Save".
         /// </summary>
         public InputAction @Save => m_Wrapper.m_UI_Editor_Save;
+        /// <summary>
+        /// Provides access to the underlying input action "UI_Editor/SaveAs".
+        /// </summary>
+        public InputAction @SaveAs => m_Wrapper.m_UI_Editor_SaveAs;
         /// <summary>
         /// Provides access to the underlying input action "UI_Editor/ImportAssets".
         /// </summary>
@@ -2718,6 +2842,9 @@ public partial class @InputSystem_Actions: IInputActionCollection2, IDisposable
             @Save.started += instance.OnSave;
             @Save.performed += instance.OnSave;
             @Save.canceled += instance.OnSave;
+            @SaveAs.started += instance.OnSaveAs;
+            @SaveAs.performed += instance.OnSaveAs;
+            @SaveAs.canceled += instance.OnSaveAs;
             @ImportAssets.started += instance.OnImportAssets;
             @ImportAssets.performed += instance.OnImportAssets;
             @ImportAssets.canceled += instance.OnImportAssets;
@@ -2804,6 +2931,9 @@ public partial class @InputSystem_Actions: IInputActionCollection2, IDisposable
             @Save.started -= instance.OnSave;
             @Save.performed -= instance.OnSave;
             @Save.canceled -= instance.OnSave;
+            @SaveAs.started -= instance.OnSaveAs;
+            @SaveAs.performed -= instance.OnSaveAs;
+            @SaveAs.canceled -= instance.OnSaveAs;
             @ImportAssets.started -= instance.OnImportAssets;
             @ImportAssets.performed -= instance.OnImportAssets;
             @ImportAssets.canceled -= instance.OnImportAssets;
@@ -3061,6 +3191,13 @@ public partial class @InputSystem_Actions: IInputActionCollection2, IDisposable
         /// <seealso cref="UnityEngine.InputSystem.InputAction.canceled" />
         void OnSave(InputAction.CallbackContext context);
         /// <summary>
+        /// Method invoked when associated input action "SaveAs" is either <see cref="UnityEngine.InputSystem.InputAction.started" />, <see cref="UnityEngine.InputSystem.InputAction.performed" /> or <see cref="UnityEngine.InputSystem.InputAction.canceled" />.
+        /// </summary>
+        /// <seealso cref="UnityEngine.InputSystem.InputAction.started" />
+        /// <seealso cref="UnityEngine.InputSystem.InputAction.performed" />
+        /// <seealso cref="UnityEngine.InputSystem.InputAction.canceled" />
+        void OnSaveAs(InputAction.CallbackContext context);
+        /// <summary>
         /// Method invoked when associated input action "Import Assets" is either <see cref="UnityEngine.InputSystem.InputAction.started" />, <see cref="UnityEngine.InputSystem.InputAction.performed" /> or <see cref="UnityEngine.InputSystem.InputAction.canceled" />.
         /// </summary>
         /// <seealso cref="UnityEngine.InputSystem.InputAction.started" />
@@ -3243,6 +3380,13 @@ public partial class @InputSystem_Actions: IInputActionCollection2, IDisposable
         /// <seealso cref="UnityEngine.InputSystem.InputAction.performed" />
         /// <seealso cref="UnityEngine.InputSystem.InputAction.canceled" />
         void OnSave(InputAction.CallbackContext context);
+        /// <summary>
+        /// Method invoked when associated input action "SaveAs" is either <see cref="UnityEngine.InputSystem.InputAction.started" />, <see cref="UnityEngine.InputSystem.InputAction.performed" /> or <see cref="UnityEngine.InputSystem.InputAction.canceled" />.
+        /// </summary>
+        /// <seealso cref="UnityEngine.InputSystem.InputAction.started" />
+        /// <seealso cref="UnityEngine.InputSystem.InputAction.performed" />
+        /// <seealso cref="UnityEngine.InputSystem.InputAction.canceled" />
+        void OnSaveAs(InputAction.CallbackContext context);
         /// <summary>
         /// Method invoked when associated input action "Import Assets" is either <see cref="UnityEngine.InputSystem.InputAction.started" />, <see cref="UnityEngine.InputSystem.InputAction.performed" /> or <see cref="UnityEngine.InputSystem.InputAction.canceled" />.
         /// </summary>

@@ -31,8 +31,6 @@ public class InputHandler : MonoBehaviour, InputSystem_Actions.IUIActions, Input
         inputActions.UI.Enable();
         inputActions.UI.SetCallbacks(this);
 #endif
-
-        inputActions.UI.Enable();
     }
     void OnDestroy()
     {
@@ -140,6 +138,7 @@ public class InputHandler : MonoBehaviour, InputSystem_Actions.IUIActions, Input
     {
         if (context.started)
         {
+            SuppressShortcutLetter(context, KeyCode.C);
             triggerCommand(EditorCommand.Copy);
         }
     }
@@ -148,6 +147,7 @@ public class InputHandler : MonoBehaviour, InputSystem_Actions.IUIActions, Input
     {
         if (context.started)
         {
+            SuppressShortcutLetter(context, KeyCode.V);
             triggerCommand(EditorCommand.Paste);
         }
     }
@@ -156,6 +156,7 @@ public class InputHandler : MonoBehaviour, InputSystem_Actions.IUIActions, Input
     {
         if (context.started)
         {
+            SuppressShortcutLetter(context, KeyCode.D);
             triggerCommand(EditorCommand.Duplicate);
         }
     }
@@ -164,6 +165,7 @@ public class InputHandler : MonoBehaviour, InputSystem_Actions.IUIActions, Input
     {
         if (context.started)
         {
+            SuppressShortcutLetter(context, KeyCode.X);
             triggerCommand(EditorCommand.Cut);
         }
     }
@@ -172,6 +174,7 @@ public class InputHandler : MonoBehaviour, InputSystem_Actions.IUIActions, Input
     {
         if (context.started)
         {
+            SuppressShortcutLetter(context, KeyCode.S);
             triggerCommand(EditorCommand.SaveFile);
         }
     }
@@ -180,6 +183,7 @@ public class InputHandler : MonoBehaviour, InputSystem_Actions.IUIActions, Input
     {
         if (context.started)
         {
+            SuppressShortcutLetter(context, KeyCode.I);
             triggerCommand(EditorCommand.ImportAssets);
         }
     }
@@ -188,6 +192,7 @@ public class InputHandler : MonoBehaviour, InputSystem_Actions.IUIActions, Input
     {
         if (context.started)
         {
+            SuppressShortcutLetter(context, KeyCode.N);
             triggerCommand(EditorCommand.NewFile);
         }
     }
@@ -196,6 +201,7 @@ public class InputHandler : MonoBehaviour, InputSystem_Actions.IUIActions, Input
     {
         if (context.started)
         {
+            SuppressShortcutLetter(context, KeyCode.O);
             triggerCommand(EditorCommand.OpenFile);
         }
     }
@@ -217,4 +223,22 @@ public class InputHandler : MonoBehaviour, InputSystem_Actions.IUIActions, Input
             || Keyboard.current.ctrlKey.isPressed
             || Keyboard.current.altKey.isPressed;
     }
+
+    public void OnSaveAs(InputAction.CallbackContext context)
+    {
+        if (context.started)
+        {
+            SuppressShortcutLetter(context, KeyCode.S);
+            triggerCommand(EditorCommand.SaveFileAs);
+        }
+    }
+
+    static void SuppressShortcutLetter(InputAction.CallbackContext context, KeyCode key)
+    {
+        if (!context.started)
+            return;
+
+        EditorShortcutInputGate.SuppressShortcutTextInput(key);
+    }
+
 }

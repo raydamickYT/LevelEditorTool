@@ -3,11 +3,38 @@ using UnityEngine.UIElements;
 
 /// <summary>
 /// Blocks editor shortcuts while UI Toolkit text fields are focused or a modal popup is open.
+/// Also suppresses the letter key from UIToolkit text fields when a modifier shortcut was just triggered.
 /// </summary>
 public static class EditorShortcutInputGate
 {
+    static KeyCode? suppressedKey;
+    static int suppressUntilFrame = -1;
+
     public static bool AreShortcutsBlocked =>
         IsAnyTextInputFocused() || EditorPopupService.IsAnyModalVisible();
+
+    public static void SuppressShortcutTextInput(KeyCode key)
+    {
+        suppressedKey = key;
+        suppressUntilFrame = Time.frameCount + 1;
+    }
+
+    public static bool ShouldSuppressTextInput(KeyDownEvent evt)
+    {
+        if (suppressedKey == null || Time.frameCount > suppressUntilFrame)
+            return false;
+
+        if (evt.keyCode != suppressedKey)
+            return false;
+
+        return evt.ctrlKey || evt.commandKey;
+    }
+
+    public static void ClearTextInputSuppression()
+    {
+        suppressedKey = null;
+        suppressUntilFrame = -1;
+    }
 
     static bool IsAnyTextInputFocused()
     {

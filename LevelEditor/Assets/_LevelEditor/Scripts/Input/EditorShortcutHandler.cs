@@ -3,13 +3,14 @@ using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
 using UnityEngine.InputSystem;
+using UnityEngine.UIElements;
 
 public class EditorShortcutHandler : MonoBehaviour
 {
     [SerializeField] private List<ShortCutBinding> shortcutBindings = new();
     private Dictionary<EditorCommand, EditorCommand> commandMap;
     private Coroutine subscribeRoutine;
-
+    readonly List<UIDocument> registeredUiDocuments = new();
 
     void Awake()
     {
@@ -30,14 +31,58 @@ public class EditorShortcutHandler : MonoBehaviour
 
     void OnEnable()
     {
+        RegisterUiTextInputSuppression();
         subscribeRoutine = StartCoroutine(waitForInputHandler());
     }
 
     void OnDisable()
     {
-        if (InputHandler.Instance == null)
+        UnregisterUiTextInputSuppression();
+
+        if (InputHandler.Instance != null)
+            InputHandler.Instance.TriggerCMD -= HandleInputAction;
+
+        if (subscribeRoutine != null)
+        {
+            StopCoroutine(subscribeRoutine);
+            subscribeRoutine = null;
+        }
+    }
+
+    void RegisterUiTextInputSuppression()
+    {
+        UIDocument[] documents = FindObjectsByType<UIDocument>(FindObjectsInactive.Exclude, FindObjectsSortMode.None);
+        foreach (UIDocument document in documents)
+        {
+            if (document == null || document.rootVisualElement == null)
+                continue;
+
+            document.rootVisualElement.RegisterCallback<KeyDownEvent>(OnUiKeyDown, TrickleDown.TrickleDown);
+            registeredUiDocuments.Add(document);
+        }
+    }
+
+    void UnregisterUiTextInputSuppression()
+    {
+        foreach (UIDocument document in registeredUiDocuments)
+        {
+            if (document == null || document.rootVisualElement == null)
+                continue;
+
+            document.rootVisualElement.UnregisterCallback<KeyDownEvent>(OnUiKeyDown, TrickleDown.TrickleDown);
+        }
+
+        registeredUiDocuments.Clear();
+    }
+
+    static void OnUiKeyDown(KeyDownEvent evt)
+    {
+        if (!EditorShortcutInputGate.ShouldSuppressTextInput(evt))
             return;
-        InputHandler.Instance.TriggerCMD -= HandleInputAction;
+
+        evt.StopPropagation();
+        evt.PreventDefault();
+        EditorShortcutInputGate.ClearTextInputSuppression();
     }
 
     public void HandleInputAction(EditorCommand inputActionName)
@@ -70,6 +115,7 @@ public enum EditorCommand
     Cut,
     ToggleSelect,
     SaveFile,
+    SaveFileAs,
     OpenFile,
     NewFile,
     ImportAssets,

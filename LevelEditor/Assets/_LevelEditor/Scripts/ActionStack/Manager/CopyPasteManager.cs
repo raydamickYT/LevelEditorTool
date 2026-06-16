@@ -30,22 +30,6 @@ public class CopyPasteManager : MonoBehaviour
             case EditorCommand.Cut:
                 Cut();
                 break;
-
-            case EditorCommand.SaveFile:
-                LevelEditorFileMenuCommands.SaveLevel();
-                break;
-
-            case EditorCommand.OpenFile:
-                LevelEditorFileMenuCommands.OpenLevel();
-                break;
-
-            case EditorCommand.NewFile:
-                LevelEditorFileMenuCommands.NewEmptyLevel();
-                break;
-
-            case EditorCommand.ImportAssets:
-                LevelEditorFileMenuCommands.ImportGameAssets();
-                break;
         }
     }
 
@@ -53,7 +37,7 @@ public class CopyPasteManager : MonoBehaviour
     {
         //if nothing is selected dont copy
         if (!EditorBlackBoard.HasSelection && !EditorBlackBoard.HasMultiSelection) return;
-        
+
         clipBoard.Clear();
 
 
