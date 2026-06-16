@@ -392,7 +392,7 @@ public class selectionController
 
     private void RefreshGizmo()
     {
-        //todo gebruik hier de blackboard
+        // gebruik hier de blackboard
         EditorBlackBoard.SetSelection(_selectedGameObjects);
         EventManager.Instance.TriggerDelegate(SelectionEvents.OnSelectionChanged, _selectedGameObjects);
     }

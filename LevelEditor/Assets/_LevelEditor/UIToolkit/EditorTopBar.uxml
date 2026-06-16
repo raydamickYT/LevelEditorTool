@@ -9,6 +9,7 @@
                 <ui:Button name="item-new-file" text="New Project" class="menu-item" />
                 <ui:Button name="item-open" text="Open Project" class="menu-item" />
                 <ui:Button name="item-save" text="Save Project" class="menu-item" />
+                <ui:Button name="item-save-as" text="Save Project As…" class="menu-item" />
                 <!-- <ui:Button name="item-export" text="Export" class="menu-item" /> --> <!-- Future feature: does the same as saving right now -->
                 <ui:VisualElement class="menu-separator" />
                 <ui:Button name="item-import-unity-assets" text="Link Unity Project" class="menu-item" />

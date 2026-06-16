@@ -74,6 +74,8 @@ public static class LevelProjectService
             toastMessage = $"Saved · {Path.GetFileName(directory.TrimEnd(Path.DirectorySeparatorChar, Path.AltDirectorySeparatorChar))}";
 
         EditorPopupService.ShowToast(toastMessage);
+
+        LevelProjectDirtyState.SetSavedBaseline(json);
     }
 
     public static void LoadLevelFromPath(string levelJsonFilePath)
@@ -130,7 +132,28 @@ public static class LevelProjectService
             Enumerable.Empty<GameObject>());
 
         LevelProjectSession.SetCurrentLevelJsonPath(fullLevelPath);
+        LevelProjectDirtyState.SetSavedBaselineFromCurrentScene();
     }
+
+    public static string GetCurrentLevelDisplayName()
+    {
+        if (LevelProjectSession.HasOpenProject)
+        {
+            string dir = LevelProjectSession.CurrentProjectDirectory;
+            string name = Path.GetFileName(dir.TrimEnd(Path.DirectorySeparatorChar, Path.AltDirectorySeparatorChar));
+            if (!string.IsNullOrEmpty(name))
+                return name;
+        }
+
+        if (!string.IsNullOrEmpty(LevelProjectSession.CurrentLevelJsonPath))
+            return Path.GetFileNameWithoutExtension(LevelProjectSession.CurrentLevelJsonPath);
+
+        return "Level";
+    }
+
+    /// <summary>Serializes the current scene the same way as save, for dirty-state comparison.</summary>
+    public static string BuildCurrentLevelJson()
+        => JsonUtility.ToJson(BuildProjectFileFromScene(GetCurrentLevelDisplayName()), true);
 
     static LevelProjectFile BuildProjectFileFromScene(string levelName)
     {
@@ -338,7 +361,7 @@ public static class LevelProjectService
 
     static void RefreshEditorPickColliders()
     {
-        LevelObject[] levelObjects = Object.FindObjectsByType<LevelObject>(FindObjectsSortMode.None);
+        LevelObject[] levelObjects = UnityEngine.Object.FindObjectsByType<LevelObject>(FindObjectsSortMode.None);
         foreach (LevelObject levelObject in levelObjects)
         {
             if (levelObject == null || levelObject.IsGroup)

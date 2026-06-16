@@ -48,9 +48,10 @@ public sealed class EditorTopBarController : MonoBehaviour
         if (_menuTrigger != null)
             _menuTrigger.clicked += ToggleFileMenu;
 
-        Register(root.Q<Button>("item-new-project"), OnNewFile);
+        Register(root.Q<Button>("item-new-file"), OnNewFile);
         Register(root.Q<Button>("item-open"), OnOpen);
         Register(root.Q<Button>("item-save"), OnSave);
+        Register(root.Q<Button>("item-save-as"), OnSaveAs);
         Register(root.Q<Button>("item-export"), OnExport);
         Register(root.Q<Button>("item-import-unity-assets"), OnImportUnityAssets);
         // Register(root.Q<Button>("item-import-folder"), OnImportFolder);
@@ -350,6 +351,12 @@ public sealed class EditorTopBarController : MonoBehaviour
     {
         CloseMenu();
         LevelEditorFileMenuCommands.SaveLevel();
+    }
+
+    void OnSaveAs()
+    {
+        CloseMenu();
+        LevelEditorFileMenuCommands.SaveLevelAs();
     }
 
     void OnExport()

@@ -48,7 +48,7 @@ public static class LevelExportRuntime
         LevelProjectService.SaveLevelToPath(jsonPath, levelDisplayName ?? Path.GetFileName(exportDirectory));
     }
 
-    static string SanitizeFolderName(string name)
+    public static string SanitizeFolderName(string name)
     {
         foreach (char c in Path.GetInvalidFileNameChars())
             name = name.Replace(c, '_');

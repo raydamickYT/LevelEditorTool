@@ -19,5 +19,31 @@
                 </ui:VisualElement>
             </ui:VisualElement>
         </ui:VisualElement>
+        <ui:VisualElement name="save-project-overlay" class="popup-overlay" style="display: none;">
+            <ui:VisualElement class="popup-window save-project-window">
+                <ui:Label name="save-project-title" text="Save project" class="popup-title save-project-title" />
+                <ui:Label text="Parent folder" class="save-project-label" />
+                <ui:Label name="save-project-parent-path" text="" class="save-project-path" />
+                <ui:Label text="Project folder name" class="save-project-label" />
+                <ui:TextField name="save-project-name-field" class="save-project-name-field" />
+                <ui:VisualElement class="popup-actions save-project-actions">
+                    <ui:Button name="save-project-cancel-button" text="Cancel" class="popup-button" />
+                    <ui:Button name="save-project-save-button" text="Save" class="popup-button popup-primary-button" />
+                </ui:VisualElement>
+            </ui:VisualElement>
+        </ui:VisualElement>
+        <ui:VisualElement name="confirm-overlay" class="popup-overlay" style="display: none;">
+            <ui:VisualElement class="popup-window">
+                <ui:VisualElement class="popup-header">
+                    <ui:Label text="!" class="popup-icon popup-icon-warning" />
+                    <ui:Label name="confirm-title" text="Confirm" class="popup-title" />
+                </ui:VisualElement>
+                <ui:Label name="confirm-message" text="" class="popup-message" />
+                <ui:VisualElement class="popup-actions">
+                    <ui:Button name="confirm-cancel-button" text="Cancel" class="popup-button" />
+                    <ui:Button name="confirm-ok-button" text="Overwrite" class="popup-button popup-primary-button" />
+                </ui:VisualElement>
+            </ui:VisualElement>
+        </ui:VisualElement>
     </ui:VisualElement>
 </ui:UXML>

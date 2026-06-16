@@ -129,3 +129,34 @@
 .popup-primary-button:hover {
     background-color: rgb(235, 235, 235);
 }
+
+.save-project-window {
+    width: 480px;
+}
+
+.save-project-title {
+    margin-bottom: 10px;
+}
+
+.save-project-label {
+    color: rgb(55, 55, 55);
+    -unity-font-style: bold;
+    margin-top: 4px;
+    margin-bottom: 4px;
+}
+
+.save-project-path {
+    color: rgb(40, 40, 40);
+    white-space: normal;
+    margin-bottom: 8px;
+    padding-left: 4px;
+    padding-right: 4px;
+}
+
+.save-project-name-field {
+    margin-bottom: 12px;
+}
+
+.save-project-actions {
+    margin-top: 4px;
+}

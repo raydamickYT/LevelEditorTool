@@ -273,6 +273,8 @@ public class TransformWindowView : MonoBehaviour
 
             levelObject.ApplySortingOrder(layerField.value);
         }
+
+        LevelProjectDirtyState.MarkDirty();
     }
 
     private void ApplyCollision()
@@ -285,6 +287,8 @@ public class TransformWindowView : MonoBehaviour
             if (IsSpriteAsset(levelObject))
                 levelObject.HasCollision = collisionToggle.value;
         }
+
+        LevelProjectDirtyState.MarkDirty();
     }
 
     private bool IsSpriteAsset(LevelObject levelObject)

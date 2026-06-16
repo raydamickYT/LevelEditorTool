@@ -84,6 +84,10 @@ public class UndoManager : MonoBehaviour
     {
         undoStack.Push(action);
         redoStack.Clear(); //new history branch, clear redo stack
+
+        // **DONE(dirty-state): LevelProjectDirtyState.MarkDirty() for level-changing actions; skip SelectAction (selection only).
+        if (action is not SelectAction)
+            LevelProjectDirtyState.MarkDirty();
     }
 
     void Clear()

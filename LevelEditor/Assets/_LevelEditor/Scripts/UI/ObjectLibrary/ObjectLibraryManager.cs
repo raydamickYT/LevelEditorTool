@@ -51,6 +51,7 @@ public class ObjectLibraryManager : MonoBehaviour
     int resizePointerId = InvalidPointerId;
     bool isResizingLibrary;
     bool isLibraryCollapsed;
+    VisualElement dragEventRoot;
 
     private GameObject gameObjectPrefab;
     private GameObject GameObjectPrefab
@@ -507,6 +508,14 @@ public class ObjectLibraryManager : MonoBehaviour
         draggedPointerId = evt.pointerId;
         dragSource.CapturePointer(draggedPointerId);
 
+        dragEventRoot = toolkitRoot?.panel?.visualTree;
+        if (dragEventRoot != null)
+        {
+            dragEventRoot.RegisterCallback<PointerMoveEvent>(HandleGlobalDragPointerMove, TrickleDown.TrickleDown);
+            dragEventRoot.RegisterCallback<PointerUpEvent>(HandleGlobalDragPointerUp, TrickleDown.TrickleDown);
+            dragEventRoot.RegisterCallback<PointerCancelEvent>(HandleGlobalDragPointerCancel, TrickleDown.TrickleDown);
+        }
+
         CreateDragPreview(sprite);
         ShowDragPreview(evt.position);
         evt.StopPropagation();
@@ -517,7 +526,7 @@ public class ObjectLibraryManager : MonoBehaviour
         if (evt.pointerId != draggedPointerId || draggedSprite == null)
             return;
 
-        if (IsPointerInsideLibrary(evt.position) || IsPointerOverOtherUIDocument(evt.position))
+        if (IsPointerInsideLibrary(evt.position) || IsPointerOverBlockingEditorUi(evt.position))
         {
             ShowDragPreview(evt.position);
             RemoveDraggedSpawnedObject();
@@ -532,7 +541,7 @@ public class ObjectLibraryManager : MonoBehaviour
 
     void EndToolkitDrag(PointerUpEvent evt)
     {
-        if (evt.pointerId != draggedPointerId)
+        if (draggedPointerId == InvalidPointerId || evt.pointerId != draggedPointerId)
             return;
 
         if (draggedSpawnedObject != null)
@@ -549,6 +558,12 @@ public class ObjectLibraryManager : MonoBehaviour
         evt.StopPropagation();
     }
 
+    void HandleGlobalDragPointerMove(PointerMoveEvent evt) => UpdateToolkitDrag(evt);
+
+    void HandleGlobalDragPointerUp(PointerUpEvent evt) => EndToolkitDrag(evt);
+
+    void HandleGlobalDragPointerCancel(PointerCancelEvent evt) => CancelToolkitDrag();
+
     void CancelToolkitDrag(PointerCancelEvent _)
     {
         CancelToolkitDrag();
@@ -557,6 +572,14 @@ public class ObjectLibraryManager : MonoBehaviour
     void CancelToolkitDrag()
     {
         RemoveDraggedSpawnedObject();
+
+        if (dragEventRoot != null)
+        {
+            dragEventRoot.UnregisterCallback<PointerMoveEvent>(HandleGlobalDragPointerMove, TrickleDown.TrickleDown);
+            dragEventRoot.UnregisterCallback<PointerUpEvent>(HandleGlobalDragPointerUp, TrickleDown.TrickleDown);
+            dragEventRoot.UnregisterCallback<PointerCancelEvent>(HandleGlobalDragPointerCancel, TrickleDown.TrickleDown);
+            dragEventRoot = null;
+        }
 
         if (dragSource != null && draggedPointerId != InvalidPointerId)
             dragSource.ReleasePointer(draggedPointerId);
@@ -621,23 +644,39 @@ public class ObjectLibraryManager : MonoBehaviour
         return toolkitLibraryRoot.worldBound.Contains(panelPosition);
     }
 
-    bool IsPointerOverOtherUIDocument(Vector2 panelPosition)
+    bool IsPointerOverBlockingEditorUi(Vector2 panelPosition)
     {
-        foreach (UIDocument document in FindObjectsByType<UIDocument>(FindObjectsInactive.Exclude, FindObjectsSortMode.None))
+        UIDocument[] documents = FindObjectsByType<UIDocument>(FindObjectsInactive.Exclude, FindObjectsSortMode.None);
+        for (int i = 0; i < documents.Length; i++)
         {
+            UIDocument document = documents[i];
             if (document == null || document == uiDocument)
                 continue;
 
+            if (document.gameObject.GetComponent<EditorSceneContextMenuController>() != null)
+                continue;
+
             VisualElement root = document.rootVisualElement;
-            if (root == null || root.panel == null)
+            if (root == null || root.panel == null || root.resolvedStyle.display == DisplayStyle.None)
                 continue;
 
             Vector2 otherPanelPosition = ConvertPanelPosition(panelPosition, toolkitRoot, root);
             VisualElement picked = root.panel.Pick(otherPanelPosition);
-            if (picked == null || picked == root)
-                continue;
+            if (IsBlockingUiPick(picked, root))
+                return true;
+        }
 
-            return true;
+        return false;
+    }
+
+    static bool IsBlockingUiPick(VisualElement picked, VisualElement documentRoot)
+    {
+        while (picked != null && picked != documentRoot)
+        {
+            if (picked.resolvedStyle.display != DisplayStyle.None && picked.pickingMode != PickingMode.Ignore)
+                return true;
+
+            picked = picked.parent;
         }
 
         return false;

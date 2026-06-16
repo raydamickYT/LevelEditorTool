@@ -1,3 +1,4 @@
+using System;
 using System.Collections;
 using UnityEngine;
 using UnityEngine.InputSystem;
@@ -27,6 +28,56 @@ public sealed class EditorPopupService : MonoBehaviour
     Label toastLabel;
     IVisualElementScheduledItem toastHideSchedule;
     Coroutine subscribeInputRoutine;
+
+    VisualElement saveProjectOverlay;
+    Label saveProjectTitle;
+    Label saveProjectParentPath;
+    TextField saveProjectNameField;
+    Button saveProjectSaveButton;
+    Button saveProjectCancelButton;
+    Action<string> pendingSaveProjectCallback;
+
+    VisualElement confirmOverlay;
+    Label confirmTitle;
+    Label confirmMessage;
+    Button confirmOkButton;
+    Button confirmCancelButton;
+    Action pendingConfirmCallback;
+    Action pendingConfirmCancelCallback;
+    bool dialogHandlersBound;
+
+    public static void ShowSaveProjectFolderDialog(
+        string parentFolder,
+        string defaultProjectName,
+        string dialogTitle,
+        Action<string> onSave)
+    {
+        if (Instance == null)
+        {
+            Debug.LogWarning("Save project dialog requested before EditorPopupService exists.");
+            onSave?.Invoke(defaultProjectName);
+            return;
+        }
+
+        Instance.ShowSaveProjectFolderDialogInternal(parentFolder, defaultProjectName, dialogTitle, onSave);
+    }
+
+    public static void ShowConfirmDialog(
+        string titleText,
+        string messageText,
+        string confirmButtonText,
+        Action onConfirm,
+        Action onCancel,
+        string cancelButtonText = "Cancel")
+    {
+        if (Instance == null)
+        {
+            Debug.LogWarning($"Confirm dialog requested before EditorPopupService exists: {titleText}");
+            return;
+        }
+
+        Instance.ShowConfirmDialogInternal(titleText, messageText, confirmButtonText, cancelButtonText, onConfirm, onCancel);
+    }
 
     public static void ShowInfo(string title, string message, string details = null)
         => Show(PopupSeverity.Info, title, message, details);
@@ -78,15 +129,19 @@ public sealed class EditorPopupService : MonoBehaviour
     void OnEnable()
     {
         BindElements();
-
-        if (okButton != null)
-            okButton.clicked += Hide;
+        BindDialogHandlers();
 
         if (overlay != null)
         {
             overlay.focusable = true;
             overlay.RegisterCallback<KeyDownEvent>(OnPopupKeyDown);
         }
+
+        if (saveProjectOverlay != null)
+            saveProjectOverlay.RegisterCallback<KeyDownEvent>(OnSaveProjectKeyDown);
+
+        if (confirmOverlay != null)
+            confirmOverlay.RegisterCallback<KeyDownEvent>(OnConfirmKeyDown);
 
         subscribeInputRoutine = StartCoroutine(WaitForInputHandler());
     }
@@ -101,10 +156,15 @@ public sealed class EditorPopupService : MonoBehaviour
 
     void OnDismissInput(InputAction.CallbackContext context)
     {
-        if (!context.started || !IsPopupVisible())
+        if (!context.started || !IsAnyModalVisible())
             return;
 
-        Hide();
+        if (IsSaveProjectDialogVisible())
+            HideSaveProjectDialog();
+        else if (IsConfirmDialogVisible())
+            HideConfirmDialog();
+        else
+            Hide();
     }
 
     void OnDisable()
@@ -123,11 +183,16 @@ public sealed class EditorPopupService : MonoBehaviour
             InputHandler.Instance.onSubmitEvent -= OnDismissInput;
         }
 
-        if (okButton != null)
-            okButton.clicked -= Hide;
-
         if (overlay != null)
             overlay.UnregisterCallback<KeyDownEvent>(OnPopupKeyDown);
+
+        if (saveProjectOverlay != null)
+            saveProjectOverlay.UnregisterCallback<KeyDownEvent>(OnSaveProjectKeyDown);
+
+        if (confirmOverlay != null)
+            confirmOverlay.UnregisterCallback<KeyDownEvent>(OnConfirmKeyDown);
+
+        UnbindDialogHandlers();
     }
 
     void OnDestroy()
@@ -153,12 +218,75 @@ public sealed class EditorPopupService : MonoBehaviour
         okButton = root.Q<Button>("popup-ok-button");
         toastRoot = root.Q<VisualElement>("status-toast");
         toastLabel = root.Q<Label>("status-toast-label");
+        saveProjectOverlay = root.Q<VisualElement>("save-project-overlay");
+        saveProjectTitle = root.Q<Label>("save-project-title");
+        saveProjectParentPath = root.Q<Label>("save-project-parent-path");
+        saveProjectNameField = root.Q<TextField>("save-project-name-field");
+        saveProjectSaveButton = root.Q<Button>("save-project-save-button");
+        saveProjectCancelButton = root.Q<Button>("save-project-cancel-button");
+        confirmOverlay = root.Q<VisualElement>("confirm-overlay");
+        confirmTitle = root.Q<Label>("confirm-title");
+        confirmMessage = root.Q<Label>("confirm-message");
+        confirmOkButton = root.Q<Button>("confirm-ok-button");
+        confirmCancelButton = root.Q<Button>("confirm-cancel-button");
 
         if (overlay != null)
             overlay.style.display = DisplayStyle.None;
 
+        if (saveProjectOverlay != null)
+            saveProjectOverlay.style.display = DisplayStyle.None;
+
+        if (confirmOverlay != null)
+            confirmOverlay.style.display = DisplayStyle.None;
+
         if (toastRoot != null)
             toastRoot.style.display = DisplayStyle.None;
+    }
+
+    void BindDialogHandlers()
+    {
+        if (dialogHandlersBound)
+            return;
+
+        if (okButton != null)
+            okButton.clicked += Hide;
+
+        if (saveProjectSaveButton != null)
+            saveProjectSaveButton.clicked += OnSaveProjectSaveClicked;
+
+        if (saveProjectCancelButton != null)
+            saveProjectCancelButton.clicked += HideSaveProjectDialog;
+
+        if (confirmOkButton != null)
+            confirmOkButton.clicked += OnConfirmOkClicked;
+
+        if (confirmCancelButton != null)
+            confirmCancelButton.clicked += HideConfirmDialog;
+
+        dialogHandlersBound = true;
+    }
+
+    void UnbindDialogHandlers()
+    {
+        if (!dialogHandlersBound)
+            return;
+
+        if (okButton != null)
+            okButton.clicked -= Hide;
+
+        if (saveProjectSaveButton != null)
+            saveProjectSaveButton.clicked -= OnSaveProjectSaveClicked;
+
+        if (saveProjectCancelButton != null)
+            saveProjectCancelButton.clicked -= HideSaveProjectDialog;
+
+        if (confirmOkButton != null)
+            confirmOkButton.clicked -= OnConfirmOkClicked;
+
+        if (confirmCancelButton != null)
+            confirmCancelButton.clicked -= HideConfirmDialog;
+
+        dialogHandlersBound = false;
     }
 
     void ShowToastInternal(string messageText, float durationSeconds)
@@ -195,9 +323,154 @@ public sealed class EditorPopupService : MonoBehaviour
         toastHideSchedule = null;
     }
 
+    void ShowSaveProjectFolderDialogInternal(
+        string parentFolder,
+        string defaultProjectName,
+        string dialogTitle,
+        Action<string> onSave)
+    {
+        BindElements();
+        BindDialogHandlers();
+
+        if (saveProjectOverlay == null || saveProjectNameField == null)
+        {
+            Debug.LogWarning("Save project dialog UXML is missing.");
+            onSave?.Invoke(defaultProjectName);
+            return;
+        }
+
+        pendingSaveProjectCallback = onSave;
+
+        if (saveProjectTitle != null)
+            saveProjectTitle.text = string.IsNullOrWhiteSpace(dialogTitle) ? "Save project" : dialogTitle;
+
+        if (saveProjectParentPath != null)
+            saveProjectParentPath.text = parentFolder ?? string.Empty;
+
+        saveProjectNameField.SetValueWithoutNotify(string.IsNullOrWhiteSpace(defaultProjectName)
+            ? "NewLevel"
+            : defaultProjectName);
+
+        saveProjectOverlay.style.display = DisplayStyle.Flex;
+        saveProjectOverlay.BringToFront();
+        saveProjectNameField.Focus();
+    }
+
+    void ShowConfirmDialogInternal(
+        string titleText,
+        string messageText,
+        string confirmButtonText,
+        string cancelButtonText,
+        Action onConfirm,
+        Action onCancel)
+    {
+        BindElements();
+        BindDialogHandlers();
+
+        if (confirmOverlay == null)
+        {
+            Debug.LogWarning($"Confirm dialog UXML is missing: {titleText}");
+            return;
+        }
+
+        pendingConfirmCallback = onConfirm;
+        pendingConfirmCancelCallback = onCancel;
+
+        if (confirmTitle != null)
+            confirmTitle.text = string.IsNullOrWhiteSpace(titleText) ? "Confirm" : titleText;
+
+        if (confirmMessage != null)
+            confirmMessage.text = messageText ?? string.Empty;
+
+        if (confirmOkButton != null)
+            confirmOkButton.text = string.IsNullOrWhiteSpace(confirmButtonText) ? "OK" : confirmButtonText;
+
+        if (confirmCancelButton != null)
+            confirmCancelButton.text = string.IsNullOrWhiteSpace(cancelButtonText) ? "Cancel" : cancelButtonText;
+
+        confirmOverlay.style.display = DisplayStyle.Flex;
+        confirmOverlay.BringToFront();
+        confirmOkButton?.Focus();
+    }
+
+    void OnSaveProjectSaveClicked()
+    {
+        string projectName = saveProjectNameField != null ? saveProjectNameField.value : string.Empty;
+        Action<string> callback = pendingSaveProjectCallback;
+        HideSaveProjectDialog();
+        callback?.Invoke(projectName);
+    }
+
+    void HideSaveProjectDialog()
+    {
+        if (saveProjectOverlay != null)
+            saveProjectOverlay.style.display = DisplayStyle.None;
+
+        pendingSaveProjectCallback = null;
+    }
+
+    void OnConfirmOkClicked()
+    {
+        Action callback = pendingConfirmCallback;
+        pendingConfirmCallback = null;
+        pendingConfirmCancelCallback = null;
+
+        if (confirmOverlay != null)
+            confirmOverlay.style.display = DisplayStyle.None;
+
+        callback?.Invoke();
+    }
+
+    void HideConfirmDialog()
+    {
+        if (confirmOverlay != null)
+            confirmOverlay.style.display = DisplayStyle.None;
+
+        pendingConfirmCancelCallback?.Invoke();
+        pendingConfirmCallback = null;
+        pendingConfirmCancelCallback = null;
+    }
+    void OnSaveProjectKeyDown(KeyDownEvent evt)
+    {
+        if (!IsSaveProjectDialogVisible())
+            return;
+
+        if (evt.keyCode == KeyCode.Escape)
+        {
+            HideSaveProjectDialog();
+            evt.StopPropagation();
+            return;
+        }
+
+        if (evt.keyCode == KeyCode.Return || evt.keyCode == KeyCode.KeypadEnter)
+        {
+            OnSaveProjectSaveClicked();
+            evt.StopPropagation();
+        }
+    }
+
+    void OnConfirmKeyDown(KeyDownEvent evt)
+    {
+        if (!IsConfirmDialogVisible())
+            return;
+
+        if (evt.keyCode == KeyCode.Escape)
+        {
+            HideConfirmDialog();
+            evt.StopPropagation();
+            return;
+        }
+
+        if (evt.keyCode == KeyCode.Return || evt.keyCode == KeyCode.KeypadEnter)
+        {
+            OnConfirmOkClicked();
+            evt.StopPropagation();
+        }
+    }
     void ShowInternal(PopupSeverity severity, string titleText, string messageText, string detailsText)
     {
         BindElements();
+        BindDialogHandlers();
 
         if (overlay == null)
         {
@@ -240,9 +513,16 @@ public sealed class EditorPopupService : MonoBehaviour
     }
 
     bool IsPopupVisible()
-    {
-        return overlay != null && overlay.style.display == DisplayStyle.Flex;
-    }
+        => overlay != null && overlay.resolvedStyle.display == DisplayStyle.Flex;
+
+    bool IsAnyModalVisible()
+        => IsPopupVisible() || IsSaveProjectDialogVisible() || IsConfirmDialogVisible();
+
+    bool IsSaveProjectDialogVisible()
+        => saveProjectOverlay != null && saveProjectOverlay.resolvedStyle.display == DisplayStyle.Flex;
+
+    bool IsConfirmDialogVisible()
+        => confirmOverlay != null && confirmOverlay.resolvedStyle.display == DisplayStyle.Flex;
 
     void Hide()
     {

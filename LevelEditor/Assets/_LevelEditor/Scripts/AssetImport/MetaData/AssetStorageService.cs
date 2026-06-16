@@ -58,7 +58,6 @@ public static class AssetStorageService
             SaveSprite(data);
         }
 
-
         SaveMetaData(data);
     }
 

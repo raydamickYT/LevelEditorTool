@@ -1,3 +1,4 @@
+using System;
 using System.IO;
 using System.Linq;
 using SFB;
@@ -9,6 +10,29 @@ using UnityEngine;
 public static class LevelEditorFileMenuCommands
 {
     public static void NewEmptyLevel()
+    {
+        Debug.Log("New empty level requested");
+        if (LevelProjectDirtyState.HasUnsavedChanges())
+        {
+            EditorPopupService.ShowConfirmDialog(
+                "Unsaved changes",
+                "You have unsaved changes. Do you want to discard them and create a new level?",
+                "Save and create new level",
+                () => //save and confirm
+                {
+                    SaveLevel();
+                    if (!LevelProjectDirtyState.HasUnsavedChanges())
+                        ClearSceneForNewLevel();
+                },
+                () => ClearSceneForNewLevel(),
+                "Discard changes"); // canceltext
+            return;
+        }
+
+        ClearSceneForNewLevel();
+    }
+
+    static void ClearSceneForNewLevel()
     {
         if (EventManager.Instance == null)
             return;
@@ -27,9 +51,33 @@ public static class LevelEditorFileMenuCommands
         EventManager.Instance.TriggerDelegate(ObjectHierarchyEvents.RebuildEntireHierarchy);
 
         EventManager.Instance.TriggerDelegate(SelectionEvents.ReplaceSelectionWithObject, Enumerable.Empty<GameObject>());
+
+        LevelProjectDirtyState.MarkClean();
     }
 
     public static void OpenLevel()
+    {
+        if (LevelProjectDirtyState.HasUnsavedChanges())
+        {
+            EditorPopupService.ShowConfirmDialog(
+                "Unsaved changes",
+                "You have unsaved changes. Do you want to save them before opening another project?",
+                "Save and open",
+                () =>
+                {
+                    SaveLevel();
+                    if (!LevelProjectDirtyState.HasUnsavedChanges())
+                        PromptAndOpenLevel();
+                },
+                () => PromptAndOpenLevel(),
+                "Discard changes"); // canceltext
+            return;
+        }
+
+        PromptAndOpenLevel();
+    }
+
+    static void PromptAndOpenLevel()
     {
         string[] paths = StandaloneFileBrowser.OpenFolderPanel("Open project folder", "", false);
         if (paths == null || paths.Length == 0 || string.IsNullOrEmpty(paths[0]))
@@ -65,18 +113,15 @@ public static class LevelEditorFileMenuCommands
             return;
         }
 
-        // New project: user picks a folder; we write level.json inside it.
-        string[] paths = StandaloneFileBrowser.OpenFolderPanel("Select project folder", "", false);
-        if (paths == null || paths.Length == 0 || string.IsNullOrEmpty(paths[0]))
-            return;
-
-        string projectRoot = Path.GetFullPath(paths[0]);
-        Directory.CreateDirectory(projectRoot);
-
-        string jsonPath = Path.Combine(projectRoot, LevelProjectService.DefaultLevelFileName);
-        string projectName = Path.GetFileName(projectRoot.TrimEnd(Path.DirectorySeparatorChar, Path.AltDirectorySeparatorChar));
-        LevelProjectService.SaveLevelToPath(jsonPath, projectName);
+        // New project: choose parent folder, then name the project folder.
+        LevelProjectSaveUtility.PromptSaveNewProject();
     }
+
+    /// <summary>
+    /// Save a copy to a new folder (parent + project name). Switches the open project to the new location.
+    /// </summary>
+    public static void SaveLevelAs()
+        => LevelProjectSaveUtility.PromptSaveAs();
 
     /// <summary>
     /// Writes the current level into the open project folder (same data as Save). If nothing is saved yet, runs <see cref="SaveLevel"/> first.
