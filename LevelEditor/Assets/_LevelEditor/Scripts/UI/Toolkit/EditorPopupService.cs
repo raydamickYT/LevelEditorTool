@@ -1,5 +1,7 @@
 using System;
 using System.Collections;
+using System.IO;
+using SFB;
 using UnityEngine;
 using UnityEngine.InputSystem;
 using UnityEngine.UIElements;
@@ -34,8 +36,10 @@ public sealed class EditorPopupService : MonoBehaviour
     Label saveProjectParentPath;
     TextField saveProjectNameField;
     Button saveProjectSaveButton;
+    Button saveProjectBrowseButton;
     Button saveProjectCancelButton;
-    Action<string> pendingSaveProjectCallback;
+    Action<string, string> pendingSaveProjectCallback;
+    string saveProjectParentFolder;
 
     VisualElement confirmOverlay;
     Label confirmTitle;
@@ -50,12 +54,12 @@ public sealed class EditorPopupService : MonoBehaviour
         string parentFolder,
         string defaultProjectName,
         string dialogTitle,
-        Action<string> onSave)
+        Action<string, string> onSave)
     {
         if (Instance == null)
         {
             Debug.LogWarning("Save project dialog requested before EditorPopupService exists.");
-            onSave?.Invoke(defaultProjectName);
+            onSave?.Invoke(parentFolder, defaultProjectName);
             return;
         }
 
@@ -236,6 +240,7 @@ public sealed class EditorPopupService : MonoBehaviour
         saveProjectOverlay = root.Q<VisualElement>("save-project-overlay");
         saveProjectTitle = root.Q<Label>("save-project-title");
         saveProjectParentPath = root.Q<Label>("save-project-parent-path");
+        saveProjectBrowseButton = root.Q<Button>("save-project-browse-button");
         saveProjectNameField = root.Q<TextField>("save-project-name-field");
         saveProjectSaveButton = root.Q<Button>("save-project-save-button");
         saveProjectCancelButton = root.Q<Button>("save-project-cancel-button");
@@ -272,6 +277,9 @@ public sealed class EditorPopupService : MonoBehaviour
         if (saveProjectCancelButton != null)
             saveProjectCancelButton.clicked += HideSaveProjectDialog;
 
+        if (saveProjectBrowseButton != null)
+            saveProjectBrowseButton.clicked += OnSaveProjectBrowseClicked;
+
         if (confirmOkButton != null)
             confirmOkButton.clicked += OnConfirmOkClicked;
 
@@ -294,6 +302,9 @@ public sealed class EditorPopupService : MonoBehaviour
 
         if (saveProjectCancelButton != null)
             saveProjectCancelButton.clicked -= HideSaveProjectDialog;
+
+        if (saveProjectBrowseButton != null)
+            saveProjectBrowseButton.clicked -= OnSaveProjectBrowseClicked;
 
         if (confirmOkButton != null)
             confirmOkButton.clicked -= OnConfirmOkClicked;
@@ -350,11 +361,7 @@ public sealed class EditorPopupService : MonoBehaviour
         toastHideSchedule = null;
     }
 
-    void ShowSaveProjectFolderDialogInternal(
-        string parentFolder,
-        string defaultProjectName,
-        string dialogTitle,
-        Action<string> onSave)
+    void ShowSaveProjectFolderDialogInternal(string parentFolder, string defaultProjectName, string dialogTitle, Action<string, string> onSave)
     {
         BindElements();
         BindDialogHandlers();
@@ -362,7 +369,7 @@ public sealed class EditorPopupService : MonoBehaviour
         if (saveProjectOverlay == null || saveProjectNameField == null)
         {
             Debug.LogWarning("Save project dialog UXML is missing.");
-            onSave?.Invoke(defaultProjectName);
+            onSave?.Invoke(parentFolder, defaultProjectName);
             return;
         }
 
@@ -371,8 +378,9 @@ public sealed class EditorPopupService : MonoBehaviour
         if (saveProjectTitle != null)
             saveProjectTitle.text = string.IsNullOrWhiteSpace(dialogTitle) ? "Save project" : dialogTitle;
 
+        saveProjectParentFolder = Path.GetFullPath(parentFolder ?? string.Empty);
         if (saveProjectParentPath != null)
-            saveProjectParentPath.text = parentFolder ?? string.Empty;
+            saveProjectParentPath.text = saveProjectParentFolder;
 
         saveProjectNameField.SetValueWithoutNotify(string.IsNullOrWhiteSpace(defaultProjectName)
             ? "NewLevel"
@@ -423,9 +431,21 @@ public sealed class EditorPopupService : MonoBehaviour
     void OnSaveProjectSaveClicked()
     {
         string projectName = saveProjectNameField != null ? saveProjectNameField.value : string.Empty;
-        Action<string> callback = pendingSaveProjectCallback;
+        var callback = pendingSaveProjectCallback;
+        string parent = saveProjectParentFolder;
         HideSaveProjectDialog();
-        callback?.Invoke(projectName);
+        callback?.Invoke(parent, projectName);
+    }
+
+    void OnSaveProjectBrowseClicked()
+    {
+        string[] paths = StandaloneFileBrowser.OpenFolderPanel("Choose parent folder for project", saveProjectParentFolder ?? string.Empty, false);
+        if (paths == null || paths.Length == 0 || string.IsNullOrEmpty(paths[0]))
+            return;
+
+        saveProjectParentFolder = Path.GetFullPath(paths[0]);
+        if (saveProjectParentPath != null)
+            saveProjectParentPath.text = saveProjectParentFolder;
     }
 
     void HideSaveProjectDialog()
@@ -536,7 +556,7 @@ public sealed class EditorPopupService : MonoBehaviour
             Hide();
             evt.StopPropagation();
         }
-        if(evt.keyCode == KeyCode.KeypadEnter)
+        if (evt.keyCode == KeyCode.KeypadEnter)
             OnConfirmOkClicked();
 
     }

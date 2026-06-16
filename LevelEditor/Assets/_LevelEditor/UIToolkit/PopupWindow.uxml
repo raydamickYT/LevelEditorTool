@@ -23,7 +23,10 @@
             <ui:VisualElement class="popup-window save-project-window">
                 <ui:Label name="save-project-title" text="Save project" class="popup-title save-project-title" />
                 <ui:Label text="Parent folder" class="save-project-label" />
-                <ui:Label name="save-project-parent-path" text="" class="save-project-path" />
+                <ui:VisualElement class="save-project-path-row">
+                    <ui:Label name="save-project-parent-path" text="" class="save-project-path" />
+                    <ui:Button name="save-project-browse-button" text="Browse..." class="popup-button" />
+                </ui:VisualElement>
                 <ui:Label text="Project folder name" class="save-project-label" />
                 <ui:TextField name="save-project-name-field" class="save-project-name-field" />
                 <ui:VisualElement class="popup-actions save-project-actions">

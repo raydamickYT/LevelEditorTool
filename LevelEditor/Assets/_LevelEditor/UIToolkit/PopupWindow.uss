@@ -25,6 +25,16 @@
     border-width: 1px;
     border-color: rgb(20, 120, 65);
 }
+.save-project-path-row {
+    flex-direction: row;
+    align-items: flex-start;
+    margin-bottom: 8px;
+}
+.save-project-path-row .save-project-path {
+    flex-grow: 1;
+    margin-bottom: 0;
+    margin-right: 8px;
+}
 
 .popup-overlay {
     position: absolute;

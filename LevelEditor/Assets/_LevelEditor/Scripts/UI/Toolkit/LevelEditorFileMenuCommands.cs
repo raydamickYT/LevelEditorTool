@@ -102,7 +102,7 @@ public static class LevelEditorFileMenuCommands
         {
             string dir = LevelProjectSession.CurrentProjectDirectory;
             string path = LevelProjectSession.CurrentLevelJsonPath;
-            if (string.IsNullOrEmpty(path))
+            if (string.IsNullOrEmpty(path)) 
                 path = Path.Combine(dir, LevelProjectService.DefaultLevelFileName);
 
             string displayName = Path.GetFileName(dir.TrimEnd(Path.DirectorySeparatorChar, Path.AltDirectorySeparatorChar));

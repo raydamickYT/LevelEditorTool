@@ -18,7 +18,7 @@ public static class LevelProjectSaveUtility
     {
         string defaultName = GetSuggestedProjectFolderName();
         string startFolder = LevelProjectSession.HasOpenProject
-            ? LevelProjectSession.CurrentProjectDirectory
+            ? Path.GetDirectoryName(LevelProjectSession.CurrentProjectDirectory)
             : string.Empty;
 
         PromptSaveToNamedFolder(defaultName, "Save project as", startFolder);
@@ -26,15 +26,7 @@ public static class LevelProjectSaveUtility
 
     static void PromptSaveToNamedFolder(string defaultProjectName, string dialogTitle, string folderPickerStart = "")
     {
-        string[] paths = StandaloneFileBrowser.OpenFolderPanel(
-            "Choose parent folder for project",
-            folderPickerStart ?? string.Empty,
-            false);
-
-        if (paths == null || paths.Length == 0 || string.IsNullOrEmpty(paths[0]))
-            return;
-
-        string parentFolder = Path.GetFullPath(paths[0]);
+        string parentFolder = GetDefaultParentFolder(folderPickerStart);
         string defaultName = string.IsNullOrWhiteSpace(defaultProjectName)
             ? $"Level_{DateTime.Now:yyyyMMdd_HHmmss}"
             : defaultProjectName;
@@ -49,7 +41,22 @@ public static class LevelProjectSaveUtility
             parentFolder,
             defaultName,
             dialogTitle,
-            projectFolderName => SaveToNamedFolder(parentFolder, projectFolderName, overwriteExisting: false));
+            (chosenParent, projectName) => SaveToNamedFolder(chosenParent, projectName, overwriteExisting: false));
+    }
+
+    static string GetDefaultParentFolder(string folderPickerStart = "")
+    {
+        if(!string.IsNullOrEmpty(folderPickerStart))
+            return folderPickerStart;
+
+        if(LevelProjectSession.HasOpenProject)
+        {
+            string parent = Path.GetDirectoryName(LevelProjectSession.CurrentProjectDirectory);
+            if (!string.IsNullOrEmpty(parent))
+                return parent;
+        }
+
+        return Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.MyDocuments), "My Levels");
     }
 
     static string GetSuggestedProjectFolderName()
