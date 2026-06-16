@@ -2,7 +2,8 @@ using System;
 using UnityEngine;
 using UnityEngine.InputSystem;
 
-public class InputHandler : MonoBehaviour, InputSystem_Actions.IUIActions
+public class InputHandler : MonoBehaviour, InputSystem_Actions.IUIActions, InputSystem_Actions.IUI_EditorActions
+
 {
     public static InputHandler Instance;
 
@@ -19,7 +20,18 @@ public class InputHandler : MonoBehaviour, InputSystem_Actions.IUIActions
         Instance = this;
 
         inputActions = new InputSystem_Actions();
+
+        //use diffent bindings for the editor and the build.
+#if UNITY_EDITOR
+        inputActions.UI.Disable();
+        inputActions.UI_Editor.Enable();
+        inputActions.UI_Editor.SetCallbacks(this);
+#else
+        inputActions.UI_Editor.Disable();
+        inputActions.UI.Enable();
         inputActions.UI.SetCallbacks(this);
+#endif
+
         inputActions.UI.Enable();
     }
     void OnDestroy()
