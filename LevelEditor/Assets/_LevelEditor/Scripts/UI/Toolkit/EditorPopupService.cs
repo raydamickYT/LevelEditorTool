@@ -79,6 +79,9 @@ public sealed class EditorPopupService : MonoBehaviour
         Instance.ShowConfirmDialogInternal(titleText, messageText, confirmButtonText, cancelButtonText, onConfirm, onCancel);
     }
 
+    public static bool IsAnyModalVisible()
+        => Instance != null && Instance.IsAnyModalVisibleInternal();
+
     public static void ShowInfo(string title, string message, string details = null)
         => Show(PopupSeverity.Info, title, message, details);
 
@@ -97,6 +100,18 @@ public sealed class EditorPopupService : MonoBehaviour
         }
 
         Instance.ShowToastInternal(message, durationSeconds);
+    }
+
+    /// <summary>Runs after the save toast has time to appear (e.g. before quit, open, or clearing the scene).</summary>
+    public static void RunAfterSaveFeedback(Action action, float delaySeconds = 0.45f)
+    {
+        if (Instance == null)
+        {
+            action?.Invoke();
+            return;
+        }
+
+        Instance.RunAfterSaveFeedbackInternal(action, delaySeconds);
     }
 
     static void Show(PopupSeverity severity, string title, string message, string details)
@@ -156,7 +171,7 @@ public sealed class EditorPopupService : MonoBehaviour
 
     void OnDismissInput(InputAction.CallbackContext context)
     {
-        if (!context.started || !IsAnyModalVisible())
+        if (!context.started || !IsAnyModalVisibleInternal())
             return;
 
         if (IsSaveProjectDialogVisible())
@@ -307,6 +322,18 @@ public sealed class EditorPopupService : MonoBehaviour
 
         float duration = durationSeconds > 0f ? durationSeconds : defaultToastDurationSeconds;
         toastHideSchedule = toastRoot.schedule.Execute(HideToast).StartingIn((long)(duration * 1000f));
+    }
+
+    void RunAfterSaveFeedbackInternal(Action action, float delaySeconds)
+    {
+        VisualElement root = uiDocument != null ? uiDocument.rootVisualElement : null;
+        if (root == null)
+        {
+            action?.Invoke();
+            return;
+        }
+
+        root.schedule.Execute(() => action?.Invoke()).StartingIn((long)(delaySeconds * 1000f));
     }
 
     void HideToast()
@@ -504,19 +531,21 @@ public sealed class EditorPopupService : MonoBehaviour
             return;
 
         if (evt.keyCode == KeyCode.Escape
-            || evt.keyCode == KeyCode.Return
-            || evt.keyCode == KeyCode.KeypadEnter)
+            || evt.keyCode == KeyCode.Return)
         {
             Hide();
             evt.StopPropagation();
         }
+        if(evt.keyCode == KeyCode.KeypadEnter)
+            OnConfirmOkClicked();
+
     }
+
+    bool IsAnyModalVisibleInternal()
+        => IsPopupVisible() || IsSaveProjectDialogVisible() || IsConfirmDialogVisible();
 
     bool IsPopupVisible()
         => overlay != null && overlay.resolvedStyle.display == DisplayStyle.Flex;
-
-    bool IsAnyModalVisible()
-        => IsPopupVisible() || IsSaveProjectDialogVisible() || IsConfirmDialogVisible();
 
     bool IsSaveProjectDialogVisible()
         => saveProjectOverlay != null && saveProjectOverlay.resolvedStyle.display == DisplayStyle.Flex;

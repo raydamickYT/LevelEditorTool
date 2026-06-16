@@ -50,7 +50,7 @@ public sealed class LevelToolLifecycle : MonoBehaviour
                 {
                     LevelEditorFileMenuCommands.SaveLevel();
                     if (!LevelProjectDirtyState.HasUnsavedChanges())
-                        Application.Quit();
+                        EditorPopupService.RunAfterSaveFeedback(Application.Quit);
                 },
                 () => Application.Quit(),
                 "Discard changes"); // canceltext

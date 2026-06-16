@@ -22,7 +22,7 @@ public static class LevelEditorFileMenuCommands
                 {
                     SaveLevel();
                     if (!LevelProjectDirtyState.HasUnsavedChanges())
-                        ClearSceneForNewLevel();
+                        EditorPopupService.RunAfterSaveFeedback(ClearSceneForNewLevel);
                 },
                 () => ClearSceneForNewLevel(),
                 "Discard changes"); // canceltext
@@ -67,7 +67,7 @@ public static class LevelEditorFileMenuCommands
                 {
                     SaveLevel();
                     if (!LevelProjectDirtyState.HasUnsavedChanges())
-                        PromptAndOpenLevel();
+                        EditorPopupService.RunAfterSaveFeedback(PromptAndOpenLevel);
                 },
                 () => PromptAndOpenLevel(),
                 "Discard changes"); // canceltext

@@ -34,12 +34,18 @@ public class InputHandler : MonoBehaviour, InputSystem_Actions.IUIActions
     public event Action<EditorCommand> TriggerCMD;
     void triggerCommand(EditorCommand editorCommand)
     {
+        if (EditorShortcutInputGate.AreShortcutsBlocked)
+            return;
+
         TriggerCMD?.Invoke(editorCommand);
     }
 
     public event Action<SelectionCommand, InputAction.CallbackContext> TriggerSelectionCommand;
     void triggerSelection(InputAction.CallbackContext context)
     {
+        if (EditorShortcutInputGate.AreShortcutsBlocked)
+            return;
+
         SelectionCommand command =
     Keyboard.current.leftCtrlKey.isPressed || Keyboard.current.rightCtrlKey.isPressed
         ? SelectionCommand.ToggleSelect
