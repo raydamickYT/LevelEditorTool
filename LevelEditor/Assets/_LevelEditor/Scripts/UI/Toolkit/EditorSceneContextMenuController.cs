@@ -124,6 +124,7 @@ public sealed class EditorSceneContextMenuController : MonoBehaviour
         if (!context.started || menuPanel == null || !IsMenuVisible())
             return;
 
+
         if (IsPointerOverMenuPanel())
             return;
 
@@ -135,14 +136,24 @@ public sealed class EditorSceneContextMenuController : MonoBehaviour
         if (Mouse.current == null || menuPanel == null || documentRoot == null)
             return;
 
-        Vector2 screenPosition = Mouse.current.position.ReadValue();
-        Vector2 panelPosition = ScreenToPanelPosition(screenPosition, documentRoot);
-        menuPanel.style.left = panelPosition.x;
-        menuPanel.style.top = panelPosition.y;
         menuPanel.pickingMode = PickingMode.Position;
         menuPanel.style.display = DisplayStyle.Flex;
         documentRoot.style.display = DisplayStyle.Flex;
         menuPanel.BringToFront();
+
+        // tell the documentRoot to execute the PositionMenuAtPointer method on the next frame, to ensure that the menu panel is properly positioned after it becomes visible and can be picked.
+        documentRoot.schedule.Execute(PositionMenuAtPointer).StartingIn(0);
+    }
+
+    void PositionMenuAtPointer()
+    {
+        if (Mouse.current == null || menuPanel == null || documentRoot?.panel == null)
+            return;
+
+        Vector2 screenPosition = Mouse.current.position.ReadValue();
+        Vector2 panelPosition = ScreenToPanelPosition(screenPosition, documentRoot);
+        menuPanel.style.left = panelPosition.x;
+        menuPanel.style.top = panelPosition.y;
     }
 
     void HideMenu()
@@ -224,7 +235,7 @@ public sealed class EditorSceneContextMenuController : MonoBehaviour
         float height = Mathf.Max(1f, panelBounds.height);
 
         return new Vector2(
-            panelBounds.xMin + (screenPosition.x / Mathf.Max(1f, Screen.width)) * width,
-            panelBounds.yMin + ((Screen.height - screenPosition.y) / Mathf.Max(1f, Screen.height)) * height);
+            panelBounds.xMin + screenPosition.x / Mathf.Max(1f, Screen.width) * width,
+            panelBounds.yMin + (Screen.height - screenPosition.y) / Mathf.Max(1f, Screen.height) * height);
     }
 }
