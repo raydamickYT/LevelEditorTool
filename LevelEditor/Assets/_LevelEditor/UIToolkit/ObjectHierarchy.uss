@@ -1,15 +1,15 @@
+/* Same anchoring model as ObjectLibrary.uss — position set at runtime in ObjectHierarchyManager. */
 .object-hierarchy {
     position: absolute;
     left: 0;
-    top: 520px;
+    top: 480px;
     bottom: 0;
     width: 290px;
+    flex-direction: column;
+    overflow: hidden;
     background-color: rgba(214, 214, 214, 0.88);
     border-right-width: 1px;
     border-right-color: rgb(140, 140, 140);
-    padding-left: 4px;
-    padding-top: 4px;
-    padding-right: 4px;
 }
 
 .object-hierarchy-header {
@@ -18,11 +18,7 @@
     align-items: center;
     justify-content: space-between;
     padding-left: 8px;
-    padding-right: 4px;
-    margin-left: -4px;
-    margin-top: -4px;
-    margin-right: -4px;
-    margin-bottom: 4px;
+    padding-right: 6px;
     border-bottom-width: 1px;
     border-bottom-color: rgba(140, 140, 140, 0.55);
     background-color: rgba(205, 205, 205, 0.95);
@@ -48,6 +44,8 @@
 
 .object-hierarchy-group-button {
     height: 24px;
+    margin-left: 4px;
+    margin-right: 4px;
     margin-bottom: 4px;
     -unity-text-align: middle-left;
     -unity-font-style: bold;
@@ -56,6 +54,7 @@
 
 .object-hierarchy-scroll {
     flex-grow: 1;
+    min-height: 0;
 }
 
 .object-hierarchy-collapsed .object-hierarchy-group-button {
@@ -66,8 +65,14 @@
     display: none;
 }
 
+.object-hierarchy-collapsed .object-hierarchy-resize-handle {
+    display: none;
+}
+
 .object-hierarchy-content {
     flex-direction: column;
+    padding-left: 4px;
+    padding-right: 4px;
     padding-bottom: 8px;
 }
 
@@ -128,4 +133,17 @@
     -unity-text-align: middle-left;
     color: rgb(70, 70, 70);
     font-size: 12px;
+}
+
+.object-hierarchy-resize-handle {
+    position: absolute;
+    right: -4px;
+    top: 0;
+    bottom: 0;
+    width: 8px;
+    background-color: rgba(0, 0, 0, 0);
+}
+
+.object-hierarchy-resize-handle:hover {
+    background-color: rgba(80, 120, 180, 0.45);
 }

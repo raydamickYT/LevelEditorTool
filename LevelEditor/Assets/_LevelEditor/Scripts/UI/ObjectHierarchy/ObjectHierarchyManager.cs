@@ -31,6 +31,8 @@ public class ObjectHierarchyManager : MonoBehaviour
     [SerializeField] private string toolkitCreateGroupButtonName = "create-group-button";
     [SerializeField] private string toolkitCollapseButtonName = "object-hierarchy-collapse-button";
     [SerializeField] private float toolkitIndentWidth = 24f;
+    [SerializeField] float expandedHierarchyTop = 300f;
+    [SerializeField] float collapsedHierarchyHeight = 30f;
 
     private readonly Dictionary<LevelObject, HierarchyObjectItem> items = new();
     private readonly Dictionary<LevelObject, HierarchyParentObjectItem> parentItems = new();
@@ -105,6 +107,23 @@ public class ObjectHierarchyManager : MonoBehaviour
         yield return null;
         hierarchyRebuildScheduled = false;
         RebuildEntireHierarchyFromScene();
+    }
+
+    void OnEnable()
+    {
+        if (uiDocument == null)
+            uiDocument = GetComponent<UIDocument>();
+
+        if (uiDocument != null && uiDocument.rootVisualElement != null)
+            SetupToolkitReferences();
+        else
+            StartCoroutine(SetupToolkitWhenReady());
+    }
+
+    System.Collections.IEnumerator SetupToolkitWhenReady()
+    {
+        yield return null;
+        SetupToolkitReferences();
     }
 
     void OnDisable()
@@ -280,32 +299,34 @@ public class ObjectHierarchyManager : MonoBehaviour
         toolkitContent = root?.Q<VisualElement>(toolkitContentName);
 
         Button foundButton = root?.Q<Button>(toolkitCreateGroupButtonName);
-        if (foundButton != toolkitCreateGroupButton)
-        {
-            if (toolkitCreateGroupButton != null)
-                toolkitCreateGroupButton.clicked -= CreateGroupParentObject;
+        if (toolkitCreateGroupButton != null)
+            toolkitCreateGroupButton.clicked -= CreateGroupParentObject;
 
-            toolkitCreateGroupButton = foundButton;
-            if (toolkitCreateGroupButton != null)
-                toolkitCreateGroupButton.clicked += CreateGroupParentObject;
-        }
+        toolkitCreateGroupButton = foundButton;
+        if (toolkitCreateGroupButton != null)
+            toolkitCreateGroupButton.clicked += CreateGroupParentObject;
 
         SetupToolkitCollapseButton(root);
-        ApplyToolkitHierarchyCollapsedState();
     }
 
     void SetupToolkitCollapseButton(VisualElement documentRoot)
     {
         Button foundButton = documentRoot?.Q<Button>(toolkitCollapseButtonName);
         if (foundButton == toolkitCollapseButton)
+        {
+            ApplyToolkitHierarchyCollapsedState();
             return;
+        }
 
         if (toolkitCollapseButton != null)
             toolkitCollapseButton.clicked -= ToggleToolkitHierarchyCollapsed;
 
         toolkitCollapseButton = foundButton;
-        if (toolkitCollapseButton != null)
-            toolkitCollapseButton.clicked += ToggleToolkitHierarchyCollapsed;
+        if (toolkitCollapseButton == null)
+            return;
+
+        toolkitCollapseButton.clicked += ToggleToolkitHierarchyCollapsed;
+        ApplyToolkitHierarchyCollapsedState();
     }
 
     void ToggleToolkitHierarchyCollapsed()
@@ -324,12 +345,14 @@ public class ObjectHierarchyManager : MonoBehaviour
             RemoveToolkitDragPreview();
             RemoveToolkitDropIndicator();
             toolkitRoot.AddToClassList("object-hierarchy-collapsed");
-            toolkitRoot.style.bottom = StyleKeyword.Auto;
-            toolkitRoot.style.height = 30f;
+            toolkitRoot.style.top = StyleKeyword.Auto;
+            toolkitRoot.style.bottom = 0f;
+            toolkitRoot.style.height = collapsedHierarchyHeight;
         }
         else
         {
             toolkitRoot.RemoveFromClassList("object-hierarchy-collapsed");
+            toolkitRoot.style.top = expandedHierarchyTop;
             toolkitRoot.style.bottom = 0f;
             toolkitRoot.style.height = StyleKeyword.Auto;
         }
