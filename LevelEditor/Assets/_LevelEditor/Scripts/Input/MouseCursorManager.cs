@@ -33,6 +33,7 @@ public sealed class MouseCursorManager : MonoBehaviour
     {
         "asset-tile",
         "object-library-resize-handle",
+        "object-hierarchy-resize-handle",
         "object-library-collapse-button",
         "object-hierarchy-collapse-button",
         "gizmo-tool-button",

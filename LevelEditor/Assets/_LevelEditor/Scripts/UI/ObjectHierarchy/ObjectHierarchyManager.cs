@@ -30,9 +30,12 @@ public class ObjectHierarchyManager : MonoBehaviour
     [SerializeField] private string toolkitContentName = "object-hierarchy-content";
     [SerializeField] private string toolkitCreateGroupButtonName = "create-group-button";
     [SerializeField] private string toolkitCollapseButtonName = "object-hierarchy-collapse-button";
+    [SerializeField] private string resizeHandleElementName = "object-hierarchy-resize-handle";
     [SerializeField] private float toolkitIndentWidth = 24f;
     [SerializeField] float expandedHierarchyTop = 300f;
     [SerializeField] float collapsedHierarchyHeight = 30f;
+    [SerializeField] float minHierarchyWidth = 260f;
+    [SerializeField] float maxHierarchyWidth = 900f;
 
     private readonly Dictionary<LevelObject, HierarchyObjectItem> items = new();
     private readonly Dictionary<LevelObject, HierarchyParentObjectItem> parentItems = new();
@@ -42,6 +45,7 @@ public class ObjectHierarchyManager : MonoBehaviour
     private VisualElement toolkitContent;
     private Button toolkitCreateGroupButton;
     private Button toolkitCollapseButton;
+    private VisualElement resizeHandle;
     private ToolkitHierarchyRow draggedToolkitRow;
     private readonly List<LevelObject> toolkitDraggedLevelObjects = new();
     private VisualElement toolkitDragPreview;
@@ -51,6 +55,8 @@ public class ObjectHierarchyManager : MonoBehaviour
     private int draggedToolkitPointerId = InvalidPointerId;
     private bool isDraggingToolkitRow;
     private bool isToolkitHierarchyCollapsed;
+    private bool isResizingHierarchy;
+    private int resizePointerId = InvalidPointerId;
     private LevelObject toolkitRangeSelectionAnchor;
 
     struct ToolkitDropTarget
@@ -133,6 +139,9 @@ public class ObjectHierarchyManager : MonoBehaviour
 
         if (toolkitCollapseButton != null)
             toolkitCollapseButton.clicked -= ToggleToolkitHierarchyCollapsed;
+
+        UnregisterResizeHandleCallbacks();
+        FinishResizeHierarchy();
 
         ClearToolkitRows();
     }
@@ -306,7 +315,92 @@ public class ObjectHierarchyManager : MonoBehaviour
         if (toolkitCreateGroupButton != null)
             toolkitCreateGroupButton.clicked += CreateGroupParentObject;
 
+        SetupResizeHandle();
         SetupToolkitCollapseButton(root);
+    }
+
+    void SetupResizeHandle()
+    {
+        VisualElement foundHandle = toolkitRoot?.Q<VisualElement>(resizeHandleElementName);
+        if (foundHandle == resizeHandle)
+            return;
+
+        UnregisterResizeHandleCallbacks();
+
+        resizeHandle = foundHandle;
+        if (resizeHandle == null)
+            return;
+
+        resizeHandle.RegisterCallback<PointerDownEvent>(BeginResizeHierarchy);
+        resizeHandle.RegisterCallback<PointerMoveEvent>(ResizeHierarchy);
+        resizeHandle.RegisterCallback<PointerUpEvent>(EndResizeHierarchy);
+        resizeHandle.RegisterCallback<PointerCancelEvent>(CancelResizeHierarchy);
+        resizeHandle.BringToFront();
+    }
+
+    void UnregisterResizeHandleCallbacks()
+    {
+        if (resizeHandle == null)
+            return;
+
+        resizeHandle.UnregisterCallback<PointerDownEvent>(BeginResizeHierarchy);
+        resizeHandle.UnregisterCallback<PointerMoveEvent>(ResizeHierarchy);
+        resizeHandle.UnregisterCallback<PointerUpEvent>(EndResizeHierarchy);
+        resizeHandle.UnregisterCallback<PointerCancelEvent>(CancelResizeHierarchy);
+    }
+
+    void BeginResizeHierarchy(PointerDownEvent evt)
+    {
+        if (evt.button != 0 || isToolkitHierarchyCollapsed || toolkitRoot == null)
+            return;
+
+        isResizingHierarchy = true;
+        resizePointerId = evt.pointerId;
+        resizeHandle.CapturePointer(resizePointerId);
+        ResizeHierarchyToPointer(evt.position);
+        evt.StopPropagation();
+    }
+
+    void ResizeHierarchy(PointerMoveEvent evt)
+    {
+        if (!isResizingHierarchy || evt.pointerId != resizePointerId)
+            return;
+
+        ResizeHierarchyToPointer(evt.position);
+        evt.StopPropagation();
+    }
+
+    void EndResizeHierarchy(PointerUpEvent evt)
+    {
+        if (evt.pointerId != resizePointerId)
+            return;
+
+        FinishResizeHierarchy();
+        evt.StopPropagation();
+    }
+
+    void CancelResizeHierarchy(PointerCancelEvent _)
+    {
+        FinishResizeHierarchy();
+    }
+
+    void FinishResizeHierarchy()
+    {
+        if (resizeHandle != null && resizePointerId != InvalidPointerId)
+            resizeHandle.ReleasePointer(resizePointerId);
+
+        isResizingHierarchy = false;
+        resizePointerId = InvalidPointerId;
+    }
+
+    void ResizeHierarchyToPointer(Vector2 panelPosition)
+    {
+        if (toolkitRoot == null)
+            return;
+
+        Rect panelBounds = toolkitRoot.worldBound;
+        float desiredWidth = panelPosition.x - panelBounds.xMin;
+        toolkitRoot.style.width = Mathf.Clamp(desiredWidth, minHierarchyWidth, maxHierarchyWidth);
     }
 
     void SetupToolkitCollapseButton(VisualElement documentRoot)
@@ -344,6 +438,7 @@ public class ObjectHierarchyManager : MonoBehaviour
         {
             RemoveToolkitDragPreview();
             RemoveToolkitDropIndicator();
+            FinishResizeHierarchy();
             toolkitRoot.AddToClassList("object-hierarchy-collapsed");
             toolkitRoot.style.top = StyleKeyword.Auto;
             toolkitRoot.style.bottom = 0f;
