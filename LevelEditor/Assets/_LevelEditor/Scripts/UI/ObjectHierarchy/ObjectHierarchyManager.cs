@@ -31,9 +31,12 @@ public class ObjectHierarchyManager : MonoBehaviour
     [SerializeField] private string toolkitCreateGroupButtonName = "create-group-button";
     [SerializeField] private string toolkitCollapseButtonName = "object-hierarchy-collapse-button";
     [SerializeField] private string resizeHandleElementName = "object-hierarchy-resize-handle";
+    [SerializeField] private string resizeHandleVerticalElementName = "object-hierarchy-resize-handle-vertical";
     [SerializeField] private float toolkitIndentWidth = 24f;
     [SerializeField] float expandedHierarchyTop = 300f;
     [SerializeField] float collapsedHierarchyHeight = 30f;
+    [SerializeField] float minHierarchyHeight = 100f;
+    [SerializeField] float minHierarchyTop = 480f;
     [SerializeField] float minHierarchyWidth = 260f;
     [SerializeField] float maxHierarchyWidth = 900f;
 
@@ -45,7 +48,10 @@ public class ObjectHierarchyManager : MonoBehaviour
     private VisualElement toolkitContent;
     private Button toolkitCreateGroupButton;
     private Button toolkitCollapseButton;
-    private VisualElement resizeHandle;
+    private VisualElement resizeHandleHorizontal;
+    private VisualElement resizeHandleVertical;
+    private VisualElement activeResizeHandle;
+    private bool isVerticalResize;
     private ToolkitHierarchyRow draggedToolkitRow;
     private readonly List<LevelObject> toolkitDraggedLevelObjects = new();
     private VisualElement toolkitDragPreview;
@@ -140,7 +146,7 @@ public class ObjectHierarchyManager : MonoBehaviour
         if (toolkitCollapseButton != null)
             toolkitCollapseButton.clicked -= ToggleToolkitHierarchyCollapsed;
 
-        UnregisterResizeHandleCallbacks();
+        UnregisterAllResizeHandleCallbacks();
         FinishResizeHierarchy();
 
         ClearToolkitRows();
@@ -315,59 +321,99 @@ public class ObjectHierarchyManager : MonoBehaviour
         if (toolkitCreateGroupButton != null)
             toolkitCreateGroupButton.clicked += CreateGroupParentObject;
 
-        SetupResizeHandle();
+        SetupResizeHandles();
         SetupToolkitCollapseButton(root);
     }
 
-    void SetupResizeHandle()
+    void SetupResizeHandles()
     {
-        VisualElement foundHandle = toolkitRoot?.Q<VisualElement>(resizeHandleElementName);
-        if (foundHandle == resizeHandle)
+        VisualElement foundHorizontal = toolkitRoot?.Q<VisualElement>(resizeHandleElementName);
+        VisualElement foundVertical = toolkitRoot?.Q<VisualElement>(resizeHandleVerticalElementName);
+        if (foundHorizontal == resizeHandleHorizontal && foundVertical == resizeHandleVertical)
             return;
 
-        UnregisterResizeHandleCallbacks();
+        UnregisterAllResizeHandleCallbacks();
 
-        resizeHandle = foundHandle;
-        if (resizeHandle == null)
-            return;
+        resizeHandleHorizontal = foundHorizontal;
+        resizeHandleVertical = foundVertical;
 
-        resizeHandle.RegisterCallback<PointerDownEvent>(BeginResizeHierarchy);
-        resizeHandle.RegisterCallback<PointerMoveEvent>(ResizeHierarchy);
-        resizeHandle.RegisterCallback<PointerUpEvent>(EndResizeHierarchy);
-        resizeHandle.RegisterCallback<PointerCancelEvent>(CancelResizeHierarchy);
-        resizeHandle.BringToFront();
+        if (resizeHandleHorizontal != null)
+        {
+            resizeHandleHorizontal.RegisterCallback<PointerDownEvent>(OnResizeHorizontalPointerDown);
+            resizeHandleHorizontal.RegisterCallback<PointerMoveEvent>(OnResizePointerMove);
+            resizeHandleHorizontal.RegisterCallback<PointerUpEvent>(OnResizePointerUp);
+            resizeHandleHorizontal.RegisterCallback<PointerCancelEvent>(OnResizePointerCancel);
+            resizeHandleHorizontal.BringToFront();
+        }
+
+        if (resizeHandleVertical != null)
+        {
+            resizeHandleVertical.RegisterCallback<PointerDownEvent>(OnResizeVerticalPointerDown);
+            resizeHandleVertical.RegisterCallback<PointerMoveEvent>(OnResizePointerMove);
+            resizeHandleVertical.RegisterCallback<PointerUpEvent>(OnResizePointerUp);
+            resizeHandleVertical.RegisterCallback<PointerCancelEvent>(OnResizePointerCancel);
+            resizeHandleVertical.BringToFront();
+        }
     }
 
-    void UnregisterResizeHandleCallbacks()
-    {
-        if (resizeHandle == null)
-            return;
+    void OnResizeHorizontalPointerDown(PointerDownEvent evt) => BeginResizeHierarchy(evt, isVertical: false);
 
-        resizeHandle.UnregisterCallback<PointerDownEvent>(BeginResizeHierarchy);
-        resizeHandle.UnregisterCallback<PointerMoveEvent>(ResizeHierarchy);
-        resizeHandle.UnregisterCallback<PointerUpEvent>(EndResizeHierarchy);
-        resizeHandle.UnregisterCallback<PointerCancelEvent>(CancelResizeHierarchy);
+    void OnResizeVerticalPointerDown(PointerDownEvent evt) => BeginResizeHierarchy(evt, isVertical: true);
+
+    void OnResizePointerMove(PointerMoveEvent evt) => MoveResizeHierarchy(evt);
+
+    void OnResizePointerUp(PointerUpEvent evt) => EndResizeHierarchy(evt);
+
+    void OnResizePointerCancel(PointerCancelEvent evt) => CancelResizeHierarchy();
+
+    void UnregisterAllResizeHandleCallbacks()
+    {
+        if (resizeHandleHorizontal != null)
+        {
+            resizeHandleHorizontal.UnregisterCallback<PointerDownEvent>(OnResizeHorizontalPointerDown);
+            resizeHandleHorizontal.UnregisterCallback<PointerMoveEvent>(OnResizePointerMove);
+            resizeHandleHorizontal.UnregisterCallback<PointerUpEvent>(OnResizePointerUp);
+            resizeHandleHorizontal.UnregisterCallback<PointerCancelEvent>(OnResizePointerCancel);
+        }
+
+        if (resizeHandleVertical != null)
+        {
+            resizeHandleVertical.UnregisterCallback<PointerDownEvent>(OnResizeVerticalPointerDown);
+            resizeHandleVertical.UnregisterCallback<PointerMoveEvent>(OnResizePointerMove);
+            resizeHandleVertical.UnregisterCallback<PointerUpEvent>(OnResizePointerUp);
+            resizeHandleVertical.UnregisterCallback<PointerCancelEvent>(OnResizePointerCancel);
+        }
     }
 
-    void BeginResizeHierarchy(PointerDownEvent evt)
+    void BeginResizeHierarchy(PointerDownEvent evt, bool isVertical)
     {
         if (evt.button != 0 || isToolkitHierarchyCollapsed || toolkitRoot == null)
             return;
 
         isResizingHierarchy = true;
+        isVerticalResize = isVertical;
+        activeResizeHandle = evt.currentTarget as VisualElement;
         resizePointerId = evt.pointerId;
-        resizeHandle.CapturePointer(resizePointerId);
-        ResizeHierarchyToPointer(evt.position);
+        activeResizeHandle?.CapturePointer(resizePointerId);
+        ApplyHierarchyResize(evt.position);
         evt.StopPropagation();
     }
 
-    void ResizeHierarchy(PointerMoveEvent evt)
+    void MoveResizeHierarchy(PointerMoveEvent evt)
     {
         if (!isResizingHierarchy || evt.pointerId != resizePointerId)
             return;
 
-        ResizeHierarchyToPointer(evt.position);
+        ApplyHierarchyResize(evt.position);
         evt.StopPropagation();
+    }
+
+    void ApplyHierarchyResize(Vector2 panelPosition)
+    {
+        if (isVerticalResize)
+            ResizeHierarchyVerticalToPointer(panelPosition);
+        else
+            ResizeHierarchyToPointer(panelPosition);
     }
 
     void EndResizeHierarchy(PointerUpEvent evt)
@@ -379,17 +425,19 @@ public class ObjectHierarchyManager : MonoBehaviour
         evt.StopPropagation();
     }
 
-    void CancelResizeHierarchy(PointerCancelEvent _)
+    void CancelResizeHierarchy()
     {
         FinishResizeHierarchy();
     }
 
     void FinishResizeHierarchy()
     {
-        if (resizeHandle != null && resizePointerId != InvalidPointerId)
-            resizeHandle.ReleasePointer(resizePointerId);
+        if (activeResizeHandle != null && resizePointerId != InvalidPointerId)
+            activeResizeHandle.ReleasePointer(resizePointerId);
 
         isResizingHierarchy = false;
+        isVerticalResize = false;
+        activeResizeHandle = null;
         resizePointerId = InvalidPointerId;
     }
 
@@ -401,6 +449,15 @@ public class ObjectHierarchyManager : MonoBehaviour
         Rect panelBounds = toolkitRoot.worldBound;
         float desiredWidth = panelPosition.x - panelBounds.xMin;
         toolkitRoot.style.width = Mathf.Clamp(desiredWidth, minHierarchyWidth, maxHierarchyWidth);
+    }
+    void ResizeHierarchyVerticalToPointer(Vector2 panelPosition)
+    {
+        Rect bounds = toolkitRoot.worldBound;
+        float maxTop = bounds.yMax - minHierarchyHeight; // min. paneelhoogte
+        float newTop = Mathf.Clamp(panelPosition.y, minHierarchyTop, maxTop);
+
+        toolkitRoot.style.top = newTop;
+        expandedHierarchyTop = newTop; // onthouden voor na collapse/expand
     }
 
     void SetupToolkitCollapseButton(VisualElement documentRoot)

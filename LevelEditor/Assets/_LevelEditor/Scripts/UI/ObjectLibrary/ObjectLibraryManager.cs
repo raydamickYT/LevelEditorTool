@@ -22,10 +22,13 @@ public class ObjectLibraryManager : MonoBehaviour
     [SerializeField] string gridElementName = "asset-grid";
     [SerializeField] string libraryRootElementName = "object-library-root";
     [SerializeField] string resizeHandleElementName = "object-library-resize-handle";
+    [SerializeField] string resizeHandleVerticalElementName = "object-library-resize-handle-vertical";
     [SerializeField] string collapseButtonElementName = "object-library-collapse-button";
     [SerializeField] int dragPreviewSortingOrder = 32767;
     [SerializeField] float minLibraryWidth = 260f;
     [SerializeField] float maxLibraryWidth = 900f;
+    [SerializeField] float minLibraryTop = 50f;
+    [SerializeField] float minLibraryHeight = 100f;
     [SerializeField] float expandedLibraryTop = 300f;
     [SerializeField] float collapsedLibraryHeight = 30f;
 
@@ -39,7 +42,9 @@ public class ObjectLibraryManager : MonoBehaviour
     VisualElement toolkitRoot;
     VisualElement toolkitLibraryRoot;
     VisualElement toolkitGrid;
-    VisualElement resizeHandle;
+    private VisualElement resizeHandleHorizontal;
+    private VisualElement resizeHandleVertical;
+
     Button collapseButton;
     ToolkitImage dragPreview;
     VisualElement dragSource;
@@ -51,6 +56,9 @@ public class ObjectLibraryManager : MonoBehaviour
     int resizePointerId = InvalidPointerId;
     bool isResizingLibrary;
     bool isLibraryCollapsed;
+    bool isVerticalResize;
+    private VisualElement activeResizeHandle;
+
     VisualElement dragEventRoot;
 
     private GameObject gameObjectPrefab;
@@ -66,6 +74,7 @@ public class ObjectLibraryManager : MonoBehaviour
         }
     }
     private GameObject previewPrefab;
+
     private GameObject PreviewPrefab
     {
         get
@@ -197,7 +206,7 @@ public class ObjectLibraryManager : MonoBehaviour
         toolkitRoot = uiDocument.rootVisualElement;
         toolkitGrid = toolkitRoot?.Q<VisualElement>(gridElementName);
         toolkitLibraryRoot = toolkitRoot?.Q<VisualElement>(libraryRootElementName) ?? toolkitGrid;
-        SetupResizeHandle();
+        SetupResizeHandles();
         SetupCollapseButton();
     }
 
@@ -213,28 +222,35 @@ public class ObjectLibraryManager : MonoBehaviour
         property.SetValue(document, sortingOrder);
     }
 
-    void SetupResizeHandle()
+    void SetupResizeHandles()
     {
-        VisualElement foundHandle = toolkitRoot?.Q<VisualElement>(resizeHandleElementName);
-        if (foundHandle == resizeHandle)
+        VisualElement foundHorizontal = toolkitRoot?.Q<VisualElement>(resizeHandleElementName);
+        VisualElement foundVertical = toolkitRoot?.Q<VisualElement>(resizeHandleVerticalElementName);
+        if (foundHorizontal == resizeHandleHorizontal && foundVertical == resizeHandleVertical)
             return;
 
-        if (resizeHandle != null)
+        UnregisterAllResizeHandleCallbacks();
+
+        resizeHandleHorizontal = foundHorizontal;
+        resizeHandleVertical = foundVertical;
+
+        if (resizeHandleHorizontal != null)
         {
-            resizeHandle.UnregisterCallback<PointerDownEvent>(BeginResizeLibrary);
-            resizeHandle.UnregisterCallback<PointerMoveEvent>(ResizeLibrary);
-            resizeHandle.UnregisterCallback<PointerUpEvent>(EndResizeLibrary);
-            resizeHandle.UnregisterCallback<PointerCancelEvent>(CancelResizeLibrary);
+            resizeHandleHorizontal.RegisterCallback<PointerDownEvent>(OnResizeHorizontalPointerDown);
+            resizeHandleHorizontal.RegisterCallback<PointerMoveEvent>(OnResizePointerMove);
+            resizeHandleHorizontal.RegisterCallback<PointerUpEvent>(OnResizePointerUp);
+            resizeHandleHorizontal.RegisterCallback<PointerCancelEvent>(OnResizePointerCancel);
+            resizeHandleHorizontal.BringToFront();
         }
 
-        resizeHandle = foundHandle;
-        if (resizeHandle == null)
-            return;
-
-        resizeHandle.RegisterCallback<PointerDownEvent>(BeginResizeLibrary);
-        resizeHandle.RegisterCallback<PointerMoveEvent>(ResizeLibrary);
-        resizeHandle.RegisterCallback<PointerUpEvent>(EndResizeLibrary);
-        resizeHandle.RegisterCallback<PointerCancelEvent>(CancelResizeLibrary);
+        if (resizeHandleVertical != null)
+        {
+            resizeHandleVertical.RegisterCallback<PointerDownEvent>(OnResizeVerticalPointerDown);
+            resizeHandleVertical.RegisterCallback<PointerMoveEvent>(OnResizePointerMove);
+            resizeHandleVertical.RegisterCallback<PointerUpEvent>(OnResizePointerUp);
+            resizeHandleVertical.RegisterCallback<PointerCancelEvent>(OnResizePointerCancel);
+            resizeHandleVertical.BringToFront();
+        }
     }
 
     void SetupCollapseButton()
@@ -285,26 +301,64 @@ public class ObjectLibraryManager : MonoBehaviour
         if (collapseButton != null)
             collapseButton.text = isLibraryCollapsed ? "Show" : "Hide";
     }
+    void OnResizeHorizontalPointerDown(PointerDownEvent evt) => BeginResizeLibrary(evt, isVertical: false);
 
-    void BeginResizeLibrary(PointerDownEvent evt)
+    void OnResizeVerticalPointerDown(PointerDownEvent evt) => BeginResizeLibrary(evt, isVertical: true);
+
+    void OnResizePointerMove(PointerMoveEvent evt) => MoveResizeLibrary(evt);
+
+    void OnResizePointerUp(PointerUpEvent evt) => EndResizeLibrary(evt);
+
+    void OnResizePointerCancel(PointerCancelEvent evt) => CancelResizeLibrary();
+
+    void UnregisterAllResizeHandleCallbacks()
     {
-        if (evt.button != 0 || isLibraryCollapsed || toolkitLibraryRoot == null || toolkitRoot == null)
+        if (resizeHandleHorizontal != null)
+        {
+            resizeHandleHorizontal.UnregisterCallback<PointerDownEvent>(OnResizeHorizontalPointerDown);
+            resizeHandleHorizontal.UnregisterCallback<PointerMoveEvent>(OnResizePointerMove);
+            resizeHandleHorizontal.UnregisterCallback<PointerUpEvent>(OnResizePointerUp);
+            resizeHandleHorizontal.UnregisterCallback<PointerCancelEvent>(OnResizePointerCancel);
+        }
+
+        if (resizeHandleVertical != null)
+        {
+            resizeHandleVertical.UnregisterCallback<PointerDownEvent>(OnResizeVerticalPointerDown);
+            resizeHandleVertical.UnregisterCallback<PointerMoveEvent>(OnResizePointerMove);
+            resizeHandleVertical.UnregisterCallback<PointerUpEvent>(OnResizePointerUp);
+            resizeHandleVertical.UnregisterCallback<PointerCancelEvent>(OnResizePointerCancel);
+        }
+    }
+
+    void BeginResizeLibrary(PointerDownEvent evt, bool isVertical)
+    {
+        if (evt.button != 0 || isLibraryCollapsed || toolkitLibraryRoot == null)
             return;
 
         isResizingLibrary = true;
+        isVerticalResize = isVertical;
+        activeResizeHandle = evt.currentTarget as VisualElement;
         resizePointerId = evt.pointerId;
-        resizeHandle.CapturePointer(resizePointerId);
-        ResizeLibraryToPointer(evt.position);
+        activeResizeHandle?.CapturePointer(resizePointerId);
+        ApplyLibraryResize(evt.position);
         evt.StopPropagation();
     }
 
-    void ResizeLibrary(PointerMoveEvent evt)
+    void MoveResizeLibrary(PointerMoveEvent evt)
     {
         if (!isResizingLibrary || evt.pointerId != resizePointerId)
             return;
 
-        ResizeLibraryToPointer(evt.position);
+        ApplyLibraryResize(evt.position);
         evt.StopPropagation();
+    }
+
+    void ApplyLibraryResize(Vector2 panelPosition)
+    {
+        if (isVerticalResize)
+            ResizeLibraryVerticalToPointer(panelPosition);
+        else
+            ResizeLibraryToPointer(panelPosition);
     }
 
     void EndResizeLibrary(PointerUpEvent evt)
@@ -316,28 +370,45 @@ public class ObjectLibraryManager : MonoBehaviour
         evt.StopPropagation();
     }
 
-    void CancelResizeLibrary(PointerCancelEvent _)
+    void CancelResizeLibrary()
     {
         FinishResizeLibrary();
     }
 
     void FinishResizeLibrary()
     {
-        if (resizeHandle != null && resizePointerId != InvalidPointerId)
-            resizeHandle.ReleasePointer(resizePointerId);
+        if (activeResizeHandle != null && resizePointerId != InvalidPointerId)
+            activeResizeHandle.ReleasePointer(resizePointerId);
 
         isResizingLibrary = false;
+        isVerticalResize = false;
+        activeResizeHandle = null;
         resizePointerId = InvalidPointerId;
     }
 
     void ResizeLibraryToPointer(Vector2 panelPosition)
     {
-        Rect panelBounds = toolkitRoot.worldBound;
+        if (toolkitLibraryRoot == null)
+            return;
+
+        Rect panelBounds = toolkitLibraryRoot.worldBound;
         float panelRight = panelBounds.xMax;
         float desiredWidth = panelRight - panelPosition.x;
-        float maxWidth = Mathf.Min(maxLibraryWidth, Mathf.Max(minLibraryWidth, panelBounds.width));
 
-        toolkitLibraryRoot.style.width = Mathf.Clamp(desiredWidth, minLibraryWidth, maxWidth);
+        toolkitLibraryRoot.style.width = Mathf.Clamp(desiredWidth, minLibraryWidth, maxLibraryWidth);
+    }
+
+    void ResizeLibraryVerticalToPointer(Vector2 panelPosition)
+    {
+        if (toolkitLibraryRoot == null)
+            return;
+
+        Rect bounds = toolkitLibraryRoot.worldBound;
+        float maxTop = bounds.yMax - minLibraryHeight;
+        float newTop = Mathf.Clamp(panelPosition.y, minLibraryTop, maxTop);
+
+        toolkitLibraryRoot.style.top = newTop;
+        expandedLibraryTop = newTop;
     }
 
     void ClearLibraryContent()
@@ -822,7 +893,7 @@ public class ObjectLibraryManager : MonoBehaviour
         SpriteRenderer renderer = obj.AddComponent<SpriteRenderer>();
         renderer.sprite = DefaultSprite; //no need to fully assign this since the ObjectButtonController also manages this
 
-        obj.AddComponent<BoxCollider2D>(); 
+        obj.AddComponent<BoxCollider2D>();
         obj.AddComponent<SelectableObject>();
         obj.AddComponent<LevelObject>();
 

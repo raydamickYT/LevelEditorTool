@@ -1818,7 +1818,15 @@ MonoBehaviour:
   toolkitContentName: object-hierarchy-content
   toolkitCreateGroupButtonName: create-group-button
   toolkitCollapseButtonName: object-hierarchy-collapse-button
+  resizeHandleElementName: object-hierarchy-resize-handle
+  resizeHandleVerticalElementName: object-hierarchy-resize-handle-vertical
   toolkitIndentWidth: 14
+  expandedHierarchyTop: 480
+  collapsedHierarchyHeight: 30
+  minHierarchyHeight: 100
+  minHierarchyTop: 480
+  minHierarchyWidth: 260
+  maxHierarchyWidth: 900
 --- !u!114 &919032400
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -3646,13 +3654,18 @@ MonoBehaviour:
   clickableUIToolkitClasses:
   - asset-tile
   - object-library-resize-handle
+  - object-library-resize-handle-vertical
+  - object-hierarchy-resize-handle
+  - object-hierarchy-resize-handle-vertical
   - object-library-collapse-button
+  - object-hierarchy-collapse-button
   - menu-trigger
   - menu-item
   - asset-folder
   - asset-subfolder
   ignoredUIToolkitClasses:
   - object-library
+  - object-hierarchy
   - asset-scroll-view
   - asset-grid
   - asset-folder-content

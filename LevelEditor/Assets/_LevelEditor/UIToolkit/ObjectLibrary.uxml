@@ -1,7 +1,6 @@
 <ui:UXML xmlns:ui="UnityEngine.UIElements" editor-extension-mode="False">
     <Style src="ObjectLibrary.uss" />
     <ui:VisualElement name="object-library-root" class="object-library">
-        <ui:VisualElement name="object-library-resize-handle" class="object-library-resize-handle" />
         <ui:VisualElement name="object-library-header" class="object-library-header">
             <ui:Label text="Object Library" class="object-library-title" />
             <ui:Button name="object-library-collapse-button" text="Hide" class="object-library-collapse-button" />
@@ -9,5 +8,7 @@
         <ui:ScrollView name="asset-scroll-view" class="asset-scroll-view" mode="Vertical">
             <ui:VisualElement name="asset-grid" class="asset-grid" />
         </ui:ScrollView>
+        <ui:VisualElement name="object-library-resize-handle" class="object-library-resize-handle" />
+        <ui:VisualElement name="object-library-resize-handle-vertical" class="object-library-resize-handle-vertical" />
     </ui:VisualElement>
 </ui:UXML>

@@ -147,3 +147,14 @@
 .object-hierarchy-resize-handle:hover {
     background-color: rgba(80, 120, 180, 0.45);
 }
+
+.object-hierarchy-resize-handle-vertical {
+    position: absolute;
+    left: 0;
+    right: 0;
+    top: -4px;
+    height: 8px;
+    background-color: rgba(0, 0, 0, 0);
+}
+.object-hierarchy-resize-handle-vertical:hover { background-color: rgba(80, 120, 180, 0.45); }
+.object-hierarchy-collapsed .object-hierarchy-resize-handle-vertical { display: none; }

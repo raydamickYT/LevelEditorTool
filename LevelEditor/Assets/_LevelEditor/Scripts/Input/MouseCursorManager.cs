@@ -33,7 +33,9 @@ public sealed class MouseCursorManager : MonoBehaviour
     {
         "asset-tile",
         "object-library-resize-handle",
+        "object-library-resize-handle-vertical",
         "object-hierarchy-resize-handle",
+        "object-hierarchy-resize-handle-vertical",
         "object-library-collapse-button",
         "object-hierarchy-collapse-button",
         "gizmo-tool-button",
@@ -45,6 +47,7 @@ public sealed class MouseCursorManager : MonoBehaviour
     string[] ignoredUIToolkitClasses =
     {
         "object-library",
+        "object-hierarchy",
         "asset-scroll-view",
         "asset-grid",
         "asset-folder",
@@ -212,11 +215,26 @@ public sealed class MouseCursorManager : MonoBehaviour
             if (HasIgnoredClass(current))
                 return false;
 
-            if (HasClickableClass(current))
+            if (HasClickableClass(current) || IsKnownResizeHandle(current))
                 return true;
         }
 
         return false;
+    }
+
+    static bool IsKnownResizeHandle(VisualElement element)
+    {
+        if (element == null)
+            return false;
+
+        return element.ClassListContains("object-library-resize-handle")
+            || element.ClassListContains("object-library-resize-handle-vertical")
+            || element.ClassListContains("object-hierarchy-resize-handle")
+            || element.ClassListContains("object-hierarchy-resize-handle-vertical")
+            || element.name == "object-library-resize-handle"
+            || element.name == "object-library-resize-handle-vertical"
+            || element.name == "object-hierarchy-resize-handle"
+            || element.name == "object-hierarchy-resize-handle-vertical";
     }
 
     bool HasClickableClass(VisualElement element)

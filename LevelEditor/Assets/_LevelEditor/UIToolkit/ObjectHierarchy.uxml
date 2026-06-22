@@ -10,5 +10,6 @@
             <ui:VisualElement name="object-hierarchy-content" class="object-hierarchy-content"/>
         </ui:ScrollView>
         <ui:VisualElement name="object-hierarchy-resize-handle" class="object-hierarchy-resize-handle" />
+        <ui:VisualElement name="object-hierarchy-resize-handle-vertical" class="object-hierarchy-resize-handle-vertical" />
     </ui:VisualElement>
 </ui:UXML>

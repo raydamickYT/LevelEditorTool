@@ -173,3 +173,14 @@
     opacity: 0.9;
     /* z-index: 999999; */
 }
+
+.object-library-resize-handle-vertical {
+    position: absolute;
+    left: 0;
+    right: 0;
+    top: -4px;
+    height: 8px;
+    background-color: rgba(0, 0, 0, 0);
+}
+.object-library-resize-handle-vertical:hover { background-color: rgba(80, 120, 180, 0.45); }
+.object-library-collapsed .object-library-resize-handle-vertical { display: none; }
