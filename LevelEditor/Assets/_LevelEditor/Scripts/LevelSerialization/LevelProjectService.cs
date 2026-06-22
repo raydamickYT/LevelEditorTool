@@ -75,6 +75,9 @@ public static class LevelProjectService
 
         EditorPopupService.ShowToast(toastMessage);
 
+        if (LevelEditorUnityLinkSession.HasLinkedUnityProject)
+            LevelEditorToolLinkManifest.WriteActiveLevel(LevelEditorUnityLinkSession.LinkedUnityProjectRoot);
+
         LevelProjectDirtyState.SetSavedBaseline(json);
     }
 

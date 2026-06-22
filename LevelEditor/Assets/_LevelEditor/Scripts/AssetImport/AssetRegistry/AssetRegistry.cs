@@ -48,14 +48,31 @@ public class AssetRegistry : MonoBehaviour
         if (assetImportService == null || string.IsNullOrEmpty(projectFolderPath))
             return;
 
-        List<ImportedAssetMetaData> importedAssets = assetImportService.ImportUnityProjectAssets(projectFolderPath);
+        string fullProjectPath = Path.GetFullPath(projectFolderPath);
+
+        if (!UnityEditorPluginDetector.IsValidUnityProjectRoot(fullProjectPath)
+            || !UnityEditorPluginDetector.IsPluginInstalled(fullProjectPath))
+        {
+            return;
+        }
+
+        List<ImportedAssetMetaData> importedAssets = assetImportService.ImportUnityProjectAssets(fullProjectPath);
         foreach (ImportedAssetMetaData asset in importedAssets)
         {
             importedSprites[asset.AssetID] = asset;
         }
 
+        LevelEditorUnityLinkSession.SetLinked(fullProjectPath);
+
         if (LevelProjectSession.HasOpenProject)
-            UnityProjectRootResolver.SaveLinkedRoot(LevelProjectSession.CurrentProjectDirectory, projectFolderPath);
+            UnityProjectRootResolver.SaveLinkedRoot(LevelProjectSession.CurrentProjectDirectory, fullProjectPath);
+
+        LevelEditorToolLinkManifest.WriteLinkEstablished(fullProjectPath);
+
+        EditorPopupService.ShowInfo(
+            "Unity project linked",
+            $"Loaded {importedAssets.Count} assets from the linked Unity project.",
+            fullProjectPath);
 
         EventManager.Instance.TriggerDelegate(ObjectLibraryManagerEvents.UpdateObjectLibrary, importedAssets);
     }

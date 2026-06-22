@@ -21,7 +21,65 @@ namespace LevelEditorJsonImporter.Editor
             if (!hasFocus)
                 return;
 
-            EditorApplication.delayCall += CheckImportedLevels;
+            EditorApplication.delayCall += () =>
+            {
+                CheckToolLinkedLevel();
+                CheckImportedLevels();
+            };
+        }
+
+        static void CheckToolLinkedLevel()
+        {
+            if (!LevelEditorToolLinkReader.TryReadCurrentProject(out LevelEditorToolLinkReader.ToolLinkManifest manifest, out _))
+                return;
+
+            string levelJsonPath = manifest.activeLevelJsonPath;
+            if (string.IsNullOrWhiteSpace(levelJsonPath) || !File.Exists(levelJsonPath))
+                return;
+
+            long levelTicks = manifest.activeLevelJsonUtcTicks > 0
+                ? manifest.activeLevelJsonUtcTicks
+                : LevelJsonSceneImporter.GetLevelJsonUtcTicks(levelJsonPath);
+
+            if (levelTicks <= 0)
+                return;
+
+            LevelJsonImportSource existingSource = FindImportSourceForPath(levelJsonPath);
+            if (existingSource != null && existingSource.lastImportedUtcTicks >= levelTicks)
+                return;
+
+            const string importRootName = "Imported Level";
+            bool clearExistingRoot = existingSource == null;
+
+            Debug.Log($"Level Editor Tool saved a level. Auto-importing '{levelJsonPath}'.");
+            LevelJsonSceneImporter.ImportFromPath(
+                levelJsonPath,
+                importRootName,
+                clearExistingImportRoot: clearExistingRoot,
+                selectImportedRoot: true,
+                logResult: true);
+        }
+
+        static LevelJsonImportSource FindImportSourceForPath(string levelJsonPath)
+        {
+            if (string.IsNullOrWhiteSpace(levelJsonPath))
+                return null;
+
+            string fullPath = Path.GetFullPath(levelJsonPath);
+            LevelJsonImportSource[] sources = Resources.FindObjectsOfTypeAll<LevelJsonImportSource>();
+            foreach (LevelJsonImportSource source in sources)
+            {
+                if (source == null || EditorUtility.IsPersistent(source))
+                    continue;
+
+                if (string.IsNullOrWhiteSpace(source.levelJsonPath))
+                    continue;
+
+                if (string.Equals(Path.GetFullPath(source.levelJsonPath), fullPath, StringComparison.OrdinalIgnoreCase))
+                    return source;
+            }
+
+            return null;
         }
 
         static void CheckImportedLevels()

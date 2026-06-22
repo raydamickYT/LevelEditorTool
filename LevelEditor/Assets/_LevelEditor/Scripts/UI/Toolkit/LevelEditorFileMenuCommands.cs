@@ -165,10 +165,31 @@ public static class LevelEditorFileMenuCommands
             return;
         }
 
+        string projectFolder = Path.GetFullPath(paths[0]);
+
+        if (!UnityEditorPluginDetector.IsValidUnityProjectRoot(projectFolder))
+        {
+            EditorPopupService.ShowWarning(
+                "Invalid Unity project",
+                "The selected folder must be a Unity project root (it should contain an Assets folder).",
+                projectFolder);
+            return;
+        }
+
+        if (!UnityEditorPluginDetector.IsPluginInstalled(projectFolder))
+        {
+            EditorPopupService.ShowWarning(
+                "Level Editor plugin not found",
+                "This Unity project does not contain the Level Editor JSON Importer plugin. " +
+                "Game assets from that project cannot be loaded until the plugin is installed.",
+                UnityEditorPluginDetector.BuildMissingPluginDetails(projectFolder));
+            return;
+        }
+
         if (EventManager.Instance == null)
             return;
 
-        EventManager.Instance.TriggerDelegate(AssetRegistryEvents.ImportUnityProjectAssets, paths[0]);
+        EventManager.Instance.TriggerDelegate(AssetRegistryEvents.ImportUnityProjectAssets, projectFolder);
     }
 
     public static void ImportAssets()

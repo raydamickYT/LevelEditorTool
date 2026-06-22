@@ -27,6 +27,7 @@ namespace LevelEditorJsonImporter.Editor
         void OnGUI()
         {
             EditorGUILayout.LabelField("Level Editor JSON Importer", EditorStyles.boldLabel);
+            DrawToolLinkStatus();
             EditorGUILayout.HelpBox(
                 "Imports a level.json from the Level Editor Tool. Assets resolve via project_asset_registry.json (Assets/... paths), bundled copies, or unity_project_link.json when the source Unity project moved to another PC.",
                 MessageType.Info);
@@ -68,6 +69,56 @@ namespace LevelEditorJsonImporter.Editor
                 Debug.LogException(ex);
                 EditorUtility.DisplayDialog("Import failed", ex.Message, "OK");
             }
+        }
+
+        void DrawToolLinkStatus()
+        {
+            if (!LevelEditorToolLinkReader.TryReadCurrentProject(out LevelEditorToolLinkReader.ToolLinkManifest manifest, out string manifestPath))
+            {
+                EditorGUILayout.HelpBox(
+                    "Level Editor Tool is not linked to this Unity project yet.\n\n" +
+                    "In the tool, choose File → Link Unity Project and select this project's folder (with the plugin installed).",
+                    MessageType.Warning);
+                return;
+            }
+
+            LevelEditorToolLinkReader.TryGetLinkedAtLocalTime(out _, out string linkedAtText);
+
+            string status =
+                "Level Editor Tool is linked to this Unity project." +
+                (string.IsNullOrEmpty(linkedAtText) ? "" : $"\nLinked at: {linkedAtText}");
+
+            if (!string.IsNullOrWhiteSpace(manifest.activeLevelJsonPath))
+            {
+                status += $"\nActive level in tool:\n{manifest.activeLevelJsonPath}";
+
+                if (GUILayout.Button("Use active level from tool"))
+                    levelJsonPath = manifest.activeLevelJsonPath;
+            }
+            else
+            {
+                status += "\nNo level saved in the tool yet — create or save a level there first.";
+            }
+
+            EditorGUILayout.HelpBox(status, MessageType.Info);
+
+            using (new EditorGUILayout.HorizontalScope())
+            {
+                if (GUILayout.Button("Refresh link status", GUILayout.Width(140)))
+                    Repaint();
+
+                if (GUILayout.Button("Show link file", GUILayout.Width(110)))
+                {
+                    string assetPath = $"{LevelEditorToolLinkReader.ManifestAssetFolder}/{LevelEditorToolLinkReader.ManifestFileName}";
+                    UnityEngine.Object asset = AssetDatabase.LoadAssetAtPath<UnityEngine.Object>(assetPath);
+                    if (asset != null)
+                        EditorGUIUtility.PingObject(asset);
+                    else
+                        EditorUtility.RevealInFinder(manifestPath);
+                }
+            }
+
+            EditorGUILayout.Space(4);
         }
 
         static LevelEditorProjectFile LoadLevelFile(string path)
