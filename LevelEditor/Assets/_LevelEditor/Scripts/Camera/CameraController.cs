@@ -60,8 +60,19 @@ public class CameraController : MonoBehaviour
         if(UIHelper.IsPointerOverUI()) return; //to prevent zooming when pointer is over UI
 
         float scrollValue = context.ReadValue<Vector2>().y;
-        cam.orthographicSize -= scrollValue * 0.5f;
-        cam.orthographicSize = Mathf.Clamp(cam.orthographicSize, minOrthographicSize, maxOrthographicSize);
+
+        Vector3 worldBeforeZoom = GetMouseWorldPosition();
+
+        float newSize = cam.orthographicSize - scrollValue * 0.5f;
+        newSize = Mathf.Clamp(newSize, minOrthographicSize, maxOrthographicSize);
+
+        if (Mathf.Approximately(newSize, cam.orthographicSize)) return;
+
+        cam.orthographicSize = newSize;
+
+        Vector3 worldAfterZoom = GetMouseWorldPosition();
+
+        transform.position += worldBeforeZoom - worldAfterZoom; // apply mouse position offset to zoom in on the mouse position
 
         EventManager.Instance.TriggerUnityEvent(CameraEvents.OnCameraZoom);
     }
