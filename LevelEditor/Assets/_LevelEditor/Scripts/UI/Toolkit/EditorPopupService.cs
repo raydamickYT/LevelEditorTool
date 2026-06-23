@@ -159,6 +159,9 @@ public sealed class EditorPopupService : MonoBehaviour
         if (saveProjectOverlay != null)
             saveProjectOverlay.RegisterCallback<KeyDownEvent>(OnSaveProjectKeyDown);
 
+        if (saveProjectNameField != null)
+            saveProjectNameField.RegisterCallback<KeyDownEvent>(OnSaveProjectNameFieldKeyDown);
+
         if (confirmOverlay != null)
             confirmOverlay.RegisterCallback<KeyDownEvent>(OnConfirmKeyDown);
 
@@ -169,11 +172,11 @@ public sealed class EditorPopupService : MonoBehaviour
     {
         yield return new WaitUntil(() => InputHandler.Instance != null);
 
-        InputHandler.Instance.OnCancelEvent += OnDismissInput;
-        InputHandler.Instance.onSubmitEvent += OnDismissInput;
+        InputHandler.Instance.OnCancelEvent += OnCancelInput;
+        InputHandler.Instance.onSubmitEvent += OnSubmitInput;
     }
 
-    void OnDismissInput(InputAction.CallbackContext context)
+    void OnCancelInput(InputAction.CallbackContext context)
     {
         if (!context.started || !IsAnyModalVisibleInternal())
             return;
@@ -182,6 +185,19 @@ public sealed class EditorPopupService : MonoBehaviour
             HideSaveProjectDialog();
         else if (IsConfirmDialogVisible())
             HideConfirmDialog();
+        else
+            Hide();
+    }
+
+    void OnSubmitInput(InputAction.CallbackContext context)
+    {
+        if (!context.started || !IsAnyModalVisibleInternal())
+            return;
+
+        if (IsSaveProjectDialogVisible())
+            OnSaveProjectSaveClicked();
+        else if (IsConfirmDialogVisible())
+            OnConfirmOkClicked();
         else
             Hide();
     }
@@ -198,8 +214,8 @@ public sealed class EditorPopupService : MonoBehaviour
 
         if (InputHandler.Instance != null)
         {
-            InputHandler.Instance.OnCancelEvent -= OnDismissInput;
-            InputHandler.Instance.onSubmitEvent -= OnDismissInput;
+            InputHandler.Instance.OnCancelEvent -= OnCancelInput;
+            InputHandler.Instance.onSubmitEvent -= OnSubmitInput;
         }
 
         if (overlay != null)
@@ -207,6 +223,9 @@ public sealed class EditorPopupService : MonoBehaviour
 
         if (saveProjectOverlay != null)
             saveProjectOverlay.UnregisterCallback<KeyDownEvent>(OnSaveProjectKeyDown);
+
+        if (saveProjectNameField != null)
+            saveProjectNameField.UnregisterCallback<KeyDownEvent>(OnSaveProjectNameFieldKeyDown);
 
         if (confirmOverlay != null)
             confirmOverlay.UnregisterCallback<KeyDownEvent>(OnConfirmKeyDown);
@@ -498,6 +517,18 @@ public sealed class EditorPopupService : MonoBehaviour
         }
     }
 
+    void OnSaveProjectNameFieldKeyDown(KeyDownEvent evt)
+    {
+        if (!IsSaveProjectDialogVisible())
+            return;
+
+        if (evt.keyCode == KeyCode.Return || evt.keyCode == KeyCode.KeypadEnter)
+        {
+            OnSaveProjectSaveClicked();
+            evt.StopPropagation();
+        }
+    }
+
     void OnConfirmKeyDown(KeyDownEvent evt)
     {
         if (!IsConfirmDialogVisible())
@@ -553,14 +584,12 @@ public sealed class EditorPopupService : MonoBehaviour
             return;
 
         if (evt.keyCode == KeyCode.Escape
-            || evt.keyCode == KeyCode.Return)
+            || evt.keyCode == KeyCode.Return
+            || evt.keyCode == KeyCode.KeypadEnter)
         {
             Hide();
             evt.StopPropagation();
         }
-        if (evt.keyCode == KeyCode.KeypadEnter)
-            OnConfirmOkClicked();
-
     }
 
     bool IsAnyModalVisibleInternal()
