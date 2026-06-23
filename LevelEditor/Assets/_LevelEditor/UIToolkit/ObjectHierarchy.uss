@@ -2,7 +2,7 @@
 .object-hierarchy {
     position: absolute;
     left: 0;
-    top: 480px;
+    top: 510px;
     bottom: 0;
     width: 290px;
     flex-direction: column;

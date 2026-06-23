@@ -53,7 +53,7 @@ public static class AssetStorageService
         data.LocalFilePath = destinationPath;
         data.AssetType = type;
 
-        if (type == ImportedAssetTypes.Sprite) //todo this can become a switch case when there's different types of assets we import.
+        if (type == ImportedAssetTypes.Sprite)
         {
             SaveSprite(data);
         }

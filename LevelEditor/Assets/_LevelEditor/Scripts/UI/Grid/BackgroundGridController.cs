@@ -17,6 +17,7 @@ public class BackgroundGridController : MonoBehaviour
         {
             Debug.LogError("Main Camera not found. Please ensure there is a camera in the scene tagged as 'MainCamera'.");
         }
+
         EventManager.Instance.AddUnityEventListener(CameraEvents.OnCameraZoom, () => gridNeedsResize = true);
     }
 

@@ -46,8 +46,6 @@ public class PasteAction : IUndoableAction, IEditorCommand
         IEnumerable<LevelObject.Memento> statesToSpawn = isRedo ? pastedStates : ObjectsToPaste; //if redo true: assign pasted states, if redo false: assign objectsToPaste
         // Debug.LogWarning("objects to paste:" + statesToSpawn.ToList().Count);
 
-        //todo: Check if it is a child with a parent and if so if it isn't already pasted (we can do this by checking if it's in the list we create)
-
         foreach (LevelObject.Memento item in statesToSpawn)
         {
             GameObject instantiatedGameObject = LevelObjectSpawner.SpawnMementoWithDescendants(item, isRedo, deferHierarchyNotification: true);
