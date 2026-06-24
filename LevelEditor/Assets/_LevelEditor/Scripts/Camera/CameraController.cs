@@ -1,4 +1,6 @@
 
+using System;
+using System.Collections.Generic;
 using UnityEngine;
 using UnityEngine.EventSystems;
 using UnityEngine.InputSystem;
@@ -15,12 +17,16 @@ public class CameraController : MonoBehaviour
     [SerializeField] private float minOrthographicSize = 2f;
     [SerializeField] private float maxOrthographicSize = 20f;
 
+    [Header("Focus selection")]
+    [SerializeField] float focusFramePadding = 1f;
+
     // Start is called once before the first execution of Update after the MonoBehaviour is created
     void Start()
     {
         cam = GetComponent<Camera>();
         InputHandler.Instance.onMiddleMouseButtonEvent += OnMoveCamera;
         InputHandler.Instance.onScrollWheelEvent += OnCameraZoom;
+        EventManager.Instance.AddDelegateListener(ShortcutBindingEvents.OnCommandTriggered, (Action<EditorCommand>)OnFocusObject);
 
     }
     void Update()
@@ -36,6 +42,42 @@ public class CameraController : MonoBehaviour
 
         lastMouseWorldPos = GetMouseWorldPosition();
     }
+
+    private void OnFocusObject(EditorCommand command)
+    {
+        if (command != EditorCommand.FocusObject)
+            return;
+
+        FocusOnObject();
+    }
+
+    private void FocusOnObject()
+    {
+        if (cam == null)
+            cam = GetComponent<Camera>();
+
+        if (!EditorBlackBoard.HasSelection)
+            return;
+
+        if (!GizmoInteractionHandler.TryGetCombinedColliderBoundsWorld(
+                EditorBlackBoard.GetSelectedLevelObjectsList(),
+                out Bounds selectionBounds))
+            return;
+
+        Vector3 center = selectionBounds.center;
+        center.z = transform.position.z;
+        transform.position = center;
+
+        float halfHeight = Mathf.Max(selectionBounds.extents.y, 0.01f) + focusFramePadding;
+        float halfWidth = Mathf.Max(selectionBounds.extents.x, 0.01f) + focusFramePadding;
+        cam.orthographicSize = Mathf.Clamp(
+            Mathf.Max(halfHeight, halfWidth / cam.aspect),
+            minOrthographicSize,
+            maxOrthographicSize);
+
+        EventManager.Instance.TriggerUnityEvent(CameraEvents.OnCameraZoom);
+    }
+
     private Vector3 GetMouseWorldPosition()
     {
         Vector2 mouseScreenPos = Mouse.current.position.ReadValue();

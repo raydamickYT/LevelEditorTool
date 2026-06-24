@@ -233,6 +233,14 @@ public class InputHandler : MonoBehaviour, InputSystem_Actions.IUIActions, Input
         }
     }
 
+    public void OnFocusObject(InputAction.CallbackContext context)
+    {
+        if (context.started)
+        {
+            SuppressShortcutLetter(context, KeyCode.F);
+            triggerCommand(EditorCommand.FocusObject);
+        }
+    }
     static void SuppressShortcutLetter(InputAction.CallbackContext context, KeyCode key)
     {
         if (!context.started)

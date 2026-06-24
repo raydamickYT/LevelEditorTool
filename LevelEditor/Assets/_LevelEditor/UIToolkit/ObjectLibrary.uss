@@ -51,6 +51,27 @@
     font-size: 14px;
 }
 
+.object-library-search-row {
+    flex-direction: row;
+    align-items: center;
+    padding-left: 8px;
+    padding-right: 8px;
+    padding-top: 6px;
+    padding-bottom: 6px;
+    border-bottom-width: 1px;
+    border-bottom-color: rgba(140, 140, 140, 0.35);
+    background-color: rgba(200, 200, 200, 0.85);
+}
+
+.object-library-search-field {
+    flex-grow: 1;
+    min-height: 24px;
+}
+
+.object-library-collapsed .object-library-search-row {
+    display: none;
+}
+
 .asset-scroll-view {
     flex-grow: 1;
 }

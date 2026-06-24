@@ -5,6 +5,9 @@
             <ui:Label text="Object Library" class="object-library-title" />
             <ui:Button name="object-library-collapse-button" text="Hide" class="object-library-collapse-button" />
         </ui:VisualElement>
+        <ui:VisualElement name="object-library-search-row" class="object-library-search-row">
+            <ui:TextField name="object-library-search-field" class="object-library-search-field" placeholder-text="Search assets..." />
+        </ui:VisualElement>
         <ui:ScrollView name="asset-scroll-view" class="asset-scroll-view" mode="Vertical">
             <ui:VisualElement name="asset-grid" class="asset-grid" />
         </ui:ScrollView>

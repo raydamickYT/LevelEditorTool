@@ -210,7 +210,7 @@ public class GizmoInteractionHandler : MonoBehaviour
         isDragging = true;
     }
 
-    static bool TryGetCombinedColliderBoundsWorld(List<LevelObject> levelObjects, out Bounds combined)
+    public static bool TryGetCombinedColliderBoundsWorld(List<LevelObject> levelObjects, out Bounds combined)
     {
         combined = default;
         if (levelObjects == null || levelObjects.Count == 0)

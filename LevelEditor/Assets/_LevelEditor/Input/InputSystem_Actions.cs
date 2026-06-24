@@ -325,6 +325,15 @@ public partial class @InputSystem_Actions: IInputActionCollection2, IDisposable
                     ""processors"": """",
                     ""interactions"": """",
                     ""initialStateCheck"": false
+                },
+                {
+                    ""name"": ""FocusObject"",
+                    ""type"": ""Button"",
+                    ""id"": ""b95357d1-d3d8-43e1-8ca8-0829ee30ccf7"",
+                    ""expectedControlType"": """",
+                    ""processors"": """",
+                    ""interactions"": """",
+                    ""initialStateCheck"": false
                 }
             ],
             ""bindings"": [
@@ -1064,6 +1073,17 @@ public partial class @InputSystem_Actions: IInputActionCollection2, IDisposable
                     ""action"": ""SaveAs"",
                     ""isComposite"": false,
                     ""isPartOfComposite"": true
+                },
+                {
+                    ""name"": """",
+                    ""id"": ""a27b829c-0ec8-47c2-afee-6893101e2ab9"",
+                    ""path"": ""<Keyboard>/f"",
+                    ""interactions"": """",
+                    ""processors"": """",
+                    ""groups"": """",
+                    ""action"": ""FocusObject"",
+                    ""isComposite"": false,
+                    ""isPartOfComposite"": false
                 }
             ]
         },
@@ -1300,6 +1320,15 @@ public partial class @InputSystem_Actions: IInputActionCollection2, IDisposable
                     ""name"": ""Cut"",
                     ""type"": ""Button"",
                     ""id"": ""793bbacf-bb5f-4a13-bdb8-b56c050127ff"",
+                    ""expectedControlType"": """",
+                    ""processors"": """",
+                    ""interactions"": """",
+                    ""initialStateCheck"": false
+                },
+                {
+                    ""name"": ""FocusObject"",
+                    ""type"": ""Button"",
+                    ""id"": ""26647e68-14fb-4996-8f9f-380cb6e7467e"",
                     ""expectedControlType"": """",
                     ""processors"": """",
                     ""interactions"": """",
@@ -2043,6 +2072,17 @@ public partial class @InputSystem_Actions: IInputActionCollection2, IDisposable
                     ""action"": ""Cut"",
                     ""isComposite"": false,
                     ""isPartOfComposite"": true
+                },
+                {
+                    ""name"": """",
+                    ""id"": ""3184a725-6066-45c3-879a-148ad8f1cd73"",
+                    ""path"": ""<Keyboard>/f"",
+                    ""interactions"": """",
+                    ""processors"": """",
+                    ""groups"": """",
+                    ""action"": ""FocusObject"",
+                    ""isComposite"": false,
+                    ""isPartOfComposite"": false
                 }
             ]
         }
@@ -2138,6 +2178,7 @@ public partial class @InputSystem_Actions: IInputActionCollection2, IDisposable
         m_UI_Paste = m_UI.FindAction("Paste", throwIfNotFound: true);
         m_UI_Duplicate = m_UI.FindAction("Duplicate", throwIfNotFound: true);
         m_UI_Cut = m_UI.FindAction("Cut", throwIfNotFound: true);
+        m_UI_FocusObject = m_UI.FindAction("FocusObject", throwIfNotFound: true);
         // UI_Editor
         m_UI_Editor = asset.FindActionMap("UI_Editor", throwIfNotFound: true);
         m_UI_Editor_Navigate = m_UI_Editor.FindAction("Navigate", throwIfNotFound: true);
@@ -2166,6 +2207,7 @@ public partial class @InputSystem_Actions: IInputActionCollection2, IDisposable
         m_UI_Editor_Paste = m_UI_Editor.FindAction("Paste", throwIfNotFound: true);
         m_UI_Editor_Duplicate = m_UI_Editor.FindAction("Duplicate", throwIfNotFound: true);
         m_UI_Editor_Cut = m_UI_Editor.FindAction("Cut", throwIfNotFound: true);
+        m_UI_Editor_FocusObject = m_UI_Editor.FindAction("FocusObject", throwIfNotFound: true);
     }
 
     ~@InputSystem_Actions()
@@ -2273,6 +2315,7 @@ public partial class @InputSystem_Actions: IInputActionCollection2, IDisposable
     private readonly InputAction m_UI_Paste;
     private readonly InputAction m_UI_Duplicate;
     private readonly InputAction m_UI_Cut;
+    private readonly InputAction m_UI_FocusObject;
     /// <summary>
     /// Provides access to input actions defined in input action map "UI".
     /// </summary>
@@ -2389,6 +2432,10 @@ public partial class @InputSystem_Actions: IInputActionCollection2, IDisposable
         /// </summary>
         public InputAction @Cut => m_Wrapper.m_UI_Cut;
         /// <summary>
+        /// Provides access to the underlying input action "UI/FocusObject".
+        /// </summary>
+        public InputAction @FocusObject => m_Wrapper.m_UI_FocusObject;
+        /// <summary>
         /// Provides access to the underlying input action map instance.
         /// </summary>
         public InputActionMap Get() { return m_Wrapper.m_UI; }
@@ -2492,6 +2539,9 @@ public partial class @InputSystem_Actions: IInputActionCollection2, IDisposable
             @Cut.started += instance.OnCut;
             @Cut.performed += instance.OnCut;
             @Cut.canceled += instance.OnCut;
+            @FocusObject.started += instance.OnFocusObject;
+            @FocusObject.performed += instance.OnFocusObject;
+            @FocusObject.canceled += instance.OnFocusObject;
         }
 
         /// <summary>
@@ -2581,6 +2631,9 @@ public partial class @InputSystem_Actions: IInputActionCollection2, IDisposable
             @Cut.started -= instance.OnCut;
             @Cut.performed -= instance.OnCut;
             @Cut.canceled -= instance.OnCut;
+            @FocusObject.started -= instance.OnFocusObject;
+            @FocusObject.performed -= instance.OnFocusObject;
+            @FocusObject.canceled -= instance.OnFocusObject;
         }
 
         /// <summary>
@@ -2644,6 +2697,7 @@ public partial class @InputSystem_Actions: IInputActionCollection2, IDisposable
     private readonly InputAction m_UI_Editor_Paste;
     private readonly InputAction m_UI_Editor_Duplicate;
     private readonly InputAction m_UI_Editor_Cut;
+    private readonly InputAction m_UI_Editor_FocusObject;
     /// <summary>
     /// Provides access to input actions defined in input action map "UI_Editor".
     /// </summary>
@@ -2760,6 +2814,10 @@ public partial class @InputSystem_Actions: IInputActionCollection2, IDisposable
         /// </summary>
         public InputAction @Cut => m_Wrapper.m_UI_Editor_Cut;
         /// <summary>
+        /// Provides access to the underlying input action "UI_Editor/FocusObject".
+        /// </summary>
+        public InputAction @FocusObject => m_Wrapper.m_UI_Editor_FocusObject;
+        /// <summary>
         /// Provides access to the underlying input action map instance.
         /// </summary>
         public InputActionMap Get() { return m_Wrapper.m_UI_Editor; }
@@ -2863,6 +2921,9 @@ public partial class @InputSystem_Actions: IInputActionCollection2, IDisposable
             @Cut.started += instance.OnCut;
             @Cut.performed += instance.OnCut;
             @Cut.canceled += instance.OnCut;
+            @FocusObject.started += instance.OnFocusObject;
+            @FocusObject.performed += instance.OnFocusObject;
+            @FocusObject.canceled += instance.OnFocusObject;
         }
 
         /// <summary>
@@ -2952,6 +3013,9 @@ public partial class @InputSystem_Actions: IInputActionCollection2, IDisposable
             @Cut.started -= instance.OnCut;
             @Cut.performed -= instance.OnCut;
             @Cut.canceled -= instance.OnCut;
+            @FocusObject.started -= instance.OnFocusObject;
+            @FocusObject.performed -= instance.OnFocusObject;
+            @FocusObject.canceled -= instance.OnFocusObject;
         }
 
         /// <summary>
@@ -3239,6 +3303,13 @@ public partial class @InputSystem_Actions: IInputActionCollection2, IDisposable
         /// <seealso cref="UnityEngine.InputSystem.InputAction.performed" />
         /// <seealso cref="UnityEngine.InputSystem.InputAction.canceled" />
         void OnCut(InputAction.CallbackContext context);
+        /// <summary>
+        /// Method invoked when associated input action "FocusObject" is either <see cref="UnityEngine.InputSystem.InputAction.started" />, <see cref="UnityEngine.InputSystem.InputAction.performed" /> or <see cref="UnityEngine.InputSystem.InputAction.canceled" />.
+        /// </summary>
+        /// <seealso cref="UnityEngine.InputSystem.InputAction.started" />
+        /// <seealso cref="UnityEngine.InputSystem.InputAction.performed" />
+        /// <seealso cref="UnityEngine.InputSystem.InputAction.canceled" />
+        void OnFocusObject(InputAction.CallbackContext context);
     }
     /// <summary>
     /// Interface to implement callback methods for all input action callbacks associated with input actions defined by "UI_Editor" which allows adding and removing callbacks.
@@ -3429,5 +3500,12 @@ public partial class @InputSystem_Actions: IInputActionCollection2, IDisposable
         /// <seealso cref="UnityEngine.InputSystem.InputAction.performed" />
         /// <seealso cref="UnityEngine.InputSystem.InputAction.canceled" />
         void OnCut(InputAction.CallbackContext context);
+        /// <summary>
+        /// Method invoked when associated input action "FocusObject" is either <see cref="UnityEngine.InputSystem.InputAction.started" />, <see cref="UnityEngine.InputSystem.InputAction.performed" /> or <see cref="UnityEngine.InputSystem.InputAction.canceled" />.
+        /// </summary>
+        /// <seealso cref="UnityEngine.InputSystem.InputAction.started" />
+        /// <seealso cref="UnityEngine.InputSystem.InputAction.performed" />
+        /// <seealso cref="UnityEngine.InputSystem.InputAction.canceled" />
+        void OnFocusObject(InputAction.CallbackContext context);
     }
 }

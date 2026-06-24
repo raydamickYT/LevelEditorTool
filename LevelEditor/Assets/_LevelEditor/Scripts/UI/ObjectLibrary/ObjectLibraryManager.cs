@@ -24,6 +24,7 @@ public class ObjectLibraryManager : MonoBehaviour
     [SerializeField] string resizeHandleElementName = "object-library-resize-handle";
     [SerializeField] string resizeHandleVerticalElementName = "object-library-resize-handle-vertical";
     [SerializeField] string collapseButtonElementName = "object-library-collapse-button";
+    [SerializeField] string searchFieldElementName = "object-library-search-field";
     [SerializeField] int dragPreviewSortingOrder = 32767;
     [SerializeField] float minLibraryWidth = 260f;
     [SerializeField] float maxLibraryWidth = 900f;
@@ -46,6 +47,8 @@ public class ObjectLibraryManager : MonoBehaviour
     private VisualElement resizeHandleVertical;
 
     Button collapseButton;
+    TextField searchField;
+    string librarySearchQuery = string.Empty;
     ToolkitImage dragPreview;
     VisualElement dragSource;
     string draggedAssetId;
@@ -127,6 +130,8 @@ public class ObjectLibraryManager : MonoBehaviour
 
         foreach (ImportedAssetMetaData asset in AssetStorageService.GetAllCachedImportedAssets())
             TryAddLibraryEntry(asset);
+
+        ApplyLibrarySearchFilter();
     }
 
     void updateContentObject(IEnumerable<ImportedAssetMetaData> data)
@@ -210,6 +215,7 @@ public class ObjectLibraryManager : MonoBehaviour
         toolkitLibraryRoot = toolkitRoot?.Q<VisualElement>(libraryRootElementName) ?? toolkitGrid;
         SetupResizeHandles();
         SetupCollapseButton();
+        SetupSearchField();
     }
 
     static void SetDocumentSortingOrder(UIDocument document, int sortingOrder)
@@ -270,6 +276,85 @@ public class ObjectLibraryManager : MonoBehaviour
 
         collapseButton.clicked += ToggleLibraryCollapsed;
         ApplyLibraryCollapsedState();
+    }
+
+    void SetupSearchField()
+    {
+        TextField foundField = toolkitRoot?.Q<TextField>(searchFieldElementName);
+        if (foundField == searchField)
+            return;
+
+        if (searchField != null)
+            searchField.UnregisterValueChangedCallback(OnLibrarySearchChanged);
+
+        searchField = foundField;
+        if (searchField == null)
+            return;
+
+        searchField.RegisterValueChangedCallback(OnLibrarySearchChanged);
+    }
+
+    void OnLibrarySearchChanged(ChangeEvent<string> evt)
+    {
+        librarySearchQuery = evt.newValue ?? string.Empty;
+        ApplyLibrarySearchFilter();
+    }
+
+    void ApplyLibrarySearchFilter()
+    {
+        if (!UsesToolkit || toolkitGrid == null)
+            return;
+
+        string query = librarySearchQuery.Trim().ToLowerInvariant();
+        bool hasQuery = query.Length > 0;
+
+        List<VisualElement> tiles = toolkitGrid.Query(className: "asset-tile").ToList();
+        for (int i = 0; i < tiles.Count; i++)
+        {
+            VisualElement tile = tiles[i];
+            string haystack = tile.userData as string ?? string.Empty;
+            bool matches = !hasQuery || haystack.Contains(query);
+            tile.style.display = matches ? DisplayStyle.Flex : DisplayStyle.None;
+        }
+
+        List<Foldout> foldouts = toolkitGrid.Query<Foldout>().ToList();
+        for (int i = 0; i < foldouts.Count; i++)
+            UpdateFoldoutSearchVisibility(foldouts[i], hasQuery);
+    }
+
+    static bool UpdateFoldoutSearchVisibility(Foldout foldout, bool hasQuery)
+    {
+        bool anyVisible = false;
+
+        for (int i = 0; i < foldout.contentContainer.childCount; i++)
+        {
+            VisualElement child = foldout.contentContainer[i];
+            if (child is Foldout nestedFoldout)
+            {
+                if (UpdateFoldoutSearchVisibility(nestedFoldout, hasQuery))
+                    anyVisible = true;
+
+                continue;
+            }
+
+            if (!child.ClassListContains("asset-folder-grid"))
+                continue;
+
+            for (int t = 0; t < child.childCount; t++)
+            {
+                if (child[t].resolvedStyle.display != DisplayStyle.None)
+                {
+                    anyVisible = true;
+                    break;
+                }
+            }
+        }
+
+        foldout.style.display = !hasQuery || anyVisible ? DisplayStyle.Flex : DisplayStyle.None;
+        if (hasQuery && anyVisible)
+            foldout.value = true;
+
+        return anyVisible;
     }
 
     void ToggleLibraryCollapsed()
@@ -441,6 +526,7 @@ public class ObjectLibraryManager : MonoBehaviour
         string displayName = GetAssetDisplayName(asset);
         VisualElement tile = new();
         tile.name = displayName;
+        tile.userData = BuildAssetSearchHaystack(asset, displayName);
         tile.AddToClassList("asset-tile");
         if (!canDragIntoLevel)
             tile.AddToClassList("asset-tile-disabled");
@@ -476,6 +562,9 @@ public class ObjectLibraryManager : MonoBehaviour
         VisualElement categoryGrid = GetOrCreateToolkitFolderGrid(asset.AssetType, asset.FolderPath);
         categoryGrid.Add(tile);
         renderedAssetIds.Add(asset.AssetID);
+
+        if (!string.IsNullOrWhiteSpace(librarySearchQuery))
+            ApplyLibrarySearchFilter();
     }
 
     VisualElement GetOrCreateToolkitFolderGrid(string assetType, string folderPath)
@@ -565,6 +654,22 @@ public class ObjectLibraryManager : MonoBehaviour
         return string.IsNullOrWhiteSpace(nameWithoutExtension)
             ? fileName
             : nameWithoutExtension;
+    }
+
+    static string BuildAssetSearchHaystack(ImportedAssetMetaData asset, string displayName)
+    {
+        if (asset == null)
+            return displayName?.ToLowerInvariant() ?? string.Empty;
+
+        return string.Join(" ",
+                displayName,
+                asset.AssetID,
+                asset.AssetType,
+                asset.FileName,
+                asset.FolderPath,
+                asset.AssetRelativePath,
+                GetCategoryDisplayName(asset.AssetType))
+            .ToLowerInvariant();
     }
 
     void BeginToolkitDrag(PointerDownEvent evt, VisualElement source, string assetId, string displayName, Sprite sprite)

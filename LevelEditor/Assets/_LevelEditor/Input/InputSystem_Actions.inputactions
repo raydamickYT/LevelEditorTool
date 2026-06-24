@@ -239,6 +239,15 @@
                     "processors": "",
                     "interactions": "",
                     "initialStateCheck": false
+                },
+                {
+                    "name": "FocusObject",
+                    "type": "Button",
+                    "id": "b95357d1-d3d8-43e1-8ca8-0829ee30ccf7",
+                    "expectedControlType": "",
+                    "processors": "",
+                    "interactions": "",
+                    "initialStateCheck": false
                 }
             ],
             "bindings": [
@@ -978,6 +987,17 @@
                     "action": "SaveAs",
                     "isComposite": false,
                     "isPartOfComposite": true
+                },
+                {
+                    "name": "",
+                    "id": "a27b829c-0ec8-47c2-afee-6893101e2ab9",
+                    "path": "<Keyboard>/f",
+                    "interactions": "",
+                    "processors": "",
+                    "groups": "",
+                    "action": "FocusObject",
+                    "isComposite": false,
+                    "isPartOfComposite": false
                 }
             ]
         },
@@ -1214,6 +1234,15 @@
                     "name": "Cut",
                     "type": "Button",
                     "id": "793bbacf-bb5f-4a13-bdb8-b56c050127ff",
+                    "expectedControlType": "",
+                    "processors": "",
+                    "interactions": "",
+                    "initialStateCheck": false
+                },
+                {
+                    "name": "FocusObject",
+                    "type": "Button",
+                    "id": "26647e68-14fb-4996-8f9f-380cb6e7467e",
                     "expectedControlType": "",
                     "processors": "",
                     "interactions": "",
@@ -1957,6 +1986,17 @@
                     "action": "Cut",
                     "isComposite": false,
                     "isPartOfComposite": true
+                },
+                {
+                    "name": "",
+                    "id": "3184a725-6066-45c3-879a-148ad8f1cd73",
+                    "path": "<Keyboard>/f",
+                    "interactions": "",
+                    "processors": "",
+                    "groups": "",
+                    "action": "FocusObject",
+                    "isComposite": false,
+                    "isPartOfComposite": false
                 }
             ]
         }

@@ -119,7 +119,8 @@ public enum EditorCommand
     OpenFile,
     NewFile,
     ImportAssets,
-    ToggleSnapping
+    ToggleSnapping,
+    FocusObject //this'll be used to focus the camera on the selected object(s) in the scene view
 }
 
 [Serializable]
