@@ -75,15 +75,17 @@ public static class LevelObjectSpawner
             // Rebuild an empty parent from memento transform data (same idea as level JSON load).
             spawnedObject = CreateGroupShellFromMemento((LevelObjectGroup.GroupMemento)memento, parent);
         }
-        else if (memento.PrefabReference == null)
-        {
-            Debug.LogError("Cannot spawn LevelObject: missing prefab reference.");
-            return null;
-        }
         else
         {
+            GameObject spawnPrefab = ResolveSpawnPrefab(memento);
+            if (spawnPrefab == null)
+            {
+                Debug.LogError("Cannot spawn LevelObject: missing prefab reference.");
+                return null;
+            }
+
             spawnedObject = Object.Instantiate(
-                memento.PrefabReference,
+                spawnPrefab,
                 memento.Position,
                 memento.Rotation);
         }
@@ -100,22 +102,7 @@ public static class LevelObjectSpawner
 
             spawnedObject.transform.localScale = memento.Scale;
 
-            Sprite spriteToUse = null;
-
-            if (!string.IsNullOrEmpty(memento.AssetID))
-                spriteToUse = AssetRuntimeLoader.LoadSpriteByAssetID(memento.AssetID);
-
-            if (spriteToUse == null)
-                spriteToUse = memento.Sprite;
-
-            if (spriteToUse != null && spawnedObject.TryGetComponent(out SpriteRenderer spriteRenderer))
-            {
-                spriteRenderer.sprite = spriteToUse;
-            }
-            else if (!spawnedObject.TryGetComponent(out SpriteRenderer _))
-            {
-                Debug.LogWarning($"No sprite found for spawned object. AssetID: {memento.AssetID}");
-            }
+            ApplySpriteFromMemento(spawnedObject, memento);
         }
 
         LevelObject levelObject = spawnedObject.GetComponent<LevelObject>();
@@ -128,7 +115,9 @@ public static class LevelObjectSpawner
         if (!string.IsNullOrEmpty(memento.ObjectName))
             spawnedObject.name = memento.ObjectName;
 
-        levelObject.PrefabReference = isGroupMemento ? spawnedObject : memento.PrefabReference;
+        levelObject.PrefabReference = isGroupMemento
+            ? spawnedObject
+            : ResolveSpawnPrefab(memento);
 
         if (!string.IsNullOrEmpty(memento.AssetID))
             levelObject.AssetID = memento.AssetID;
@@ -178,6 +167,39 @@ public static class LevelObjectSpawner
         group.PrefabReference = go;
 
         return go;
+    }
+
+    static GameObject ResolveSpawnPrefab(LevelObject.Memento memento)
+    {
+        if (ObjectLibraryManager.Instance != null)
+        {
+            GameObject template = ObjectLibraryManager.Instance.SpawnPrefabTemplate;
+            if (template != null)
+                return template;
+        }
+
+        return memento?.PrefabReference;
+    }
+
+    static void ApplySpriteFromMemento(GameObject spawnedObject, LevelObject.Memento memento)
+    {
+        if (spawnedObject == null || memento == null)
+            return;
+
+        if (!spawnedObject.TryGetComponent(out SpriteRenderer spriteRenderer))
+            return;
+
+        Sprite spriteToUse = memento.Sprite;
+        if (spriteToUse == null && !string.IsNullOrEmpty(memento.AssetID))
+            spriteToUse = AssetRuntimeLoader.LoadSpriteByAssetID(memento.AssetID);
+
+        if (spriteToUse == null)
+        {
+            Debug.LogWarning($"No sprite found for spawned object. AssetID: {memento.AssetID}");
+            return;
+        }
+
+        spriteRenderer.sprite = spriteToUse;
     }
 
     public static void Despawn(GameObject obj, bool scheduleHierarchyRebuild = true)

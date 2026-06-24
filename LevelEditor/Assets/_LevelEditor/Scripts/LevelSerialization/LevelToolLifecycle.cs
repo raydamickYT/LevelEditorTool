@@ -6,6 +6,7 @@ using UnityEngine;
 public sealed class LevelToolLifecycle : MonoBehaviour
 {
     static LevelToolLifecycle _instance;
+    bool _quitWithoutSaving;
 
     [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.AfterSceneLoad)]
     static void EnsureHost()
@@ -51,6 +52,9 @@ public sealed class LevelToolLifecycle : MonoBehaviour
 
     bool OnWantsToQuit()
     {
+        if (_quitWithoutSaving)
+            return true;
+
         if(LevelProjectDirtyState.HasUnsavedChanges())
         {
             EditorPopupService.ShowConfirmDialog(
@@ -63,8 +67,12 @@ public sealed class LevelToolLifecycle : MonoBehaviour
                     if (!LevelProjectDirtyState.HasUnsavedChanges())
                         EditorPopupService.RunAfterSaveFeedback(Application.Quit);
                 },
-                () => Application.Quit(),
-                "Discard changes"); // canceltext
+                () =>
+                {
+                    _quitWithoutSaving = true;
+                    Application.Quit();
+                },
+                "Discard changes");
             return false;
         }
         return true;

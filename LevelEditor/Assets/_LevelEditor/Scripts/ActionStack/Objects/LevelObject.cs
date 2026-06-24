@@ -115,6 +115,9 @@ public class LevelObject : MonoBehaviour
     {
         sprite1 = getSprite();
 
+        if (sprite1 == null && !string.IsNullOrEmpty(AssetID))
+            sprite1 = AssetRuntimeLoader.LoadSpriteByAssetID(AssetID);
+
         if (sprite1 == null)
             Debug.LogWarning("Sprite could not be found");
 
