@@ -123,6 +123,7 @@
 
 .hierarchy-foldout-icon {
     width: 14px;
+    flex-shrink: 0;
     -unity-text-align: middle-center;
     color: rgb(60, 60, 60);
 }

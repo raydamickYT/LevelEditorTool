@@ -858,6 +858,9 @@ public class ObjectHierarchyManager : MonoBehaviour
         if (row == null || row.LevelObject == null || evt.button != 0)
             return;
 
+        if (row.IsFoldoutPointerTarget(evt.target as VisualElement))
+            return;
+
         draggedToolkitRow = row;
         toolkitDraggedLevelObjects.Clear();
         toolkitDraggedLevelObjects.AddRange(GetToolkitDraggedLevelObjects(row.LevelObject));
@@ -1684,6 +1687,7 @@ public class ObjectHierarchyManager : MonoBehaviour
             foldoutIcon = new Label(GetFoldoutText(hasChildren, isCollapsedParent));
             foldoutIcon.AddToClassList("hierarchy-foldout-icon");
             foldoutIcon.RegisterCallback<ClickEvent>(OnFoldoutClick);
+            foldoutIcon.RegisterCallback<PointerDownEvent>(OnFoldoutPointerDown);
             Root.Add(foldoutIcon);
 
             nameLabel = new Label(levelObject != null ? levelObject.name : "Missing Object");
@@ -1705,7 +1709,10 @@ public class ObjectHierarchyManager : MonoBehaviour
             Root.UnregisterCallback<PointerMoveEvent>(OnPointerMove);
             Root.UnregisterCallback<PointerUpEvent>(OnPointerUp);
             if (foldoutIcon != null)
+            {
                 foldoutIcon.UnregisterCallback<ClickEvent>(OnFoldoutClick);
+                foldoutIcon.UnregisterCallback<PointerDownEvent>(OnFoldoutPointerDown);
+            }
             if (selectableObject != null)
                 selectableObject.OnSelectionChanged -= UpdateSelectionVisuals;
         }
@@ -1721,6 +1728,8 @@ public class ObjectHierarchyManager : MonoBehaviour
                 nameLabel.text = displayName ?? string.Empty;
         }
 
+        public bool IsFoldoutPointerTarget(VisualElement target) => IsFoldoutTarget(target);
+
         void OnPointerDown(PointerDownEvent evt)
         {
             if (evt.button == 1)
@@ -1730,7 +1739,26 @@ public class ObjectHierarchyManager : MonoBehaviour
                 return;
             }
 
+            if (IsFoldoutTarget(evt.target as VisualElement))
+                return;
+
             beginDragCallback?.Invoke(this, evt);
+        }
+
+        void OnFoldoutPointerDown(PointerDownEvent evt)
+        {
+            if (evt.button != 0)
+                return;
+
+            evt.StopPropagation();
+        }
+
+        bool IsFoldoutTarget(VisualElement target)
+        {
+            if (target == null || foldoutIcon == null)
+                return false;
+
+            return target == foldoutIcon || foldoutIcon.Contains(target);
         }
 
         static string GetFoldoutText(bool hasChildren, bool isCollapsedParent)
