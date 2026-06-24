@@ -872,6 +872,7 @@ MonoBehaviour:
     m_Bits: 0
   minOrthographicSize: 1
   maxOrthographicSize: 100
+  focusFramePadding: 1
 --- !u!1 &601380512
 GameObject:
   m_ObjectHideFlags: 0
@@ -3246,6 +3247,7 @@ MonoBehaviour:
   resizeHandleElementName: object-library-resize-handle
   resizeHandleVerticalElementName: object-library-resize-handle-vertical
   collapseButtonElementName: object-library-collapse-button
+  searchFieldElementName: object-library-search-field
   dragPreviewSortingOrder: 32767
   minLibraryWidth: 260
   maxLibraryWidth: 900
@@ -4015,6 +4017,7 @@ MonoBehaviour:
   - command: 7
   - command: 8
   - command: 1
+  - command: 9
   - command: 9
 --- !u!1 &1895197558
 GameObject:

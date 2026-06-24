@@ -10,6 +10,7 @@ namespace LevelEditorJsonImporter.Editor
     public static class LevelJsonAutoReimportWatcher
     {
         static bool isChecking;
+        static string lastProcessedToolLinkSignature = "";
 
         static LevelJsonAutoReimportWatcher()
         {
@@ -33,6 +34,12 @@ namespace LevelEditorJsonImporter.Editor
             if (!LevelEditorToolLinkReader.TryReadCurrentProject(out LevelEditorToolLinkReader.ToolLinkManifest manifest, out _))
                 return;
 
+            string signature = BuildToolLinkSignature(manifest);
+            if (string.Equals(signature, lastProcessedToolLinkSignature, StringComparison.Ordinal))
+                return;
+
+            lastProcessedToolLinkSignature = signature;
+
             string levelJsonPath = manifest.activeLevelJsonPath;
             if (string.IsNullOrWhiteSpace(levelJsonPath) || !File.Exists(levelJsonPath))
                 return;
@@ -51,13 +58,24 @@ namespace LevelEditorJsonImporter.Editor
             const string importRootName = "Imported Level";
             bool clearExistingRoot = existingSource == null;
 
-            Debug.Log($"Level Editor Tool saved a level. Auto-importing '{levelJsonPath}'.");
+            Debug.Log($"Level Editor Tool updated the active level. Auto-importing '{levelJsonPath}'.");
             LevelJsonSceneImporter.ImportFromPath(
                 levelJsonPath,
                 importRootName,
                 clearExistingImportRoot: clearExistingRoot,
                 selectImportedRoot: true,
                 logResult: true);
+        }
+
+        static string BuildToolLinkSignature(LevelEditorToolLinkReader.ToolLinkManifest manifest)
+        {
+            if (manifest == null)
+                return "";
+
+            return string.Join("|",
+                manifest.activeLevelJsonPath ?? "",
+                manifest.activeLevelJsonUtcTicks.ToString(),
+                manifest.activeLevelUpdatedAtUtc ?? "");
         }
 
         static LevelJsonImportSource FindImportSourceForPath(string levelJsonPath)

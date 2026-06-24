@@ -22,4 +22,21 @@ public static class LevelEditorUnityLinkSession
     {
         LinkedUnityProjectRoot = null;
     }
+
+    /// <summary>Restores the session link from the open level's <c>unity_project_link.json</c>.</summary>
+    public static bool TryRestoreFromLevelDirectory(string levelDirectory)
+    {
+        string root = UnityProjectRootResolver.ResolveLinkedRoot(levelDirectory);
+        if (string.IsNullOrEmpty(root))
+            root = LevelEditorGlobalUnityLink.TryResolveGlobalLink();
+
+        if (string.IsNullOrEmpty(root) || !UnityEditorPluginDetector.IsPluginInstalled(root))
+        {
+            Clear();
+            return false;
+        }
+
+        SetLinked(root);
+        return true;
+    }
 }

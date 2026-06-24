@@ -15,6 +15,18 @@ public sealed class LevelToolLifecycle : MonoBehaviour
 
         GameObject host = new GameObject(nameof(LevelToolLifecycle));
         host.AddComponent<LevelToolLifecycle>();
+        host.AddComponent<LevelProjectAutoSaveService>();
+        DontDestroyOnLoad(host);
+        RestoreGlobalUnityLinkIfAvailable();
+    }
+
+    static void RestoreGlobalUnityLinkIfAvailable()
+    {
+        string globalLink = LevelEditorGlobalUnityLink.TryResolveGlobalLink();
+        if (string.IsNullOrEmpty(globalLink) || !UnityEditorPluginDetector.IsPluginInstalled(globalLink))
+            return;
+
+        LevelEditorUnityLinkSession.SetLinked(globalLink);
     }
 
     void Awake()
@@ -28,7 +40,6 @@ public sealed class LevelToolLifecycle : MonoBehaviour
         _instance = this;
 
         Application.wantsToQuit += OnWantsToQuit;
-        DontDestroyOnLoad(gameObject);
     }
 
     void OnDestroy()

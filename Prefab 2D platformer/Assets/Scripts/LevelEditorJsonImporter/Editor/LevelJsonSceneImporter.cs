@@ -41,6 +41,9 @@ namespace LevelEditorJsonImporter.Editor
             if (logResult)
                 Debug.Log($"Imported '{level.levelName}' with {level.objects.Count} records. Registry assets loaded: {assetsById.Count}.");
 
+            if (!string.IsNullOrEmpty(levelDirectory))
+                LevelEditorImportPathResolver.RecordUnityImport(levelDirectory, levelJsonPath);
+
             return root;
         }
 

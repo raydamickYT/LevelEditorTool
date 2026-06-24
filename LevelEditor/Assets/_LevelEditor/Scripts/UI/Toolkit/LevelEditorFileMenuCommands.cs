@@ -53,6 +53,7 @@ public static class LevelEditorFileMenuCommands
         EventManager.Instance.TriggerDelegate(SelectionEvents.ReplaceSelectionWithObject, Enumerable.Empty<GameObject>());
 
         LevelProjectDirtyState.MarkClean();
+        LevelEditorToolLinkManifest.WriteActiveLevelIfLinked();
     }
 
     public static void OpenLevel()
@@ -98,23 +99,32 @@ public static class LevelEditorFileMenuCommands
 
     public static void SaveLevel()
     {
-        if (LevelProjectSession.HasOpenProject)
-        {
-            string dir = LevelProjectSession.CurrentProjectDirectory;
-            string path = LevelProjectSession.CurrentLevelJsonPath;
-            if (string.IsNullOrEmpty(path)) 
-                path = Path.Combine(dir, LevelProjectService.DefaultLevelFileName);
-
-            string displayName = Path.GetFileName(dir.TrimEnd(Path.DirectorySeparatorChar, Path.AltDirectorySeparatorChar));
-            if (string.IsNullOrEmpty(displayName))
-                displayName = Path.GetFileNameWithoutExtension(path);
-
-            LevelProjectService.SaveLevelToPath(path, displayName);
+        if (TrySaveOpenProject(showToast: true))
             return;
-        }
 
         // New project: choose parent folder, then name the project folder.
         LevelProjectSaveUtility.PromptSaveNewProject();
+    }
+
+    /// <summary>Silent background save for auto-save; only when a project path is already open.</summary>
+    public static bool TrySaveOpenProjectSilent() => TrySaveOpenProject(showToast: false);
+
+    static bool TrySaveOpenProject(bool showToast)
+    {
+        if (!LevelProjectSession.HasOpenProject)
+            return false;
+
+        string dir = LevelProjectSession.CurrentProjectDirectory;
+        string path = LevelProjectSession.CurrentLevelJsonPath;
+        if (string.IsNullOrEmpty(path))
+            path = Path.Combine(dir, LevelProjectService.DefaultLevelFileName);
+
+        string displayName = Path.GetFileName(dir.TrimEnd(Path.DirectorySeparatorChar, Path.AltDirectorySeparatorChar));
+        if (string.IsNullOrEmpty(displayName))
+            displayName = Path.GetFileNameWithoutExtension(path);
+
+        LevelProjectService.SaveLevelToPath(path, displayName, showToast);
+        return true;
     }
 
     /// <summary>

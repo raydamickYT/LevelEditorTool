@@ -63,6 +63,7 @@ public class AssetRegistry : MonoBehaviour
         }
 
         LevelEditorUnityLinkSession.SetLinked(fullProjectPath);
+        LevelEditorGlobalUnityLink.Save(fullProjectPath);
 
         if (LevelProjectSession.HasOpenProject)
             UnityProjectRootResolver.SaveLinkedRoot(LevelProjectSession.CurrentProjectDirectory, fullProjectPath);

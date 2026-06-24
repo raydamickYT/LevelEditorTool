@@ -20,9 +20,20 @@ public static class UnityProjectRootResolver
     public const string LinkFileName = "unity_project_link.json";
 
     [Serializable]
-    sealed class UnityProjectLinkFile
+    public sealed class UnityProjectLinkFile
     {
         public string unityProjectRoot = "";
+        public string lastUnityImportUtc = "";
+        public long lastUnityImportLevelJsonUtcTicks;
+    }
+
+    public struct UnityProjectLinkStatus
+    {
+        public bool HasLinkFile;
+        public bool UnityProjectAvailableOnThisMachine;
+        public string UnityProjectRoot;
+        public string LastUnityImportUtc;
+        public long LastUnityImportLevelJsonUtcTicks;
     }
 
     public static bool NeedsExternalUnityProject(ImportedAssetMetaData asset)
@@ -117,20 +128,78 @@ public static class UnityProjectRootResolver
         return true;
     }
 
-    public static string ResolveLinkedRoot(string levelDirectory)
+    public static UnityProjectLinkStatus GetLinkStatus(string levelDirectory)
     {
         if (string.IsNullOrWhiteSpace(levelDirectory))
-            return null;
+            return default;
+
+        if (!TryReadLinkFile(levelDirectory, out UnityProjectLinkFile link))
+            return default;
+
+        string resolvedRoot = ResolveStoredRootPath(levelDirectory, link.unityProjectRoot);
+        bool available = !string.IsNullOrEmpty(resolvedRoot)
+            && Directory.Exists(resolvedRoot)
+            && UnityEditorPluginDetector.IsPluginInstalled(resolvedRoot);
+
+        return new UnityProjectLinkStatus
+        {
+            HasLinkFile = true,
+            UnityProjectAvailableOnThisMachine = available,
+            UnityProjectRoot = resolvedRoot ?? link.unityProjectRoot,
+            LastUnityImportUtc = link.lastUnityImportUtc ?? "",
+            LastUnityImportLevelJsonUtcTicks = link.lastUnityImportLevelJsonUtcTicks,
+        };
+    }
+
+    public static bool TryReadLinkFile(string levelDirectory, out UnityProjectLinkFile link)
+    {
+        link = null;
+        if (string.IsNullOrWhiteSpace(levelDirectory))
+            return false;
 
         string linkPath = Path.Combine(levelDirectory, LinkFileName);
         if (!File.Exists(linkPath))
-            return null;
+            return false;
 
-        UnityProjectLinkFile link = JsonUtility.FromJson<UnityProjectLinkFile>(File.ReadAllText(linkPath, Encoding.UTF8));
-        if (link == null || string.IsNullOrWhiteSpace(link.unityProjectRoot))
+        try
+        {
+            link = JsonUtility.FromJson<UnityProjectLinkFile>(File.ReadAllText(linkPath, Encoding.UTF8));
+            return link != null;
+        }
+        catch (Exception)
+        {
+            return false;
+        }
+    }
+
+    public static string ResolveLinkedRoot(string levelDirectory)
+    {
+        if (!TryReadLinkFile(levelDirectory, out UnityProjectLinkFile link)
+            || string.IsNullOrWhiteSpace(link.unityProjectRoot))
+        {
             return null;
+        }
 
         return ResolveStoredRootPath(levelDirectory, link.unityProjectRoot);
+    }
+
+    public static void RecordUnityImport(string levelDirectory, string levelJsonPath, string absoluteUnityProjectRoot)
+    {
+        if (string.IsNullOrWhiteSpace(levelDirectory) || string.IsNullOrWhiteSpace(absoluteUnityProjectRoot))
+            return;
+
+        TryReadLinkFile(levelDirectory, out UnityProjectLinkFile link);
+        link ??= new UnityProjectLinkFile();
+
+        string fullRoot = Path.GetFullPath(absoluteUnityProjectRoot);
+        link.unityProjectRoot = (TryMakeRelativePath(levelDirectory, fullRoot) ?? fullRoot).Replace('\\', '/');
+        link.lastUnityImportUtc = DateTime.UtcNow.ToString("o");
+        link.lastUnityImportLevelJsonUtcTicks = string.IsNullOrWhiteSpace(levelJsonPath) || !File.Exists(levelJsonPath)
+            ? 0
+            : File.GetLastWriteTimeUtc(levelJsonPath).Ticks;
+
+        string linkPath = Path.Combine(levelDirectory, LinkFileName);
+        File.WriteAllText(linkPath, JsonUtility.ToJson(link, true), Encoding.UTF8);
     }
 
     public static void SaveLinkedRoot(string levelDirectory, string absoluteUnityProjectRoot)
@@ -141,7 +210,10 @@ public static class UnityProjectRootResolver
         string fullRoot = Path.GetFullPath(absoluteUnityProjectRoot);
         string stored = TryMakeRelativePath(levelDirectory, fullRoot) ?? fullRoot;
 
-        UnityProjectLinkFile link = new() { unityProjectRoot = stored.Replace('\\', '/') };
+        TryReadLinkFile(levelDirectory, out UnityProjectLinkFile link);
+        link ??= new UnityProjectLinkFile();
+        link.unityProjectRoot = stored.Replace('\\', '/');
+
         string linkPath = Path.Combine(levelDirectory, LinkFileName);
         File.WriteAllText(linkPath, JsonUtility.ToJson(link, true), Encoding.UTF8);
     }

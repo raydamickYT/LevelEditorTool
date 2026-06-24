@@ -19,6 +19,7 @@ namespace LevelEditorJsonImporter.Editor
             public string linkedAtUtc = "";
             public string activeLevelJsonPath = "";
             public long activeLevelJsonUtcTicks;
+            public string activeLevelUpdatedAtUtc = "";
         }
 
         public static bool TryReadCurrentProject(out ToolLinkManifest manifest, out string manifestAbsolutePath)
@@ -60,6 +61,44 @@ namespace LevelEditorJsonImporter.Editor
             linkedAtLocal = linkedAtUtc.ToLocalTime();
             formatted = linkedAtLocal.ToString("g");
             return true;
+        }
+
+        public static void WriteActiveLevel(string unityProjectRoot, string levelJsonPath)
+        {
+            if (string.IsNullOrWhiteSpace(unityProjectRoot) || string.IsNullOrWhiteSpace(levelJsonPath))
+                return;
+
+            string manifestDirectory = Path.Combine(unityProjectRoot, ManifestAssetFolder.Replace('/', Path.DirectorySeparatorChar));
+            Directory.CreateDirectory(manifestDirectory);
+
+            string manifestPath = Path.Combine(manifestDirectory, ManifestFileName);
+            ToolLinkManifest manifest = ReadManifest(manifestPath) ?? new ToolLinkManifest();
+
+            if (string.IsNullOrWhiteSpace(manifest.linkedAtUtc))
+                manifest.linkedAtUtc = DateTime.UtcNow.ToString("o");
+
+            manifest.activeLevelJsonPath = Path.GetFullPath(levelJsonPath);
+            manifest.activeLevelUpdatedAtUtc = DateTime.UtcNow.ToString("o");
+            manifest.activeLevelJsonUtcTicks = File.Exists(manifest.activeLevelJsonPath)
+                ? File.GetLastWriteTimeUtc(manifest.activeLevelJsonPath).Ticks
+                : 0;
+
+            File.WriteAllText(manifestPath, JsonUtility.ToJson(manifest, true), Encoding.UTF8);
+        }
+
+        static ToolLinkManifest ReadManifest(string manifestPath)
+        {
+            if (!File.Exists(manifestPath))
+                return null;
+
+            try
+            {
+                return JsonUtility.FromJson<ToolLinkManifest>(File.ReadAllText(manifestPath, Encoding.UTF8));
+            }
+            catch (Exception)
+            {
+                return null;
+            }
         }
     }
 }

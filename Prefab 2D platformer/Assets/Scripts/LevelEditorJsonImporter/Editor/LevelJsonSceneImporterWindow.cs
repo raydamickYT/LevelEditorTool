@@ -91,6 +91,7 @@ namespace LevelEditorJsonImporter.Editor
             if (!string.IsNullOrWhiteSpace(manifest.activeLevelJsonPath))
             {
                 status += $"\nActive level in tool:\n{manifest.activeLevelJsonPath}";
+                AppendLevelLinkStatus(ref status, manifest.activeLevelJsonPath);
 
                 if (GUILayout.Button("Use active level from tool"))
                     levelJsonPath = manifest.activeLevelJsonPath;
@@ -119,6 +120,54 @@ namespace LevelEditorJsonImporter.Editor
             }
 
             EditorGUILayout.Space(4);
+        }
+
+        static void AppendLevelLinkStatus(ref string status, string levelJsonPath)
+        {
+            string levelDirectory = Path.GetDirectoryName(levelJsonPath);
+            if (string.IsNullOrEmpty(levelDirectory))
+                return;
+
+            string linkPath = Path.Combine(levelDirectory, LevelEditorImportPathResolver.LinkFileName);
+            if (!File.Exists(linkPath))
+                return;
+
+            try
+            {
+                string json = File.ReadAllText(linkPath);
+                var link = JsonUtility.FromJson<LevelUnityLinkStatus>(json);
+                if (link == null)
+                    return;
+
+                if (!string.IsNullOrWhiteSpace(link.lastUnityImportUtc)
+                    && DateTime.TryParse(link.lastUnityImportUtc, null, System.Globalization.DateTimeStyles.RoundtripKind, out DateTime importedUtc))
+                {
+                    status += $"\nLast imported in Unity: {importedUtc.ToLocalTime():g}";
+                }
+
+                if (!string.IsNullOrWhiteSpace(link.unityProjectRoot))
+                {
+                    string resolved = Path.IsPathRooted(link.unityProjectRoot)
+                        ? link.unityProjectRoot
+                        : Path.GetFullPath(Path.Combine(levelDirectory, link.unityProjectRoot));
+
+                    status += Directory.Exists(resolved)
+                        ? "\nUnity project link: available on this PC."
+                        : "\nUnity project link: saved path is not on this PC.";
+                }
+            }
+            catch (Exception)
+            {
+                // ignore malformed link file in status panel
+            }
+        }
+
+        [Serializable]
+        sealed class LevelUnityLinkStatus
+        {
+            public string unityProjectRoot = "";
+            public string lastUnityImportUtc = "";
+            public long lastUnityImportLevelJsonUtcTicks;
         }
 
         static LevelEditorProjectFile LoadLevelFile(string path)

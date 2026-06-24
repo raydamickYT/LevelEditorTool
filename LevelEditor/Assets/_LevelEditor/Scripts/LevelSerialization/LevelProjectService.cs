@@ -37,7 +37,7 @@ public static class LevelProjectService
         LoadLevelFromPath(levelJsonPath);
     }
 
-    public static void SaveLevelToPath(string levelJsonFilePath, string levelDisplayName = "")
+    public static void SaveLevelToPath(string levelJsonFilePath, string levelDisplayName = "", bool showToast = true)
     {
         if (string.IsNullOrWhiteSpace(levelJsonFilePath))
             throw new ArgumentException("Path is empty.", nameof(levelJsonFilePath));
@@ -69,16 +69,20 @@ public static class LevelProjectService
 
         LevelProjectSession.SetCurrentLevelJsonPath(Path.GetFullPath(levelJsonFilePath));
 
-        string toastMessage = "Saved";
-        if (!string.IsNullOrEmpty(directory))
-            toastMessage = $"Saved · {Path.GetFileName(directory.TrimEnd(Path.DirectorySeparatorChar, Path.AltDirectorySeparatorChar))}";
+        if (showToast)
+        {
+            string toastMessage = "Saved";
+            if (!string.IsNullOrEmpty(directory))
+                toastMessage = $"Saved · {Path.GetFileName(directory.TrimEnd(Path.DirectorySeparatorChar, Path.AltDirectorySeparatorChar))}";
 
-        EditorPopupService.ShowToast(toastMessage);
+            EditorPopupService.ShowToast(toastMessage);
+        }
 
         if (LevelEditorUnityLinkSession.HasLinkedUnityProject)
             LevelEditorToolLinkManifest.WriteActiveLevel(LevelEditorUnityLinkSession.LinkedUnityProjectRoot);
 
         LevelProjectDirtyState.SetSavedBaseline(json);
+        LevelProjectAutoSaveService.ResetIntervalTimerIfActive();
     }
 
     public static void LoadLevelFromPath(string levelJsonFilePath)
@@ -90,14 +94,17 @@ public static class LevelProjectService
         }
 
         string fullLevelPath = Path.GetFullPath(levelJsonFilePath);
+        string levelDirectory = Path.GetDirectoryName(levelJsonFilePath);
         if (LevelProjectSession.IsSameLevelJsonLoaded(fullLevelPath))
+        {
+            SyncUnityLinkForLevelDirectory(levelDirectory);
             return;
+        }
 
         EventManager.Instance.TriggerDelegate(
             SelectionEvents.ReplaceSelectionWithObject,
             Enumerable.Empty<GameObject>());
 
-        string levelDirectory = Path.GetDirectoryName(levelJsonFilePath);
         if (!string.IsNullOrEmpty(levelDirectory))
         {
             LevelProjectSession.SetProjectDirectory(levelDirectory);
@@ -136,6 +143,26 @@ public static class LevelProjectService
 
         LevelProjectSession.SetCurrentLevelJsonPath(fullLevelPath);
         LevelProjectDirtyState.SetSavedBaselineFromCurrentScene();
+        SyncUnityLinkForLevelDirectory(levelDirectory);
+    }
+
+    static void SyncUnityLinkForLevelDirectory(string levelDirectory)
+    {
+        if (string.IsNullOrEmpty(levelDirectory))
+            return;
+
+        LevelEditorUnityLinkSession.TryRestoreFromLevelDirectory(levelDirectory);
+
+        UnityProjectRootResolver.UnityProjectLinkStatus linkStatus = UnityProjectRootResolver.GetLinkStatus(levelDirectory);
+        if (linkStatus.HasLinkFile && !linkStatus.UnityProjectAvailableOnThisMachine)
+        {
+            Debug.LogWarning(
+                "This level is linked to a Unity project that is not available on this computer. " +
+                "Use File → Link Unity Project to point it to the project on this PC.\n" +
+                $"Saved link: {linkStatus.UnityProjectRoot}");
+        }
+
+        LevelEditorToolLinkManifest.WriteActiveLevelIfLinked();
     }
 
     public static string GetCurrentLevelDisplayName()

@@ -17,6 +17,7 @@ public static class LevelEditorToolLinkManifest
         public string linkedAtUtc = "";
         public string activeLevelJsonPath = "";
         public long activeLevelJsonUtcTicks;
+        public string activeLevelUpdatedAtUtc = "";
     }
 
     public static void WriteLinkEstablished(string unityProjectRoot)
@@ -27,6 +28,36 @@ public static class LevelEditorToolLinkManifest
     public static void WriteActiveLevel(string unityProjectRoot)
     {
         WriteToUnityProject(unityProjectRoot, updateLinkTimestamp: false);
+    }
+
+    /// <summary>Writes the tool's currently open level into the linked Unity project manifest.</summary>
+    public static void WriteActiveLevelIfLinked()
+    {
+        if (TryResolveLinkedUnityProjectRoot(out string unityProjectRoot))
+            WriteActiveLevel(unityProjectRoot);
+    }
+
+    public static bool TryResolveLinkedUnityProjectRoot(out string unityProjectRoot)
+    {
+        if (LevelEditorUnityLinkSession.HasLinkedUnityProject)
+        {
+            unityProjectRoot = LevelEditorUnityLinkSession.LinkedUnityProjectRoot;
+            return true;
+        }
+
+        if (!LevelProjectSession.HasOpenProject)
+        {
+            unityProjectRoot = null;
+            return false;
+        }
+
+        unityProjectRoot = UnityProjectRootResolver.ResolveLinkedRoot(LevelProjectSession.CurrentProjectDirectory);
+        if (string.IsNullOrEmpty(unityProjectRoot))
+            unityProjectRoot = LevelEditorGlobalUnityLink.TryResolveGlobalLink();
+
+        return !string.IsNullOrEmpty(unityProjectRoot)
+            && Directory.Exists(unityProjectRoot)
+            && UnityEditorPluginDetector.IsPluginInstalled(unityProjectRoot);
     }
 
     static void WriteToUnityProject(string unityProjectRoot, bool updateLinkTimestamp)
@@ -44,6 +75,7 @@ public static class LevelEditorToolLinkManifest
             manifest.linkedAtUtc = DateTime.UtcNow.ToString("o");
 
         manifest.activeLevelJsonPath = LevelProjectSession.CurrentLevelJsonPath ?? "";
+        manifest.activeLevelUpdatedAtUtc = DateTime.UtcNow.ToString("o");
 
         if (!string.IsNullOrWhiteSpace(manifest.activeLevelJsonPath)
             && File.Exists(manifest.activeLevelJsonPath))
