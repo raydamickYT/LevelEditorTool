@@ -7,6 +7,8 @@ using UnityEngine.InputSystem;
 
 public class GizmoInteractionHandler : MonoBehaviour
 {
+    public static GizmoInteractionHandler Instance { get; private set; }
+
     //snapping
     [Header("Snapping")]
     [SerializeField] private SnappingSettings snappingSettings;
@@ -42,7 +44,46 @@ public class GizmoInteractionHandler : MonoBehaviour
 
     void Awake()
     {
+        if (Instance != null && Instance != this)
+        {
+            Destroy(this);
+            return;
+        }
+
+        Instance = this;
         EventManager.Instance.AddDelegateListener(SnappingEvent.OnToggleSnapping, (Action<bool>)(isEnabled => snappingSettings.snappingEnabled = isEnabled));
+    }
+
+    void OnDestroy()
+    {
+        if (Instance == this)
+            Instance = null;
+    }
+
+    public Vector3 SnapSpawnWorldPosition(
+        Vector3 rawWorldPosition,
+        GameObject spawnedObject = null,
+        Vector3 spawnDragStartPosition = default,
+        Bounds spawnDragStartBounds = default,
+        bool hasSpawnDragStartBounds = false)
+    {
+        if (snappingSettings == null || !snappingSettings.snappingEnabled)
+            return rawWorldPosition;
+
+        if (spawnedObject != null && hasSpawnDragStartBounds)
+        {
+            return GizmoSnapToEdgeUtility.ResolveSnappedPlanePosition(
+                rawWorldPosition,
+                spawnDragStartPosition,
+                spawnDragStartBounds,
+                true,
+                snappingSettings,
+                GizmoAxis.All,
+                Vector3.zero,
+                new[] { spawnedObject });
+        }
+
+        return GizmoSnapToGridUtility.SnapVector(rawWorldPosition, snappingSettings.moveSnapSize, true);
     }
 
     // Start is called once before the first execution of Update after the MonoBehaviour is created
@@ -197,6 +238,32 @@ public class GizmoInteractionHandler : MonoBehaviour
                 else
                     combined.Encapsulate(col.bounds);
             }
+        }
+
+        return hasAny;
+    }
+
+    public static bool TryGetColliderBoundsWorld(GameObject root, out Bounds combined)
+    {
+        combined = default;
+        if (root == null)
+            return false;
+
+        Collider2D[] cols = root.GetComponentsInChildren<Collider2D>(true);
+        bool hasAny = false;
+        for (int c = 0; c < cols.Length; c++)
+        {
+            Collider2D col = cols[c];
+            if (col == null)
+                continue;
+
+            if (!hasAny)
+            {
+                combined = col.bounds;
+                hasAny = true;
+            }
+            else
+                combined.Encapsulate(col.bounds);
         }
 
         return hasAny;

@@ -1,3 +1,4 @@
+using System;
 using UnityEngine;
 
 public class LevelObject : MonoBehaviour
@@ -221,4 +222,10 @@ public class LevelObject : MonoBehaviour
     {
         levelObjectGroup = null;
     }
+
+    public static implicit operator LevelObject(GameObject v)
+    {
+        throw new NotImplementedException();
+    }
+
 }

@@ -19,6 +19,9 @@ public class ObjectButtonController : MonoBehaviour, IBeginDragHandler, IEndDrag
     private bool previewExists => spawnedPreviewObject != null;
     private bool gameObjectExists => spawnedObject != null;
     private DragVisualiseState currentVisualiseState = DragVisualiseState.None;
+    Vector3 spawnDragStartPosition;
+    Bounds spawnDragStartBounds;
+    bool hasSpawnDragStartBounds;
     [SerializeField] private float minSpriteSize = 0.5f;
     [SerializeField] private float maxSpriteSize = 4f;
 
@@ -69,15 +72,12 @@ public class ObjectButtonController : MonoBehaviour, IBeginDragHandler, IEndDrag
         if (previewExists) //this check also makes sure that there is no objects spawned behind the menu.
             RemoveSpawnedPreview();
 
+        ResetSpawnDragSnapState();
         currentVisualiseState = DragVisualiseState.None;
     }
 
     public void OnDrag(PointerEventData eventData)
     {
-        //get the mouse position in world space, this'll be used to move the spawned objects around with the mouse
-        Vector3 mouseWorldPos = Camera.main.ScreenToWorldPoint(eventData.position);
-        mouseWorldPos.z = 0f; // Assuming a 2D game, set z to 0
-
         //check if there's an object spawned and if the mouse is hovering over a preview. if so we'd like to switch to the preview
         if (UIHelper.IsPointerOverUI() && currentVisualiseState == DragVisualiseState.SpawnedObject)
         {
@@ -100,7 +100,26 @@ public class ObjectButtonController : MonoBehaviour, IBeginDragHandler, IEndDrag
         if (currentVisualiseState != DragVisualiseState.SpawnedObject)
             SpawnObjectOnDrag(eventData);
 
+        Vector3 mouseWorldPos = Camera.main.ScreenToWorldPoint(eventData.position);
+        mouseWorldPos.z = 0f;
+        if (GizmoInteractionHandler.Instance != null)
+        {
+            mouseWorldPos = GizmoInteractionHandler.Instance.SnapSpawnWorldPosition(
+                mouseWorldPos,
+                spawnedObject,
+                spawnDragStartPosition,
+                spawnDragStartBounds,
+                hasSpawnDragStartBounds);
+        }
+
         spawnedObject.transform.position = mouseWorldPos;
+    }
+
+    void ResetSpawnDragSnapState()
+    {
+        spawnDragStartPosition = default;
+        spawnDragStartBounds = default;
+        hasSpawnDragStartBounds = false;
     }
 
     //helper function to spawn the actual object.
@@ -127,6 +146,11 @@ public class ObjectButtonController : MonoBehaviour, IBeginDragHandler, IEndDrag
 
         if (spawnedObject.TryGetComponent(out LevelObject levelObject))
             levelObject.ApplyCollisionState();
+
+        spawnDragStartPosition = pos;
+        hasSpawnDragStartBounds = GizmoInteractionHandler.TryGetColliderBoundsWorld(
+            spawnedObject,
+            out spawnDragStartBounds);
     }
 
     private void ClampSpawnedObjectSize(SpriteRenderer spriteRenderer)
@@ -154,6 +178,7 @@ public class ObjectButtonController : MonoBehaviour, IBeginDragHandler, IEndDrag
         {
             Destroy(spawnedObject);
             spawnedObject = null;
+            ResetSpawnDragSnapState();
         }
     }
 

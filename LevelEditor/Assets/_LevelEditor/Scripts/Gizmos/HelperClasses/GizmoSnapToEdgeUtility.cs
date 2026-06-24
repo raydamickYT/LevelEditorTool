@@ -7,28 +7,55 @@ public static class GizmoSnapToEdgeUtility
     static readonly List<Bounds> s_OtherBoundsScratch = new(128);
     static readonly HashSet<GameObject> s_ExcludeScratch = new();
 
-    /// <summary>
-    /// Grid snap is always used when snapping is enabled. Hold Shift during a move drag for edge snap
-    /// (within threshold) on nearby objects; edge snap wins per axis when applied.
-    /// </summary>
-    public static Vector3 ResolveSnappedMoveWorldPosition(
-        Vector3 rawWorldPosition,
-        GizmoDragContext context,
-        GizmoObject gizmoObject)
+    // Grid snap is always used when snapping is enabled. Hold Shift during a move drag for edge snap
+    // (within threshold) on nearby objects; edge snap wins per axis when applied.
+    public static Vector3 ResolveSnappedMoveWorldPosition(Vector3 rawWorldPosition, GizmoDragContext context, GizmoObject gizmoObject)
     {
         SnappingSettings s = context.SnappingSettings;
         if (s == null || !s.snappingEnabled)
             return rawWorldPosition;
 
-        Vector3 start = context.TargetStartPosition;
-        Vector2 planeDelta = new Vector2(rawWorldPosition.x - start.x, rawWorldPosition.y - start.y);
-
+        // If the user is dragging along a specific axis, we need to project the delta onto that axis
         GizmoAxis axisMode = context.ActiveHandle.Axis;
         Vector3 axisWorld = axisMode != GizmoAxis.All
             ? context.ActiveHandle.GetAxisVectorWorld().normalized
             : Vector3.zero;
 
-        if (axisMode != GizmoAxis.All)
+        var exclude = new List<GameObject>();
+        if (gizmoObject?.selectedLevelObjects != null)
+            for (int i = 0; i < gizmoObject.selectedLevelObjects.Count; i++)
+                if (gizmoObject.selectedLevelObjects[i] != null)
+                    exclude.Add(gizmoObject.selectedLevelObjects[i].gameObject);
+
+        return ResolveSnappedPlanePosition(
+            rawWorldPosition,
+            context.TargetStartPosition,
+            context.SelectionBoundsWorldAtDragStart,
+            context.HasSelectionBoundsWorld,
+            s,
+            axisMode,
+            axisWorld,
+            exclude);
+    }
+
+    public static Vector3 ResolveSnappedPlanePosition(
+        Vector3 rawWorldPosition,
+        Vector3 startPosition,
+        Bounds selectionBoundsAtStart,
+        bool hasSelectionBounds,
+        SnappingSettings settings,
+        GizmoAxis axisMode,
+        Vector3 axisWorld,
+        IReadOnlyList<GameObject> excludeObjects)
+    {
+        SnappingSettings s = settings;
+        if (s == null || !s.snappingEnabled)
+            return rawWorldPosition;
+
+        //save the start position of the drag, so we can calculate the delta from that point
+        Vector2 planeDelta = new Vector2(rawWorldPosition.x - startPosition.x, rawWorldPosition.y - startPosition.y);
+
+        if (axisMode != GizmoAxis.All) // project the delta onto the axis
         {
             float alongRaw = Vector3.Dot(new Vector3(planeDelta.x, planeDelta.y, 0f), axisWorld);
             planeDelta = new Vector2(axisWorld.x * alongRaw, axisWorld.y * alongRaw);
@@ -39,20 +66,20 @@ public static class GizmoSnapToEdgeUtility
         Vector2 edgeCorrection = Vector2.zero;
 
         if (IsEdgeSnapModifierHeld()
-            && context.HasSelectionBoundsWorld
+            && hasSelectionBounds
             && s.edgeSnapThreshold > 0f
-            && LevelObjectsRoot.Instance != null
-            && gizmoObject != null
-            && gizmoObject.selectedLevelObjects != null
-            && gizmoObject.selectedLevelObjects.Count > 0)
+            && LevelObjectsRoot.Instance != null)
         {
             s_OtherBoundsScratch.Clear();
             s_ExcludeScratch.Clear();
-            for (int i = 0; i < gizmoObject.selectedLevelObjects.Count; i++)
+            if (excludeObjects != null)
             {
-                LevelObject lo = gizmoObject.selectedLevelObjects[i];
-                if (lo != null)
-                    s_ExcludeScratch.Add(lo.gameObject);
+                for (int i = 0; i < excludeObjects.Count; i++)
+                {
+                    GameObject go = excludeObjects[i];
+                    if (go != null)
+                        s_ExcludeScratch.Add(go);
+                }
             }
 
             LevelObjectsRoot.Instance.AppendLevelColliderBounds(s_OtherBoundsScratch, s_ExcludeScratch);
@@ -61,7 +88,7 @@ public static class GizmoSnapToEdgeUtility
             {
                 edgeCorrection = ComputeAxisAlignedEdgeCorrection(
                     planeDelta,
-                    context.SelectionBoundsWorldAtDragStart,
+                    selectionBoundsAtStart,
                     s_OtherBoundsScratch,
                     s.edgeSnapThreshold,
                     s.moveSnapSize);
@@ -80,8 +107,8 @@ public static class GizmoSnapToEdgeUtility
 
         if (axisMode == GizmoAxis.All)
         {
-            Vector3 worldBeforeGrid = start + new Vector3(afterEdge.x, afterEdge.y, 0f);
-            worldBeforeGrid.z = start.z;
+            Vector3 worldBeforeGrid = startPosition + new Vector3(afterEdge.x, afterEdge.y, 0f);
+            worldBeforeGrid.z = startPosition.z;
             result = worldBeforeGrid;
             result.x = GizmoSnapToGridUtility.SnapFloat(result.x, grid, !usedEdgeX);
             result.y = GizmoSnapToGridUtility.SnapFloat(result.y, grid, !usedEdgeY);
@@ -91,8 +118,8 @@ public static class GizmoSnapToEdgeUtility
             float along = Vector3.Dot(new Vector3(afterEdge.x, afterEdge.y, 0f), axisWorld);
             bool skipGridAlong = Mathf.Abs(Vector3.Dot(new Vector3(edgeCorrection.x, edgeCorrection.y, 0f), axisWorld)) > 1e-5f;
             along = GizmoSnapToGridUtility.SnapFloat(along, grid, !skipGridAlong);
-            result = start + axisWorld * along;
-            result.z = start.z;
+            result = startPosition + axisWorld * along;
+            result.z = startPosition.z;
         }
 
         return result;

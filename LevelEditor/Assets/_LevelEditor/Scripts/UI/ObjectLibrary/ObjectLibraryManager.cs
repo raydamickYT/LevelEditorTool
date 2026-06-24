@@ -52,6 +52,9 @@ public class ObjectLibraryManager : MonoBehaviour
     string draggedAssetDisplayName;
     Sprite draggedSprite;
     GameObject draggedSpawnedObject;
+    Vector3 spawnDragStartPosition;
+    Bounds spawnDragStartBounds;
+    bool hasSpawnDragStartBounds;
     int draggedPointerId = InvalidPointerId;
     int resizePointerId = InvalidPointerId;
     bool isResizingLibrary;
@@ -87,7 +90,6 @@ public class ObjectLibraryManager : MonoBehaviour
         }
     }
 
-    /// <summary>Same template used for library spawns (sprite + collider + <see cref="LevelObject"/>).</summary>
     public GameObject SpawnPrefabTemplate => GameObjectPrefab;
 
     void Awake()
@@ -623,6 +625,7 @@ public class ObjectLibraryManager : MonoBehaviour
 
             EventManager.Instance.TriggerDelegate(SelectionEvents.OnTrySelection, draggedSpawnedObject, SelectionCommand.Select);
             draggedSpawnedObject = null;
+            ResetSpawnDragSnapState();
         }
 
         CancelToolkitDrag();
@@ -792,20 +795,54 @@ public class ObjectLibraryManager : MonoBehaviour
 
     void MoveOrCreateDraggedSpawnedObject(Vector2 panelPosition)
     {
-        Vector3 worldPosition = PanelPositionToWorld(panelPosition);
+        Vector3 rawWorldPosition = PanelPositionToWorld(panelPosition);
 
         if (draggedSpawnedObject == null)
         {
-            draggedSpawnedObject = Instantiate(GameObjectPrefab, worldPosition, Quaternion.identity);
+            draggedSpawnedObject = Instantiate(GameObjectPrefab, rawWorldPosition, Quaternion.identity);
             draggedSpawnedObject.SetActive(true);
             draggedSpawnedObject.hideFlags = HideFlags.None;
             if (!string.IsNullOrWhiteSpace(draggedAssetDisplayName))
                 draggedSpawnedObject.name = draggedAssetDisplayName;
             ConfigureSpawnedSprite(draggedSpawnedObject, draggedSprite);
+
+            spawnDragStartPosition = rawWorldPosition;
+            hasSpawnDragStartBounds = GizmoInteractionHandler.TryGetColliderBoundsWorld(
+                draggedSpawnedObject,
+                out spawnDragStartBounds);
         }
+
+        Vector3 worldPosition = SnapSpawnWorldPosition(
+            rawWorldPosition,
+            draggedSpawnedObject,
+            spawnDragStartPosition,
+            spawnDragStartBounds,
+            hasSpawnDragStartBounds);
 
         draggedSpawnedObject.transform.position = worldPosition;
     }
+
+    void ResetSpawnDragSnapState()
+    {
+        spawnDragStartPosition = default;
+        spawnDragStartBounds = default;
+        hasSpawnDragStartBounds = false;
+    }
+
+    static Vector3 SnapSpawnWorldPosition(
+        Vector3 rawWorldPosition,
+        GameObject spawnedObject,
+        Vector3 spawnDragStartPosition,
+        Bounds spawnDragStartBounds,
+        bool hasSpawnDragStartBounds)
+        => GizmoInteractionHandler.Instance != null
+            ? GizmoInteractionHandler.Instance.SnapSpawnWorldPosition(
+                rawWorldPosition,
+                spawnedObject,
+                spawnDragStartPosition,
+                spawnDragStartBounds,
+                hasSpawnDragStartBounds)
+            : rawWorldPosition;
 
     Vector3 PanelPositionToWorld(Vector2 panelPosition)
     {
@@ -843,6 +880,7 @@ public class ObjectLibraryManager : MonoBehaviour
 
         Destroy(draggedSpawnedObject);
         draggedSpawnedObject = null;
+        ResetSpawnDragSnapState();
     }
 
     void ClampSpawnedObjectSize(SpriteRenderer spriteRenderer)

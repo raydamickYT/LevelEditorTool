@@ -870,8 +870,8 @@ MonoBehaviour:
   targetLayer:
     serializedVersion: 2
     m_Bits: 0
-  minOrthographicSize: 2
-  maxOrthographicSize: 40
+  minOrthographicSize: 1
+  maxOrthographicSize: 100
 --- !u!1 &601380512
 GameObject:
   m_ObjectHideFlags: 0
@@ -1344,9 +1344,9 @@ SpriteRenderer:
   m_AutoUVMaxAngle: 89
   m_LightmapParameters: {fileID: 0}
   m_GlobalIlluminationMeshLod: 0
-  m_SortingLayerID: 0
-  m_SortingLayer: 0
-  m_SortingOrder: 3000
+  m_SortingLayerID: -555035731
+  m_SortingLayer: 1
+  m_SortingOrder: 0
   m_MaskInteraction: 0
   m_Sprite: {fileID: 7482667652216324306, guid: 311925a002f4447b3a28927169b83ea6, type: 3}
   m_Color: {r: 1, g: 1, b: 1, a: 1}
@@ -1821,10 +1821,10 @@ MonoBehaviour:
   resizeHandleElementName: object-hierarchy-resize-handle
   resizeHandleVerticalElementName: object-hierarchy-resize-handle-vertical
   toolkitIndentWidth: 14
-  expandedHierarchyTop: 480
+  expandedHierarchyTop: 510
   collapsedHierarchyHeight: 30
   minHierarchyHeight: 100
-  minHierarchyTop: 480
+  minHierarchyTop: 510
   minHierarchyWidth: 260
   maxHierarchyWidth: 900
 --- !u!114 &919032400
@@ -3244,10 +3244,13 @@ MonoBehaviour:
   gridElementName: asset-grid
   libraryRootElementName: object-library-root
   resizeHandleElementName: object-library-resize-handle
+  resizeHandleVerticalElementName: object-library-resize-handle-vertical
   collapseButtonElementName: object-library-collapse-button
   dragPreviewSortingOrder: 32767
   minLibraryWidth: 260
   maxLibraryWidth: 900
+  minLibraryTop: 50
+  minLibraryHeight: 100
   expandedLibraryTop: 300
   collapsedLibraryHeight: 30
   refreshEntireLibraryFromDiskOnStart: 0
