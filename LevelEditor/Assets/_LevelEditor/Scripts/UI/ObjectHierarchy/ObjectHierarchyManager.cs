@@ -64,6 +64,9 @@ public class ObjectHierarchyManager : MonoBehaviour
     private bool isResizingHierarchy;
     private int resizePointerId = InvalidPointerId;
     private LevelObject toolkitRangeSelectionAnchor;
+    private VisualElement hierarchyContextMenu;
+    private Coroutine subscribeInputRoutine;
+    private bool hierarchyInputSubscribed;
 
     struct ToolkitDropTarget
     {
@@ -130,6 +133,71 @@ public class ObjectHierarchyManager : MonoBehaviour
             SetupToolkitReferences();
         else
             StartCoroutine(SetupToolkitWhenReady());
+
+        subscribeInputRoutine = StartCoroutine(WaitForHierarchyInputHandler());
+    }
+
+    System.Collections.IEnumerator WaitForHierarchyInputHandler()
+    {
+        yield return new WaitUntil(() => InputHandler.Instance != null);
+        SubscribeHierarchyInput();
+    }
+
+    void SubscribeHierarchyInput()
+    {
+        if (hierarchyInputSubscribed || InputHandler.Instance == null)
+            return;
+
+        InputHandler.Instance.onRightClickEvent += OnHierarchyRightClick;
+        InputHandler.Instance.TriggerSelectionCommand += OnDismissHierarchyContextMenu;
+        hierarchyInputSubscribed = true;
+    }
+
+    void UnsubscribeHierarchyInput()
+    {
+        if (!hierarchyInputSubscribed || InputHandler.Instance == null)
+            return;
+
+        InputHandler.Instance.onRightClickEvent -= OnHierarchyRightClick;
+        InputHandler.Instance.TriggerSelectionCommand -= OnDismissHierarchyContextMenu;
+        hierarchyInputSubscribed = false;
+    }
+
+    void OnHierarchyRightClick(InputAction.CallbackContext context)
+    {
+        if (!context.started || !UsesToolkit)
+            return;
+
+        if (!TryPickLevelObjectUnderPointer(out LevelObject levelObject))
+            return;
+
+        ShowHierarchyContextMenu(levelObject);
+    }
+
+    void OnDismissHierarchyContextMenu(SelectionCommand command, InputAction.CallbackContext context)
+    {
+        if (!context.started || hierarchyContextMenu == null)
+            return;
+
+        if (IsPointerOverHierarchyContextMenu())
+            return;
+
+        HideHierarchyContextMenu();
+    }
+
+    bool IsPointerOverHierarchyContextMenu()
+    {
+        if (hierarchyContextMenu == null || Mouse.current == null || hierarchyContextMenu.panel == null)
+            return false;
+
+        Vector2 screenPosition = Mouse.current.position.ReadValue();
+        VisualElement attachRoot = hierarchyContextMenu.parent;
+        if (attachRoot == null)
+            return false;
+
+        Vector2 panelPosition = ScreenToPanelPosition(screenPosition, attachRoot);
+        VisualElement picked = hierarchyContextMenu.panel.Pick(panelPosition);
+        return picked != null && hierarchyContextMenu.Contains(picked);
     }
 
     System.Collections.IEnumerator SetupToolkitWhenReady()
@@ -140,6 +208,15 @@ public class ObjectHierarchyManager : MonoBehaviour
 
     void OnDisable()
     {
+        if (subscribeInputRoutine != null)
+        {
+            StopCoroutine(subscribeInputRoutine);
+            subscribeInputRoutine = null;
+        }
+
+        UnsubscribeHierarchyInput();
+        HideHierarchyContextMenu();
+
         if (toolkitCreateGroupButton != null)
             toolkitCreateGroupButton.clicked -= CreateGroupParentObject;
 
@@ -280,6 +357,184 @@ public class ObjectHierarchyManager : MonoBehaviour
         action.Execute();
 
         EventManager.Instance.TriggerDelegate(ActionStackEvents.RegisterAction, action);
+    }
+
+    public void PromptRenameLevelObject(LevelObject levelObject)
+    {
+        if (levelObject == null || levelObject.gameObject == null)
+            return;
+
+        HideHierarchyContextMenu();
+
+        EditorPopupService.ShowRenameDialog(
+            "Rename object",
+            levelObject.name,
+            newName => CommitRenameLevelObject(levelObject, newName));
+    }
+
+    public void ShowHierarchyContextMenu(LevelObject levelObject)
+    {
+        if (levelObject == null)
+            return;
+
+        VisualElement attachRoot = uiDocument != null ? uiDocument.rootVisualElement : toolkitRoot;
+        if (attachRoot == null)
+            return;
+
+        HideHierarchyContextMenu();
+
+        hierarchyContextMenu = new VisualElement();
+        hierarchyContextMenu.AddToClassList("hierarchy-context-menu");
+        hierarchyContextMenu.pickingMode = PickingMode.Position;
+
+        Button renameButton = new Button
+        {
+            text = "Rename",
+        };
+        renameButton.AddToClassList("hierarchy-context-menu-item");
+        renameButton.clicked += () => PromptRenameLevelObject(levelObject);
+        renameButton.RegisterCallback<PointerDownEvent>(evt =>
+        {
+            evt.StopPropagation();
+        });
+        hierarchyContextMenu.Add(renameButton);
+
+        attachRoot.Add(hierarchyContextMenu);
+        hierarchyContextMenu.BringToFront();
+        attachRoot.schedule.Execute(PositionHierarchyContextMenuAtPointer).StartingIn(0);
+    }
+
+    void PositionHierarchyContextMenuAtPointer()
+    {
+        if (hierarchyContextMenu == null || Mouse.current == null)
+            return;
+
+        VisualElement attachRoot = hierarchyContextMenu.parent;
+        if (attachRoot?.panel == null)
+            return;
+
+        Vector2 screenPosition = Mouse.current.position.ReadValue();
+        Vector2 panelPosition = ScreenToPanelPosition(screenPosition, attachRoot);
+        hierarchyContextMenu.style.position = Position.Absolute;
+        hierarchyContextMenu.style.left = panelPosition.x;
+        hierarchyContextMenu.style.top = panelPosition.y;
+    }
+
+    void HideHierarchyContextMenu()
+    {
+        hierarchyContextMenu?.RemoveFromHierarchy();
+        hierarchyContextMenu = null;
+    }
+
+    bool TryPickLevelObjectUnderPointer(out LevelObject levelObject)
+    {
+        levelObject = null;
+        if (Mouse.current == null || toolkitRoot?.panel == null)
+            return false;
+
+        Vector2 screenPosition = Mouse.current.position.ReadValue();
+        Vector2 panelPosition = ScreenToPanelPosition(screenPosition, toolkitRoot);
+        VisualElement picked = toolkitRoot.panel.Pick(panelPosition);
+        if (picked == null)
+            return false;
+
+        for (VisualElement current = picked; current != null; current = current.parent)
+        {
+            foreach (KeyValuePair<LevelObject, ToolkitHierarchyRow> entry in toolkitRows)
+            {
+                if (entry.Value?.Root == current)
+                {
+                    levelObject = entry.Key;
+                    return true;
+                }
+            }
+
+            if (current == toolkitRoot)
+                break;
+        }
+
+        return false;
+    }
+
+    static Vector2 ScreenToPanelPosition(Vector2 screenPosition, VisualElement root)
+    {
+        Rect panelBounds = root != null
+            ? root.worldBound
+            : new Rect(0f, 0f, Screen.width, Screen.height);
+
+        float width = Mathf.Max(1f, panelBounds.width);
+        float height = Mathf.Max(1f, panelBounds.height);
+
+        return new Vector2(
+            panelBounds.xMin + screenPosition.x / Mathf.Max(1f, Screen.width) * width,
+            panelBounds.yMin + (Screen.height - screenPosition.y) / Mathf.Max(1f, Screen.height) * height);
+    }
+
+    public void CommitRenameLevelObject(LevelObject levelObject, string newName)
+    {
+        if (levelObject == null || levelObject.gameObject == null)
+            return;
+
+        newName = newName?.Trim();
+        if (string.IsNullOrEmpty(newName))
+        {
+            EditorPopupService.ShowWarning("Invalid name", "Object name cannot be empty.");
+            return;
+        }
+
+        if (string.Equals(newName, levelObject.name, StringComparison.Ordinal))
+            return;
+
+        if (!IsHierarchyNameAvailable(newName, levelObject))
+        {
+            EditorPopupService.ShowWarning(
+                "Name already in use",
+                "Another object in the hierarchy already has this name. Choose a different name.");
+            return;
+        }
+
+        RenameObjectAction action = new RenameObjectAction(levelObject, newName);
+        EventManager.Instance.TriggerDelegate(ActionStackEvents.RegisterAction, action);
+    }
+
+    public void ApplyObjectDisplayName(LevelObject levelObject, string newName)
+    {
+        if (levelObject == null || levelObject.gameObject == null)
+            return;
+
+        if (string.IsNullOrWhiteSpace(newName))
+            return;
+
+        string oldName = levelObject.gameObject.name;
+        if (string.Equals(oldName, newName, StringComparison.Ordinal))
+            return;
+
+        existingNames.Remove(oldName);
+        levelObject.gameObject.name = newName;
+        existingNames.Add(newName);
+
+        if (toolkitRows.TryGetValue(levelObject, out ToolkitHierarchyRow row))
+            row.SetDisplayName(newName);
+
+        if (items.TryGetValue(levelObject, out HierarchyObjectItem item))
+            item.SetDisplayName(newName);
+    }
+
+    bool IsHierarchyNameAvailable(string name, LevelObject exclude)
+    {
+        if (string.IsNullOrWhiteSpace(name))
+            return false;
+
+        foreach (string existing in existingNames)
+        {
+            if (exclude != null && string.Equals(existing, exclude.name, StringComparison.Ordinal))
+                continue;
+
+            if (string.Equals(existing, name, StringComparison.Ordinal))
+                return false;
+        }
+
+        return true;
     }
 
     private void AddItem(LevelObject levelObject)
@@ -574,6 +829,7 @@ public class ObjectHierarchyManager : MonoBehaviour
             BeginToolkitRowDrag,
             MoveToolkitRowDrag,
             EndToolkitRowDrag,
+            ShowHierarchyContextMenu,
             hasChildren,
             isCollapsedParent);
         toolkitRows[levelObject] = row;
@@ -1384,6 +1640,7 @@ public class ObjectHierarchyManager : MonoBehaviour
         readonly Action<ToolkitHierarchyRow, PointerDownEvent> beginDragCallback;
         readonly Action<ToolkitHierarchyRow, PointerMoveEvent> moveDragCallback;
         readonly Action<ToolkitHierarchyRow, PointerUpEvent> endDragCallback;
+        readonly Action<LevelObject> contextMenuCallback;
         readonly Label nameLabel;
         readonly Label foldoutIcon;
         bool suppressNextClick;
@@ -1400,6 +1657,7 @@ public class ObjectHierarchyManager : MonoBehaviour
             Action<ToolkitHierarchyRow, PointerDownEvent> beginDragCallback,
             Action<ToolkitHierarchyRow, PointerMoveEvent> moveDragCallback,
             Action<ToolkitHierarchyRow, PointerUpEvent> endDragCallback,
+            Action<LevelObject> contextMenuCallback,
             bool hasChildren,
             bool isCollapsedParent)
         {
@@ -1409,6 +1667,7 @@ public class ObjectHierarchyManager : MonoBehaviour
             this.beginDragCallback = beginDragCallback;
             this.moveDragCallback = moveDragCallback;
             this.endDragCallback = endDragCallback;
+            this.contextMenuCallback = contextMenuCallback;
 
             Root = new VisualElement();
             Root.AddToClassList("hierarchy-row");
@@ -1456,6 +1715,24 @@ public class ObjectHierarchyManager : MonoBehaviour
             suppressNextClick = true;
         }
 
+        public void SetDisplayName(string displayName)
+        {
+            if (nameLabel != null)
+                nameLabel.text = displayName ?? string.Empty;
+        }
+
+        void OnPointerDown(PointerDownEvent evt)
+        {
+            if (evt.button == 1)
+            {
+                contextMenuCallback?.Invoke(levelObject);
+                evt.StopPropagation();
+                return;
+            }
+
+            beginDragCallback?.Invoke(this, evt);
+        }
+
         static string GetFoldoutText(bool hasChildren, bool isCollapsedParent)
         {
             if (!hasChildren)
@@ -1469,11 +1746,6 @@ public class ObjectHierarchyManager : MonoBehaviour
             toggleParentCallback?.Invoke(levelObject);
 
             evt.StopPropagation();
-        }
-
-        void OnPointerDown(PointerDownEvent evt)
-        {
-            beginDragCallback?.Invoke(this, evt);
         }
 
         void OnPointerMove(PointerMoveEvent evt)

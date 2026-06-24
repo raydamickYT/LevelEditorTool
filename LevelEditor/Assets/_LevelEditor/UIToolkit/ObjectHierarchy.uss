@@ -135,6 +135,29 @@
     font-size: 12px;
 }
 
+.hierarchy-context-menu {
+    position: absolute;
+    min-width: 120px;
+    background-color: rgb(245, 245, 245);
+    border-width: 1px;
+    border-color: rgb(120, 120, 120);
+    padding-top: 2px;
+    padding-bottom: 2px;
+}
+
+.hierarchy-context-menu-item {
+    height: 22px;
+    margin-left: 2px;
+    margin-right: 2px;
+    -unity-text-align: middle-left;
+    background-color: rgba(0, 0, 0, 0);
+    border-width: 0;
+}
+
+.hierarchy-context-menu-item:hover {
+    background-color: rgba(64, 115, 255, 0.25);
+}
+
 .object-hierarchy-resize-handle {
     position: absolute;
     right: -4px;

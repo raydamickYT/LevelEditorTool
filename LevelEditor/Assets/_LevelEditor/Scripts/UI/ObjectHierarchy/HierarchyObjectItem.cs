@@ -49,6 +49,12 @@ public class HierarchyObjectItem : MonoBehaviour
             levelObject.hierarchyObjectItem = null;
     }
 
+    public void SetDisplayName(string displayName)
+    {
+        if (nameText != null)
+            nameText.text = displayName ?? string.Empty;
+    }
+
     //responsible for selecting the object whenever the button is pressed
     private void SetSelected()
     {

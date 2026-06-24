@@ -48,5 +48,16 @@
                 </ui:VisualElement>
             </ui:VisualElement>
         </ui:VisualElement>
+        <ui:VisualElement name="rename-overlay" class="popup-overlay" style="display: none;">
+            <ui:VisualElement class="popup-window save-project-window">
+                <ui:Label name="rename-title" text="Rename object" class="popup-title save-project-title" />
+                <ui:Label text="Name" class="save-project-label" />
+                <ui:TextField name="rename-object-field" class="save-project-name-field" />
+                <ui:VisualElement class="popup-actions save-project-actions">
+                    <ui:Button name="rename-cancel-button" text="Cancel" class="popup-button" />
+                    <ui:Button name="rename-confirm-button" text="Rename" class="popup-button popup-primary-button" />
+                </ui:VisualElement>
+            </ui:VisualElement>
+        </ui:VisualElement>
     </ui:VisualElement>
 </ui:UXML>

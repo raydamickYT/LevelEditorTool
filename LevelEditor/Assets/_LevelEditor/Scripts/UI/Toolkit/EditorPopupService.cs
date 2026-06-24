@@ -48,6 +48,13 @@ public sealed class EditorPopupService : MonoBehaviour
     Button confirmCancelButton;
     Action pendingConfirmCallback;
     Action pendingConfirmCancelCallback;
+
+    VisualElement renameOverlay;
+    Label renameTitle;
+    TextField renameObjectField;
+    Button renameConfirmButton;
+    Button renameCancelButton;
+    Action<string> pendingRenameCallback;
     bool dialogHandlersBound;
 
     public static void ShowSaveProjectFolderDialog(
@@ -81,6 +88,17 @@ public sealed class EditorPopupService : MonoBehaviour
         }
 
         Instance.ShowConfirmDialogInternal(titleText, messageText, confirmButtonText, cancelButtonText, onConfirm, onCancel);
+    }
+
+    public static void ShowRenameDialog(string titleText, string defaultName, Action<string> onRename)
+    {
+        if (Instance == null)
+        {
+            Debug.LogWarning($"Rename dialog requested before EditorPopupService exists: {titleText}");
+            return;
+        }
+
+        Instance.ShowRenameDialogInternal(titleText, defaultName, onRename);
     }
 
     public static bool IsAnyModalVisible()
@@ -183,6 +201,8 @@ public sealed class EditorPopupService : MonoBehaviour
 
         if (IsSaveProjectDialogVisible())
             HideSaveProjectDialog();
+        else if (IsRenameDialogVisible())
+            HideRenameDialog();
         else if (IsConfirmDialogVisible())
             HideConfirmDialog();
         else
@@ -196,6 +216,8 @@ public sealed class EditorPopupService : MonoBehaviour
 
         if (IsSaveProjectDialogVisible())
             OnSaveProjectSaveClicked();
+        else if (IsRenameDialogVisible())
+            OnRenameConfirmClicked();
         else if (IsConfirmDialogVisible())
             OnConfirmOkClicked();
         else
@@ -268,6 +290,11 @@ public sealed class EditorPopupService : MonoBehaviour
         confirmMessage = root.Q<Label>("confirm-message");
         confirmOkButton = root.Q<Button>("confirm-ok-button");
         confirmCancelButton = root.Q<Button>("confirm-cancel-button");
+        renameOverlay = root.Q<VisualElement>("rename-overlay");
+        renameTitle = root.Q<Label>("rename-title");
+        renameObjectField = root.Q<TextField>("rename-object-field");
+        renameConfirmButton = root.Q<Button>("rename-confirm-button");
+        renameCancelButton = root.Q<Button>("rename-cancel-button");
 
         if (overlay != null)
             overlay.style.display = DisplayStyle.None;
@@ -277,6 +304,9 @@ public sealed class EditorPopupService : MonoBehaviour
 
         if (confirmOverlay != null)
             confirmOverlay.style.display = DisplayStyle.None;
+
+        if (renameOverlay != null)
+            renameOverlay.style.display = DisplayStyle.None;
 
         if (toastRoot != null)
             toastRoot.style.display = DisplayStyle.None;
@@ -305,6 +335,12 @@ public sealed class EditorPopupService : MonoBehaviour
         if (confirmCancelButton != null)
             confirmCancelButton.clicked += HideConfirmDialog;
 
+        if (renameConfirmButton != null)
+            renameConfirmButton.clicked += OnRenameConfirmClicked;
+
+        if (renameCancelButton != null)
+            renameCancelButton.clicked += HideRenameDialog;
+
         dialogHandlersBound = true;
     }
 
@@ -330,6 +366,12 @@ public sealed class EditorPopupService : MonoBehaviour
 
         if (confirmCancelButton != null)
             confirmCancelButton.clicked -= HideConfirmDialog;
+
+        if (renameConfirmButton != null)
+            renameConfirmButton.clicked -= OnRenameConfirmClicked;
+
+        if (renameCancelButton != null)
+            renameCancelButton.clicked -= HideRenameDialog;
 
         dialogHandlersBound = false;
     }
@@ -410,6 +452,65 @@ public sealed class EditorPopupService : MonoBehaviour
 
         // Focus after the shortcut key is released so Ctrl+S does not type "s" into the field.
         saveProjectNameField.schedule.Execute(() => saveProjectNameField.Focus()).StartingIn(50);
+    }
+
+    void ShowRenameDialogInternal(string titleText, string defaultName, Action<string> onRename)
+    {
+        BindElements();
+        BindDialogHandlers();
+
+        if (renameOverlay == null || renameObjectField == null)
+        {
+            Debug.LogWarning("Rename dialog UXML is missing.");
+            return;
+        }
+
+        pendingRenameCallback = onRename;
+
+        if (renameTitle != null)
+            renameTitle.text = string.IsNullOrWhiteSpace(titleText) ? "Rename object" : titleText;
+
+        renameObjectField.SetValueWithoutNotify(defaultName ?? string.Empty);
+        renameOverlay.style.display = DisplayStyle.Flex;
+        renameOverlay.pickingMode = PickingMode.Position;
+        renameOverlay.BringToFront();
+
+        VisualElement notificationRoot = renameOverlay.parent;
+        if (notificationRoot != null)
+            notificationRoot.pickingMode = PickingMode.Position;
+
+        renameObjectField.schedule.Execute(() =>
+        {
+            renameObjectField.Focus();
+        }).StartingIn(50);
+    }
+
+    void OnRenameConfirmClicked()
+    {
+        if (!IsRenameDialogVisible())
+            return;
+
+        string newName = renameObjectField != null ? renameObjectField.value?.Trim() : string.Empty;
+        Action<string> callback = pendingRenameCallback;
+        HideRenameDialog();
+        callback?.Invoke(newName);
+    }
+
+    void HideRenameDialog()
+    {
+        pendingRenameCallback = null;
+
+        if (renameOverlay != null)
+            renameOverlay.style.display = DisplayStyle.None;
+
+        VisualElement notificationRoot = renameOverlay != null ? renameOverlay.parent : null;
+        if (notificationRoot != null
+            && !IsSaveProjectDialogVisible()
+            && !IsConfirmDialogVisible()
+            && !IsPopupVisible())
+        {
+            notificationRoot.pickingMode = PickingMode.Ignore;
+        }
     }
 
     void ShowConfirmDialogInternal(
@@ -593,7 +694,7 @@ public sealed class EditorPopupService : MonoBehaviour
     }
 
     bool IsAnyModalVisibleInternal()
-        => IsPopupVisible() || IsSaveProjectDialogVisible() || IsConfirmDialogVisible();
+        => IsPopupVisible() || IsSaveProjectDialogVisible() || IsRenameDialogVisible() || IsConfirmDialogVisible();
 
     bool IsPopupVisible()
         => overlay != null && overlay.resolvedStyle.display == DisplayStyle.Flex;
@@ -603,6 +704,9 @@ public sealed class EditorPopupService : MonoBehaviour
 
     bool IsConfirmDialogVisible()
         => confirmOverlay != null && confirmOverlay.resolvedStyle.display == DisplayStyle.Flex;
+
+    bool IsRenameDialogVisible()
+        => renameOverlay != null && renameOverlay.resolvedStyle.display == DisplayStyle.Flex;
 
     void Hide()
     {
