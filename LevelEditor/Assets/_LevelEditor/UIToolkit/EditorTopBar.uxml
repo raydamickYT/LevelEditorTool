@@ -12,6 +12,8 @@
                 <ui:Button name="item-save-as" text="Save Project As…" class="menu-item" />
                 <!-- <ui:Button name="item-export" text="Export" class="menu-item" /> --> <!-- Future feature: does the same as saving right now -->
                 <ui:VisualElement class="menu-separator" />
+                <ui:Button name="item-import-external-json" text="Import Level JSON…" class="menu-item" />
+                <ui:Button name="item-export-external-json" text="Export Level JSON…" class="menu-item" />
                 <ui:Button name="item-import-unity-assets" text="Link Unity Project" class="menu-item" />
                 <!-- <ui:Button name="item-import-folder" text="Import Folder" class="menu-item" /> -->
                 <ui:Button name="item-import-assets" text="Import Sprites" class="menu-item" />

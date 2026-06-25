@@ -1,0 +1,9 @@
+{
+  "start": [25, 400],
+  "end": [550, 425],
+  "boxes": [
+    [0, 450, 600]
+  ],
+  "text": "Reach the GOAL to finish the LEVEL.",
+  "lava": []
+}

@@ -54,6 +54,7 @@ public static class LevelEditorFileMenuCommands
 
         LevelProjectDirtyState.MarkClean();
         LevelEditorToolLinkManifest.WriteActiveLevelIfLinked();
+        ExternalLevelJsonImportSession.Clear();
     }
 
     public static void OpenLevel()
@@ -200,6 +201,92 @@ public static class LevelEditorFileMenuCommands
             return;
 
         EventManager.Instance.TriggerDelegate(AssetRegistryEvents.ImportUnityProjectAssets, projectFolder);
+    }
+
+    public static void ImportExternalLevelJson()
+    {
+        if (LevelProjectDirtyState.HasUnsavedChanges())
+        {
+            EditorPopupService.ShowConfirmDialog(
+                "Unsaved changes",
+                "You have unsaved changes. Importing external JSON will replace the current level.",
+                "Save and import",
+                () =>
+                {
+                    SaveLevel();
+                    if (!LevelProjectDirtyState.HasUnsavedChanges())
+                        EditorPopupService.RunAfterSaveFeedback(PromptAndImportExternalLevelJson);
+                },
+                PromptAndImportExternalLevelJson,
+                "Discard and import");
+            return;
+        }
+
+        PromptAndImportExternalLevelJson();
+    }
+
+    static void PromptAndImportExternalLevelJson()
+    {
+        ExtensionFilter[] extensions =
+        {
+            new ExtensionFilter("JSON Files", "json"),
+            new ExtensionFilter("All Files", "*"),
+        };
+
+        string[] paths = StandaloneFileBrowser.OpenFilePanel("Import external level JSON", "", extensions, false);
+        if (paths == null || paths.Length == 0 || string.IsNullOrEmpty(paths[0]))
+            return;
+
+        string jsonPath = Path.GetFullPath(paths[0]);
+        ExternalLevelImportResult result = ExternalLevelJsonImportService.ImportFromFile(jsonPath);
+        if (result == null)
+            return;
+
+        if (!result.Success)
+        {
+            EditorPopupService.ShowWarning(
+                "Import failed",
+                string.IsNullOrEmpty(result.ErrorMessage)
+                    ? "The selected JSON could not be imported."
+                    : result.ErrorMessage,
+                jsonPath);
+            return;
+        }
+
+        string message = $"Imported {result.SpawnedObjectCount} objects using {result.FormatDisplayName}.";
+        if (result.Warnings.Count > 0)
+            message += "\n" + string.Join("\n", result.Warnings);
+
+        EditorPopupService.ShowToast(message);
+        Debug.Log($"External JSON import OK ({result.FormatId}): {result.SpawnedObjectCount} objects from {jsonPath}");
+    }
+
+    public static void ExportExternalLevelJson()
+    {
+        ExternalLevelExportResult result = ExternalLevelJsonExportService.PromptAndExportToFile();
+        if (result == null)
+            return;
+
+        if (!result.Success)
+        {
+            if (!string.Equals(result.ErrorMessage, "Export cancelled.", StringComparison.Ordinal))
+            {
+                EditorPopupService.ShowWarning(
+                    "Export failed",
+                    string.IsNullOrEmpty(result.ErrorMessage)
+                        ? "The level could not be exported."
+                        : result.ErrorMessage);
+            }
+
+            return;
+        }
+
+        string message = $"Exported {result.ExportedObjectCount} objects to {result.FormatDisplayName}.";
+        if (result.Warnings.Count > 0)
+            message += "\n" + string.Join("\n", result.Warnings);
+
+        EditorPopupService.ShowToast(message);
+        Debug.Log($"External JSON export OK ({result.FormatId}): {result.OutputPath}");
     }
 
     public static void ImportAssets()

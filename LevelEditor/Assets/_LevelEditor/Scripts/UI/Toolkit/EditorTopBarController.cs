@@ -53,6 +53,8 @@ public sealed class EditorTopBarController : MonoBehaviour
         Register(root.Q<Button>("item-save"), OnSave);
         Register(root.Q<Button>("item-save-as"), OnSaveAs);
         Register(root.Q<Button>("item-export"), OnExport);
+        Register(root.Q<Button>("item-import-external-json"), OnImportExternalLevelJson);
+        Register(root.Q<Button>("item-export-external-json"), OnExportExternalLevelJson);
         Register(root.Q<Button>("item-import-unity-assets"), OnImportUnityAssets);
         // Register(root.Q<Button>("item-import-folder"), OnImportFolder);
         Register(root.Q<Button>("item-import-assets"), OnImportAssets);
@@ -369,6 +371,18 @@ public sealed class EditorTopBarController : MonoBehaviour
     {
         CloseMenu();
         LevelEditorFileMenuCommands.ImportFolder();
+    }
+
+    void OnImportExternalLevelJson()
+    {
+        CloseMenu();
+        LevelEditorFileMenuCommands.ImportExternalLevelJson();
+    }
+
+    void OnExportExternalLevelJson()
+    {
+        CloseMenu();
+        LevelEditorFileMenuCommands.ExportExternalLevelJson();
     }
 
     void OnImportUnityAssets()
