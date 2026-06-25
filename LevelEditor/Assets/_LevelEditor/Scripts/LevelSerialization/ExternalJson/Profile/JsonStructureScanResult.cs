@@ -1,3 +1,4 @@
+using System;
 using System.Collections.Generic;
 
 public sealed class JsonStructureScanResult
@@ -14,6 +15,9 @@ public sealed class JsonArrayCandidate
     public int ItemCount;
     public readonly List<string> ObjectFieldNames = new();
     public string SampleJson = "";
+    public string DiscriminatorField = "";
+    public readonly List<string> DiscriminatorValues = new();
+    public readonly Dictionary<string, ExternalJsonShapeKind> ShapeByDiscriminatorValue = new(StringComparer.OrdinalIgnoreCase);
 }
 
 public sealed class JsonSingleObjectCandidate

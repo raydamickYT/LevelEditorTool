@@ -26,6 +26,8 @@
                 <ui:Button name="json-mapping-cancel-button" text="Cancel" class="json-mapping-button" />
                 <ui:Button name="json-mapping-import-button" text="Import" class="json-mapping-button json-mapping-primary-button" />
             </ui:VisualElement>
+
+            <ui:VisualElement name="json-mapping-resize-grip" class="json-mapping-resize-grip" />
         </ui:VisualElement>
 
         <ui:Label name="json-mapping-tooltip" text="" class="json-mapping-tooltip" picking-mode="Ignore" />

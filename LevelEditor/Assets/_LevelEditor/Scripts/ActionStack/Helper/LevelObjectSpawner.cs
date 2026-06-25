@@ -136,6 +136,8 @@ public static class LevelObjectSpawner
             ObjectRegistry.OnObjectCreated(levelObject);
         }
 
+        ExternalJsonObjectBinding.ApplyFromMemento(spawnedObject, memento, preserveObjectID);
+
         if (!deferHierarchyNotification)
             NotifyHierarchyForSpawned(levelObject, isParent);
 

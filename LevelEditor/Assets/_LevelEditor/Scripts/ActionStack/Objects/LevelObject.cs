@@ -29,6 +29,11 @@ public class LevelObject : MonoBehaviour
         public bool HasCollision;
         public int SortingOrder;
         public bool HasSortingOrder;
+        public bool HasExternalJsonBinding;
+        public string ExternalJsonSourceFormatId = "";
+        public string ExternalJsonSourceCategory = "";
+        public int ExternalJsonSourceIndex = -1;
+        public string ExternalJsonSourceFragment = "";
         public virtual bool HasParent => LevelObjectGroup != null ? true : false;
 
         public Memento(Transform t, GameObject obj, int id, Sprite sprite, string assetID, LevelObjectGroup levelObjectGroup)
@@ -123,10 +128,10 @@ public class LevelObject : MonoBehaviour
 
         if (string.IsNullOrEmpty(AssetID))
             Debug.LogWarning("No asset ID assigned to this object");
-        // else
-        // Debug.Log("AssetID: " + AssetID);
 
-        return new Memento(transform, PrefabReference, ObjectID, sprite1, AssetID, levelObjectGroup);
+        var memento = new Memento(transform, PrefabReference, ObjectID, sprite1, AssetID, levelObjectGroup);
+        ExternalJsonObjectBinding.CaptureToMemento(memento, gameObject);
+        return memento;
     }
 
     private Sprite getSprite()

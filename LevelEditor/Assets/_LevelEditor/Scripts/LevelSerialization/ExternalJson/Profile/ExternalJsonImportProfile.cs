@@ -43,4 +43,8 @@ public sealed class ExternalJsonObjectSourceProfile
     public float defaultWidth = 32f;
     public float defaultHeight = 32f;
     public string spriteAssetId = "";
+    public ExternalJsonSpriteMode spriteMode = ExternalJsonSpriteMode.Placeholder;
+    public ExternalJsonFallbackShape fallbackShape = ExternalJsonFallbackShape.Rect;
+    public string discriminatorField = "";
+    public string discriminatorValue = "";
 }

@@ -1,16 +1,40 @@
 using System;
-using System.Collections.Generic;
 using Newtonsoft.Json.Linq;
 
 public static class JsonPathResolver
 {
-    public static bool TryResolve(JObject root, string path, out JToken token)
+    public const string RootPath = "$";
+
+    public static bool IsRootPath(string path)
+    {
+        if (string.IsNullOrWhiteSpace(path))
+            return true;
+
+        return string.Equals(path.Trim(), RootPath, StringComparison.Ordinal)
+            || string.Equals(path.Trim(), "$root", StringComparison.OrdinalIgnoreCase);
+    }
+
+    public static string NormalizePath(string path)
+    {
+        return IsRootPath(path) ? RootPath : path.Trim();
+    }
+
+    public static bool TryResolve(JToken root, string path, out JToken token)
     {
         token = null;
-        if (root == null || string.IsNullOrWhiteSpace(path))
+        if (root == null)
             return false;
 
-        JToken current = root;
+        if (IsRootPath(path))
+        {
+            token = root;
+            return true;
+        }
+
+        if (root is not JObject rootObject)
+            return false;
+
+        JToken current = rootObject;
         string[] segments = path.Split('.');
 
         for (int i = 0; i < segments.Length; i++)
@@ -22,8 +46,11 @@ public static class JsonPathResolver
             int bracketIndex = segment.IndexOf('[');
             string propertyName = bracketIndex >= 0 ? segment[..bracketIndex] : segment;
 
-            if (current is not JObject obj || !obj.TryGetValue(propertyName, StringComparison.OrdinalIgnoreCase, out current))
+            if (current is not JObject obj
+                || !obj.TryGetValue(propertyName, StringComparison.OrdinalIgnoreCase, out current))
+            {
                 return false;
+            }
 
             if (bracketIndex >= 0)
             {
@@ -33,7 +60,7 @@ public static class JsonPathResolver
                         return false;
 
                     current = array[0];
-                    string remainder = segment[(segment.IndexOf("]") + 1)..];
+                    string remainder = segment[(segment.IndexOf(']') + 1)..];
                     if (remainder.StartsWith("."))
                         remainder = remainder[1..];
 
@@ -66,7 +93,7 @@ public static class JsonPathResolver
         return current != null;
     }
 
-    public static bool TryResolveScalar(JObject root, string path, out float value)
+    public static bool TryResolveScalar(JToken root, string path, out float value)
     {
         value = 0f;
         if (!TryResolve(root, path, out JToken token))
@@ -81,13 +108,16 @@ public static class JsonPathResolver
         return false;
     }
 
-    public static void WriteScalar(JObject root, string path, float value)
+    public static void WriteScalar(JToken root, string path, float value)
     {
-        if (root == null || string.IsNullOrWhiteSpace(path))
+        if (root == null || string.IsNullOrWhiteSpace(path) || IsRootPath(path))
+            return;
+
+        if (root is not JObject rootObject)
             return;
 
         string[] segments = path.Split('.');
-        JObject current = root;
+        JObject current = rootObject;
 
         for (int i = 0; i < segments.Length; i++)
         {
@@ -100,7 +130,8 @@ public static class JsonPathResolver
                 return;
             }
 
-            if (!current.TryGetValue(segment, StringComparison.OrdinalIgnoreCase, out JToken next) || next is not JObject nextObject)
+            if (!current.TryGetValue(segment, StringComparison.OrdinalIgnoreCase, out JToken next)
+                || next is not JObject nextObject)
             {
                 nextObject = new JObject();
                 current[segment] = nextObject;
@@ -110,28 +141,49 @@ public static class JsonPathResolver
         }
     }
 
-    public static void EnsureArray(JObject root, string path, out JArray array)
+    public static void EnsureArray(JToken root, string path, out JArray array)
     {
         array = null;
-        if (root == null || string.IsNullOrWhiteSpace(path))
+        if (root == null)
             return;
 
-        if (!TryResolve(root, path, out JToken token) || token is not JArray existing)
+        if (IsRootPath(path))
+        {
+            if (root is JArray rootArray)
+            {
+                array = rootArray;
+                return;
+            }
+
+            array = new JArray();
+            return;
+        }
+
+        if (root is not JObject rootObject)
+            return;
+
+        if (!TryResolve(rootObject, path, out JToken token) || token is not JArray existing)
         {
             existing = new JArray();
-            SetToken(root, path, existing);
+            SetToken(rootObject, path, existing);
         }
 
         array = existing;
     }
 
-    public static void SetToken(JObject root, string path, JToken value)
+    public static JToken SetToken(JToken root, string path, JToken value)
     {
-        if (root == null || string.IsNullOrWhiteSpace(path))
-            return;
+        if (root == null)
+            return value;
+
+        if (IsRootPath(path))
+            return value;
+
+        if (root is not JObject rootObject)
+            return root;
 
         string[] segments = path.Split('.');
-        JObject current = root;
+        JObject current = rootObject;
 
         for (int i = 0; i < segments.Length; i++)
         {
@@ -141,10 +193,11 @@ public static class JsonPathResolver
             if (isLast)
             {
                 current[segment] = value;
-                return;
+                return root;
             }
 
-            if (!current.TryGetValue(segment, StringComparison.OrdinalIgnoreCase, out JToken next) || next is not JObject nextObject)
+            if (!current.TryGetValue(segment, StringComparison.OrdinalIgnoreCase, out JToken next)
+                || next is not JObject nextObject)
             {
                 nextObject = new JObject();
                 current[segment] = nextObject;
@@ -152,5 +205,7 @@ public static class JsonPathResolver
 
             current = nextObject;
         }
+
+        return root;
     }
 }

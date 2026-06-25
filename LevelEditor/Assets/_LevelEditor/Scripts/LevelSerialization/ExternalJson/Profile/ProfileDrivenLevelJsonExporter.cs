@@ -34,10 +34,7 @@ public sealed class ProfileDrivenLevelJsonExporter : IExternalLevelJsonExporter
 
         try
         {
-            JObject root = string.IsNullOrEmpty(ExternalLevelJsonImportSession.SourceJsonText)
-                ? new JObject()
-                : JObject.Parse(ExternalLevelJsonImportSession.SourceJsonText);
-
+            JToken root = ParseExportRoot(profile);
             List<LevelObject> objects = CollectExportableObjects();
             if (objects.Count == 0)
             {
@@ -49,12 +46,19 @@ public sealed class ProfileDrivenLevelJsonExporter : IExternalLevelJsonExporter
             int exported = 0;
             int skipped = 0;
 
-            foreach (ExternalJsonObjectSourceProfile source in profile.objectSources)
-            {
-                if (source == null || !source.enabled)
-                    continue;
+            IEnumerable<IGrouping<string, ExternalJsonObjectSourceProfile>> pathGroups = profile.objectSources
+                .Where(source => source != null && source.enabled)
+                .GroupBy(source => JsonPathResolver.NormalizePath(source.jsonPath));
 
-                exported += ExportSource(root, profile, source, objects, ref skipped, result);
+            foreach (IGrouping<string, ExternalJsonObjectSourceProfile> group in pathGroups)
+            {
+                if (ShouldMergeArrayExport(group))
+                    exported += ExportMergedArray(root, profile, group, objects, ref skipped, result);
+                else
+                {
+                    foreach (ExternalJsonObjectSourceProfile source in group)
+                        exported += ExportSource(root, profile, source, objects, ref skipped, result);
+                }
             }
 
             result.Json = root.ToString(Formatting.Indented);
@@ -73,8 +77,84 @@ public sealed class ProfileDrivenLevelJsonExporter : IExternalLevelJsonExporter
         return result;
     }
 
+    static JToken ParseExportRoot(ExternalJsonImportProfile profile)
+    {
+        if (!string.IsNullOrEmpty(ExternalLevelJsonImportSession.SourceJsonText))
+            return JToken.Parse(ExternalLevelJsonImportSession.SourceJsonText);
+
+        bool usesRootArray = profile.objectSources != null
+            && profile.objectSources.Any(source =>
+                source != null
+                && source.enabled
+                && source.isArray
+                && JsonPathResolver.IsRootPath(source.jsonPath));
+
+        return usesRootArray ? new JArray() : new JObject();
+    }
+
+    static bool ShouldMergeArrayExport(IGrouping<string, ExternalJsonObjectSourceProfile> group)
+    {
+        if (group.Count() <= 1)
+            return false;
+
+        ExternalJsonObjectSourceProfile first = group.First();
+        if (!first.isArray)
+            return false;
+
+        return group.Any(source => !string.IsNullOrWhiteSpace(source.discriminatorField));
+    }
+
+    static int ExportMergedArray(
+        JToken root,
+        ExternalJsonImportProfile profile,
+        IEnumerable<ExternalJsonObjectSourceProfile> sources,
+        List<LevelObject> objects,
+        ref int skipped,
+        ExternalLevelExportResult result)
+    {
+        ExternalJsonObjectSourceProfile first = sources.First();
+        string path = JsonPathResolver.NormalizePath(first.jsonPath);
+
+        List<LevelObject> matchedObjects = objects
+            .Where(levelObject => sources.Any(source => MatchesSource(levelObject, source)))
+            .OrderBy(levelObject => levelObject.transform.GetSiblingIndex())
+            .ToList();
+
+        if (matchedObjects.Count == 0)
+            return 0;
+
+        JsonPathResolver.EnsureArray(root, path, out JArray array);
+        if (array == null)
+            return 0;
+
+        array.Clear();
+
+        int exported = 0;
+
+        foreach (LevelObject levelObject in matchedObjects)
+        {
+            ExternalJsonObjectSourceProfile source = sources.FirstOrDefault(s => MatchesSource(levelObject, s));
+            if (source == null)
+            {
+                skipped++;
+                continue;
+            }
+
+            if (!TryBuildToken(levelObject, profile, source, out JToken token))
+            {
+                skipped++;
+                continue;
+            }
+
+            array.Add(token);
+            exported++;
+        }
+
+        return exported;
+    }
+
     static int ExportSource(
-        JObject root,
+        JToken root,
         ExternalJsonImportProfile profile,
         ExternalJsonObjectSourceProfile source,
         List<LevelObject> objects,
@@ -82,8 +162,8 @@ public sealed class ProfileDrivenLevelJsonExporter : IExternalLevelJsonExporter
         ExternalLevelExportResult result)
     {
         List<LevelObject> sourceObjects = objects
-            .Where(lo => MatchesSource(lo, source))
-            .OrderBy(lo => lo.transform.GetSiblingIndex())
+            .Where(levelObject => MatchesSource(levelObject, source))
+            .OrderBy(levelObject => levelObject.transform.GetSiblingIndex())
             .ToList();
 
         if (sourceObjects.Count == 0)
@@ -92,6 +172,9 @@ public sealed class ProfileDrivenLevelJsonExporter : IExternalLevelJsonExporter
         if (source.isArray)
         {
             JsonPathResolver.EnsureArray(root, source.jsonPath, out JArray array);
+            if (array == null)
+                return 0;
+
             array.Clear();
 
             int exported = 0;
@@ -190,6 +273,7 @@ public sealed class ProfileDrivenLevelJsonExporter : IExternalLevelJsonExporter
                 {
                     pointObj[source.xField] = ExternalJsonCoordinateUtil.RoundPixel(center.x);
                     pointObj[source.yField] = ExternalJsonCoordinateUtil.RoundPixel(center.y);
+                    ApplyDiscriminator(pointObj, source);
                 }
                 break;
 
@@ -201,6 +285,7 @@ public sealed class ProfileDrivenLevelJsonExporter : IExternalLevelJsonExporter
                     rectObj[source.widthField] = Mathf.Max(1, ExternalJsonCoordinateUtil.RoundPixel(width));
                     if (rectObj[source.heightField] != null || source.defaultHeight > 0f)
                         rectObj[source.heightField] = Mathf.Max(1, ExternalJsonCoordinateUtil.RoundPixel(height));
+                    ApplyDiscriminator(rectObj, source);
                 }
                 break;
 
@@ -241,7 +326,7 @@ public sealed class ProfileDrivenLevelJsonExporter : IExternalLevelJsonExporter
         float height,
         Vector2 center)
     {
-        return source.shape switch
+        JToken token = source.shape switch
         {
             ExternalJsonShapeKind.PointObject => new JObject
             {
@@ -269,6 +354,23 @@ public sealed class ProfileDrivenLevelJsonExporter : IExternalLevelJsonExporter
                 Mathf.Max(1, ExternalJsonCoordinateUtil.RoundPixel(height))),
             _ => null,
         };
+
+        if (token is JObject obj)
+            ApplyDiscriminator(obj, source);
+
+        return token;
+    }
+
+    static void ApplyDiscriminator(JObject obj, ExternalJsonObjectSourceProfile source)
+    {
+        if (obj == null
+            || string.IsNullOrWhiteSpace(source.discriminatorField)
+            || string.IsNullOrWhiteSpace(source.discriminatorValue))
+        {
+            return;
+        }
+
+        obj[source.discriminatorField] = source.discriminatorValue;
     }
 
     static List<LevelObject> CollectExportableObjects()

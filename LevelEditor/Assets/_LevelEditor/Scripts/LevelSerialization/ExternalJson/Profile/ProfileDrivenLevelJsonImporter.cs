@@ -28,13 +28,16 @@ public static class ProfileDrivenLevelJsonImporter
 
         try
         {
-            JObject root = JObject.Parse(json);
+            JToken root = JToken.Parse(json);
             int spawned = 0;
             float pixelScale = Mathf.Max(0.0001f, profile.pixelScale);
 
             foreach (ExternalJsonObjectSourceProfile source in profile.objectSources)
             {
-                if (source == null || !source.enabled || string.IsNullOrWhiteSpace(source.jsonPath))
+                if (source == null || !source.enabled)
+                    continue;
+
+                if (!JsonPathResolver.IsRootPath(source.jsonPath) && string.IsNullOrWhiteSpace(source.jsonPath))
                     continue;
 
                 spawned += ImportSource(root, profile, source, pixelScale, result);
@@ -58,7 +61,7 @@ public static class ProfileDrivenLevelJsonImporter
     }
 
     static int ImportSource(
-        JObject root,
+        JToken root,
         ExternalJsonImportProfile profile,
         ExternalJsonObjectSourceProfile source,
         float pixelScale,
@@ -81,11 +84,41 @@ public static class ProfileDrivenLevelJsonImporter
             }
 
             for (int i = 0; i < array.Count; i++)
+            {
+                if (!MatchesDiscriminator(array[i], source))
+                    continue;
+
                 spawned += TrySpawnToken(array[i], profile, source, pixelScale, i);
+            }
+
             return spawned;
         }
 
+        if (!MatchesDiscriminator(container, source))
+            return 0;
+
         return TrySpawnToken(container, profile, source, pixelScale, 0);
+    }
+
+    static bool MatchesDiscriminator(JToken token, ExternalJsonObjectSourceProfile source)
+    {
+        if (string.IsNullOrWhiteSpace(source.discriminatorField)
+            || string.IsNullOrWhiteSpace(source.discriminatorValue))
+        {
+            return true;
+        }
+
+        if (token is not JObject obj)
+            return false;
+
+        if (!obj.TryGetValue(source.discriminatorField, StringComparison.OrdinalIgnoreCase, out JToken valueToken))
+            return false;
+
+        string value = valueToken.Type == JTokenType.String
+            ? valueToken.Value<string>()
+            : valueToken.ToString();
+
+        return string.Equals(value, source.discriminatorValue, StringComparison.OrdinalIgnoreCase);
     }
 
     static int TrySpawnToken(
@@ -110,6 +143,7 @@ public static class ProfileDrivenLevelJsonImporter
             source.id,
             sourceIndex,
             token.ToString(Newtonsoft.Json.Formatting.None),
+            source,
             pixelScale);
 
         return go != null ? 1 : 0;
@@ -246,7 +280,7 @@ public static class ProfileDrivenLevelJsonImporter
         return 0f;
     }
 
-    static void ApplyViewportFromProfile(JObject root, ExternalJsonImportProfile profile)
+    static void ApplyViewportFromProfile(JToken root, ExternalJsonImportProfile profile)
     {
         float width = 0f;
         float height = 0f;

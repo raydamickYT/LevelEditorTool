@@ -33,7 +33,8 @@ public sealed class ExternalJsonMappingWizardView : MonoBehaviour
         "When enabled, objects from this JSON path are imported into the level.";
 
     const string TooltipShape =
-        "How each entry is stored in the JSON: point (x,y), rectangle (x,y,width,height), or a numeric array such as [x,y] or [x,y,w,h].";
+        "How each JSON entry is read: point (x,y), rectangle (x,y,width,height), or a numeric array such as [x,y]. "
+        + "This also sets the placeholder sprite shape when Sprite is set to Placeholder.";
 
     const string TooltipFieldX =
         "JSON property name for horizontal position in pixels (usually the top-left corner).";
@@ -46,6 +47,15 @@ public sealed class ExternalJsonMappingWizardView : MonoBehaviour
 
     const string TooltipFieldH =
         "JSON property name for object height in pixels. Used for rectangles; ignored for point-only shapes.";
+
+    const string TooltipDiscriminatorField =
+        "Optional. JSON property used to filter items inside a shared array (e.g. type). Leave empty to import every item at this path.";
+
+    const string TooltipDiscriminatorValue =
+        "Only import items where the discriminator field equals this value (e.g. block or enemy).";
+
+    const string TooltipSpriteMode =
+        "Placeholder uses the built-in shape sprite (matches Shape above, colored per category). Pick a library sprite or 'Custom file...' to import your own.";
 
     [SerializeField] UIDocument uiDocument;
     [SerializeField] int sortingOrder = 33200;
@@ -62,7 +72,11 @@ public sealed class ExternalJsonMappingWizardView : MonoBehaviour
     Button cancelButton;
     Button closeButton;
     Label hoverTooltip;
+    VisualElement resizeGrip;
     IVisualElementScheduledItem tooltipDelay;
+    bool isResizingWindow;
+    Vector2 resizeStartPointer;
+    Vector2 resizeStartSize;
 
     const int TooltipDelayMs = 400;
 
@@ -83,7 +97,14 @@ public sealed class ExternalJsonMappingWizardView : MonoBehaviour
         public TextField YField;
         public TextField WidthField;
         public TextField HeightField;
+        public TextField DiscriminatorField;
+        public TextField DiscriminatorValueField;
+        public PopupField<string> SpriteField;
     }
+
+    const string CustomSpriteKey = "__custom_file__";
+    const string PlaceholderKey = "placeholder";
+    const string AssetKeyPrefix = "asset:";
 
     void Awake()
     {
@@ -149,6 +170,7 @@ public sealed class ExternalJsonMappingWizardView : MonoBehaviour
         cancelButton = root.Q<Button>("json-mapping-cancel-button");
         closeButton = root.Q<Button>("json-mapping-close-button");
         hoverTooltip = root.Q<Label>("json-mapping-tooltip");
+        resizeGrip = root.Q<VisualElement>("json-mapping-resize-grip");
 
         if (importButton != null)
             importButton.clicked += OnImportClicked;
@@ -161,6 +183,60 @@ public sealed class ExternalJsonMappingWizardView : MonoBehaviour
 
         ApplyStaticTooltips(root);
         RegisterWindowDrag();
+        RegisterWindowResize();
+    }
+
+    void RegisterWindowResize()
+    {
+        if (resizeGrip == null || panelRoot == null)
+            return;
+
+        resizeGrip.RegisterCallback<PointerDownEvent>(OnResizePointerDown);
+        resizeGrip.RegisterCallback<PointerMoveEvent>(OnResizePointerMove);
+        resizeGrip.RegisterCallback<PointerUpEvent>(OnResizePointerUp);
+        resizeGrip.RegisterCallback<PointerCancelEvent>(OnResizePointerCancel);
+    }
+
+    void OnResizePointerDown(PointerDownEvent evt)
+    {
+        if (evt.button != 0)
+            return;
+
+        resizeGrip.CapturePointer(evt.pointerId);
+        isResizingWindow = true;
+        resizeStartPointer = evt.position;
+        resizeStartSize = new Vector2(panelRoot.resolvedStyle.width, panelRoot.resolvedStyle.height);
+        evt.StopPropagation();
+    }
+
+    void OnResizePointerMove(PointerMoveEvent evt)
+    {
+        if (!isResizingWindow || !resizeGrip.HasPointerCapture(evt.pointerId))
+            return;
+
+        Vector2 delta = (Vector2)evt.position - resizeStartPointer;
+        panelRoot.style.width = Mathf.Max(360f, resizeStartSize.x + delta.x);
+        panelRoot.style.height = Mathf.Max(320f, resizeStartSize.y + delta.y);
+        evt.StopPropagation();
+    }
+
+    void OnResizePointerUp(PointerUpEvent evt)
+    {
+        if (!resizeGrip.HasPointerCapture(evt.pointerId))
+            return;
+
+        resizeGrip.ReleasePointer(evt.pointerId);
+        isResizingWindow = false;
+        evt.StopPropagation();
+    }
+
+    void OnResizePointerCancel(PointerCancelEvent evt)
+    {
+        if (!resizeGrip.HasPointerCapture(evt.pointerId))
+            return;
+
+        resizeGrip.ReleasePointer(evt.pointerId);
+        isResizingWindow = false;
     }
 
     void ApplyStaticTooltips(VisualElement root)
@@ -184,6 +260,17 @@ public sealed class ExternalJsonMappingWizardView : MonoBehaviour
             CancelTooltipDelay();
             HideTooltip();
         });
+    }
+
+    void RegisterFieldTooltip(VisualElement field, string tooltip)
+    {
+        RegisterTooltip(field, tooltip);
+        if (field == null)
+            return;
+
+        Label fieldLabel = field.Q<Label>();
+        if (fieldLabel != null)
+            RegisterTooltip(fieldLabel, tooltip);
     }
 
     void BeginTooltipDelay(VisualElement anchor, string tooltip)
@@ -269,14 +356,15 @@ public sealed class ExternalJsonMappingWizardView : MonoBehaviour
             var header = new VisualElement();
             header.AddToClassList("json-mapping-source-header");
 
-            var enabledToggle = new Toggle { label = source.jsonPath, value = source.enabled };
+            string pathLabel = FormatSourceLabel(source);
+            var enabledToggle = new Toggle { label = pathLabel, value = source.enabled };
             enabledToggle.AddToClassList("json-mapping-source-toggle");
             RegisterTooltip(enabledToggle, TooltipSourceEnabled);
             header.Add(enabledToggle);
 
             var shapeField = new EnumField("Shape", source.shape);
             shapeField.AddToClassList("json-mapping-shape-field");
-            RegisterTooltip(shapeField, TooltipShape);
+            RegisterFieldTooltip(shapeField, TooltipShape);
             header.Add(shapeField);
 
             row.Add(header);
@@ -301,6 +389,40 @@ public sealed class ExternalJsonMappingWizardView : MonoBehaviour
             fieldsRow.Add(heightField);
             row.Add(fieldsRow);
 
+            var discriminatorRow = new VisualElement();
+            discriminatorRow.AddToClassList("row");
+
+            var discriminatorField = new TextField("Type field") { value = source.discriminatorField ?? string.Empty };
+            var discriminatorValueField = new TextField("Type value") { value = source.discriminatorValue ?? string.Empty };
+            RegisterTooltip(discriminatorField, TooltipDiscriminatorField);
+            RegisterTooltip(discriminatorValueField, TooltipDiscriminatorValue);
+
+            discriminatorRow.Add(discriminatorField);
+            discriminatorRow.Add(discriminatorValueField);
+            row.Add(discriminatorRow);
+
+            var spriteRow = new VisualElement();
+            spriteRow.AddToClassList("row");
+
+            var spriteChoices = BuildSpriteChoices();
+            string currentKey = GetSpriteKeyForSource(source);
+            if (!spriteChoices.Contains(currentKey))
+                currentKey = PlaceholderKey;
+
+            var spriteField = new PopupField<string>(
+                "Sprite",
+                spriteChoices,
+                spriteChoices.IndexOf(currentKey),
+                FormatSpriteChoice,
+                FormatSpriteChoice);
+            spriteField.AddToClassList("json-mapping-sprite-asset-field");
+            RegisterTooltip(spriteField, TooltipSpriteMode);
+
+            spriteField.RegisterValueChangedCallback(evt => OnSpriteChoiceChanged(spriteField, evt.previousValue, evt.newValue));
+
+            spriteRow.Add(spriteField);
+            row.Add(spriteRow);
+
             sourcesContainer.Add(row);
 
             sourceRows.Add(new SourceRowBinding
@@ -312,8 +434,94 @@ public sealed class ExternalJsonMappingWizardView : MonoBehaviour
                 YField = yField,
                 WidthField = widthField,
                 HeightField = heightField,
+                DiscriminatorField = discriminatorField,
+                DiscriminatorValueField = discriminatorValueField,
+                SpriteField = spriteField,
             });
         }
+    }
+
+    static string GetSpriteKeyForSource(ExternalJsonObjectSourceProfile source)
+    {
+        if (source == null)
+            return PlaceholderKey;
+
+        if (source.spriteMode == ExternalJsonSpriteMode.Custom && !string.IsNullOrWhiteSpace(source.spriteAssetId))
+            return AssetKeyPrefix + source.spriteAssetId.Trim();
+
+        return PlaceholderKey;
+    }
+
+    static List<string> BuildSpriteChoices()
+    {
+        var choices = new List<string> { PlaceholderKey };
+
+        foreach (ImportedAssetMetaData asset in AssetStorageService.GetAllCachedImportedAssets())
+        {
+            if (asset == null || string.IsNullOrWhiteSpace(asset.AssetID))
+                continue;
+
+            if (!string.Equals(asset.AssetType, ImportedAssetTypes.Sprite, StringComparison.OrdinalIgnoreCase))
+                continue;
+
+            choices.Add(AssetKeyPrefix + asset.AssetID);
+        }
+
+        choices.Add(CustomSpriteKey);
+        return choices;
+    }
+
+    static string FormatSpriteChoice(string key)
+    {
+        if (string.Equals(key, PlaceholderKey, StringComparison.Ordinal))
+            return "Placeholder";
+
+        if (string.Equals(key, CustomSpriteKey, StringComparison.Ordinal))
+            return "Custom file...";
+
+        if (key != null && key.StartsWith(AssetKeyPrefix, StringComparison.Ordinal))
+        {
+            string assetId = key.Substring(AssetKeyPrefix.Length);
+            ImportedAssetMetaData meta = AssetStorageService.GetAssetByID(assetId);
+            if (meta != null && !string.IsNullOrWhiteSpace(meta.FileName))
+                return meta.FileName;
+
+            return assetId;
+        }
+
+        return key;
+    }
+
+    void OnSpriteChoiceChanged(PopupField<string> spriteField, string previousValue, string newValue)
+    {
+        if (spriteField == null || !string.Equals(newValue, CustomSpriteKey, StringComparison.Ordinal))
+            return;
+
+        if (ExternalJsonWizardSpriteImport.TryPickAndImport(out string assetId)
+            && !string.IsNullOrWhiteSpace(assetId))
+        {
+            string newKey = AssetKeyPrefix + assetId;
+            List<string> refreshed = BuildSpriteChoices();
+            if (!refreshed.Contains(newKey))
+                refreshed.Insert(refreshed.Count - 1, newKey);
+
+            spriteField.choices = refreshed;
+            spriteField.SetValueWithoutNotify(newKey);
+            return;
+        }
+
+        // Cancelled or failed: revert to the previous selection.
+        spriteField.SetValueWithoutNotify(
+            string.Equals(previousValue, CustomSpriteKey, StringComparison.Ordinal) ? PlaceholderKey : previousValue);
+    }
+
+    static string FormatSourceLabel(ExternalJsonObjectSourceProfile source)
+    {
+        string path = string.IsNullOrWhiteSpace(source.jsonPath) ? JsonPathResolver.RootPath : source.jsonPath;
+        if (string.IsNullOrWhiteSpace(source.discriminatorField) || string.IsNullOrWhiteSpace(source.discriminatorValue))
+            return path;
+
+        return $"{path} [{source.discriminatorField}={source.discriminatorValue}]";
     }
 
     void OnImportClicked()
@@ -378,10 +586,34 @@ public sealed class ExternalJsonMappingWizardView : MonoBehaviour
             source.yField = row.YField.value;
             source.widthField = row.WidthField.value;
             source.heightField = row.HeightField.value;
+            source.discriminatorField = row.DiscriminatorField.value?.Trim() ?? string.Empty;
+            source.discriminatorValue = row.DiscriminatorValueField.value?.Trim() ?? string.Empty;
+            ApplySpriteChoiceToSource(source, row.SpriteField?.value);
             sources.Add(source);
         }
 
         workingProfile.SetObjectSources(sources);
+    }
+
+    static void ApplySpriteChoiceToSource(ExternalJsonObjectSourceProfile source, string key)
+    {
+        if (source == null)
+            return;
+
+        if (string.IsNullOrEmpty(key)
+            || string.Equals(key, PlaceholderKey, StringComparison.Ordinal)
+            || string.Equals(key, CustomSpriteKey, StringComparison.Ordinal))
+        {
+            source.spriteMode = ExternalJsonSpriteMode.Placeholder;
+            source.spriteAssetId = string.Empty;
+            return;
+        }
+
+        if (key.StartsWith(AssetKeyPrefix, StringComparison.Ordinal))
+        {
+            source.spriteMode = ExternalJsonSpriteMode.Custom;
+            source.spriteAssetId = key.Substring(AssetKeyPrefix.Length);
+        }
     }
 
     static ExternalJsonImportProfile CloneProfile(ExternalJsonImportProfile profile)

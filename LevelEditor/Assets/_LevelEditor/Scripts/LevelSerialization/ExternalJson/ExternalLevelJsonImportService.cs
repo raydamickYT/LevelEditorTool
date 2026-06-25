@@ -160,6 +160,36 @@ public static class ExternalLevelJsonImportService
         string sourceJsonFragment,
         float pixelScale = DefaultPixelScale)
     {
+        return SpawnImportedObject(
+            objectName,
+            pixelPosition,
+            pixelSize,
+            tint,
+            formatId,
+            category,
+            sourceIndex,
+            sourceJsonFragment,
+            sourceProfile: null,
+            pixelScale);
+    }
+
+    public static GameObject SpawnImportedObject(
+        string objectName,
+        Vector2 pixelPosition,
+        Vector2 pixelSize,
+        Color tint,
+        string formatId,
+        string category,
+        int sourceIndex,
+        string sourceJsonFragment,
+        ExternalJsonObjectSourceProfile sourceProfile,
+        float pixelScale = DefaultPixelScale)
+    {
+        ExternalJsonResolvedSprite resolved = ExternalJsonImportSpriteResolver.Resolve(sourceProfile, category, tint);
+        Sprite sprite = resolved.Sprite ?? ResolvePlaceholderSprite();
+        Vector3 worldCenter = PixelRectToWorldCenter(pixelPosition, pixelSize, pixelScale);
+        Vector3 scale = ComputeScaleForPixelSize(pixelSize, sprite, pixelScale);
+
         GameObject template = ObjectLibraryManager.Instance != null
             ? ObjectLibraryManager.Instance.SpawnPrefabTemplate
             : null;
@@ -170,16 +200,12 @@ public static class ExternalLevelJsonImportService
             return null;
         }
 
-        Sprite sprite = ResolvePlaceholderSprite();
-        Vector3 worldCenter = PixelRectToWorldCenter(pixelPosition, pixelSize, pixelScale);
-        Vector3 scale = ComputeScaleForPixelSize(pixelSize, sprite, pixelScale);
-
         LevelObject.Memento memento = new LevelObject.Memento(
             worldCenter,
             Quaternion.identity,
             scale,
             template,
-            string.Empty,
+            resolved.AssetId,
             sprite,
             null,
             objectName,
@@ -190,7 +216,7 @@ public static class ExternalLevelJsonImportService
             return null;
 
         if (spawned.TryGetComponent(out SpriteRenderer spriteRenderer))
-            spriteRenderer.color = tint;
+            spriteRenderer.color = resolved.UseCategoryTint ? resolved.Tint : Color.white;
 
         ExternalJsonObjectBinding binding = spawned.GetComponent<ExternalJsonObjectBinding>();
         if (binding == null)

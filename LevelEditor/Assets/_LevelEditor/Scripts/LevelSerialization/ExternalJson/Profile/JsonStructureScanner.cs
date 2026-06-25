@@ -84,7 +84,8 @@ public static class JsonStructureScanner
             if (array.Count == 0)
                 return;
 
-            var candidate = AnalyzeArray(path, array);
+            string arrayPath = string.IsNullOrEmpty(path) ? JsonPathResolver.RootPath : path;
+            JsonArrayCandidate candidate = AnalyzeArray(arrayPath, array);
             if (candidate != null)
                 result.ArrayCandidates.Add(candidate);
 
@@ -125,6 +126,8 @@ public static class JsonStructureScanner
             candidate.InferredShape = InferObjectShape(obj);
             foreach (JProperty property in obj.Properties())
                 candidate.ObjectFieldNames.Add(property.Name);
+
+            EnrichWithDiscriminators(candidate, array);
             return candidate;
         }
 
@@ -193,6 +196,92 @@ public static class JsonStructureScanner
         return false;
     }
 
+    static void EnrichWithDiscriminators(JsonArrayCandidate candidate, JArray array)
+    {
+        string field = DetectDiscriminatorField(array);
+        if (string.IsNullOrEmpty(field))
+            return;
+
+        candidate.DiscriminatorField = field;
+        var values = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
+
+        foreach (JToken item in array)
+        {
+            if (item is not JObject obj || !obj.TryGetValue(field, StringComparison.OrdinalIgnoreCase, out JToken valueToken))
+                continue;
+
+            string value = valueToken.Type == JTokenType.String
+                ? valueToken.Value<string>()
+                : valueToken.ToString();
+
+            if (string.IsNullOrEmpty(value))
+                continue;
+
+            values.Add(value);
+            if (!candidate.ShapeByDiscriminatorValue.ContainsKey(value))
+                candidate.ShapeByDiscriminatorValue[value] = InferObjectShape(obj);
+        }
+
+        candidate.DiscriminatorValues.AddRange(values.OrderBy(v => v, StringComparer.OrdinalIgnoreCase));
+    }
+
+    static string DetectDiscriminatorField(JArray array)
+    {
+        if (array == null || array.Count == 0 || array[0] is not JObject first)
+            return null;
+
+        string[] preferred = { "type", "kind", "category", "tag", "class", "tileType" };
+        foreach (string name in preferred)
+        {
+            if (AllItemsHaveStringField(array, name) && DistinctStringValues(array, name).Count > 1)
+                return name;
+        }
+
+        foreach (JProperty property in first.Properties())
+        {
+            if (property.Value.Type != JTokenType.String)
+                continue;
+
+            if (DistinctStringValues(array, property.Name).Count > 1)
+                return property.Name;
+        }
+
+        return null;
+    }
+
+    static bool AllItemsHaveStringField(JArray array, string fieldName)
+    {
+        foreach (JToken item in array)
+        {
+            if (item is not JObject obj)
+                return false;
+
+            if (!obj.TryGetValue(fieldName, StringComparison.OrdinalIgnoreCase, out JToken token))
+                return false;
+
+            if (token.Type != JTokenType.String && token.Type != JTokenType.Integer)
+                return false;
+        }
+
+        return true;
+    }
+
+    static HashSet<string> DistinctStringValues(JArray array, string fieldName)
+    {
+        var values = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
+        foreach (JToken item in array)
+        {
+            if (item is not JObject obj || !obj.TryGetValue(fieldName, StringComparison.OrdinalIgnoreCase, out JToken token))
+                continue;
+
+            string value = token.Type == JTokenType.String ? token.Value<string>() : token.ToString();
+            if (!string.IsNullOrEmpty(value))
+                values.Add(value);
+        }
+
+        return values;
+    }
+
     public static ExternalJsonImportProfile BuildSuggestedProfile(JsonStructureScanResult scan, string sourceFileName)
     {
         string baseName = string.IsNullOrEmpty(sourceFileName)
@@ -223,6 +312,34 @@ public static class JsonStructureScanner
         var sources = new List<ExternalJsonObjectSourceProfile>();
         foreach (JsonArrayCandidate arrayCandidate in scan.ArrayCandidates)
         {
+            if (!string.IsNullOrEmpty(arrayCandidate.DiscriminatorField)
+                && arrayCandidate.DiscriminatorValues.Count > 0)
+            {
+                foreach (string value in arrayCandidate.DiscriminatorValues)
+                {
+                    arrayCandidate.ShapeByDiscriminatorValue.TryGetValue(value, out ExternalJsonShapeKind shape);
+                    sources.Add(new ExternalJsonObjectSourceProfile
+                    {
+                        enabled = true,
+                        id = value,
+                        displayName = value,
+                        jsonPath = arrayCandidate.Path,
+                        isArray = true,
+                        shape = shape,
+                        xField = "x",
+                        yField = "y",
+                        widthField = "width",
+                        heightField = "height",
+                        defaultWidth = 40f,
+                        defaultHeight = 40f,
+                        discriminatorField = arrayCandidate.DiscriminatorField,
+                        discriminatorValue = value,
+                    });
+                }
+
+                continue;
+            }
+
             string id = GetLeafName(arrayCandidate.Path);
             sources.Add(new ExternalJsonObjectSourceProfile
             {
@@ -265,8 +382,8 @@ public static class JsonStructureScanner
 
     static string GetLeafName(string path)
     {
-        if (string.IsNullOrEmpty(path))
-            return "object";
+        if (string.IsNullOrEmpty(path) || JsonPathResolver.IsRootPath(path))
+            return "root";
 
         int dot = path.LastIndexOf('.');
         string leaf = dot >= 0 ? path[(dot + 1)..] : path;

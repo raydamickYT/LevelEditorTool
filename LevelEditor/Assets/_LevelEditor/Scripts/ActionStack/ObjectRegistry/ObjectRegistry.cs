@@ -36,11 +36,13 @@ public static class ObjectRegistry
 
     public static void DeregisterObject(LevelObject levelObject)
     {
-        if (levelObject != null)
-        {
+        if (levelObject == null)
+            return;
+
+        // Only remove this object's own entry. A deferred OnDestroy of an old object must never evict a
+        // freshly spawned object that reused the same ObjectID after ClearAllForNewLevel reset the counter.
+        if (objects.TryGetValue(levelObject.ObjectID, out GameObject stored) && stored == levelObject.gameObject)
             objects.Remove(levelObject.ObjectID);
-            Debug.Log("object removed " + levelObject.ObjectID);
-        }
     }
 
     public static void ClearAllForNewLevel()
