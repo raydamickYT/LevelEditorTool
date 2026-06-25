@@ -1,0 +1,50 @@
+<ui:UXML xmlns:ui="UnityEngine.UIElements">
+    <Style src="ViewportFramePanel.uss" />
+
+    <ui:VisualElement name="viewport-frame-root" class="viewport-frame-root" picking-mode="Ignore" style="display: none;">
+        <ui:VisualElement name="viewport-frame-panel" class="viewport-frame-panel" picking-mode="Position">
+            <ui:VisualElement name="viewport-frame-drag-header" class="window-header viewport-drag-header">
+                <ui:Label text="Game Viewport" class="window-title" />
+                <ui:Button name="viewport-close-button" text="×" class="viewport-close-button" />
+            </ui:VisualElement>
+
+            <ui:Toggle name="viewport-enabled-toggle" label="Show" class="viewport-enabled-toggle" />
+
+            <ui:VisualElement class="section">
+                <ui:Label text="Position (px)" class="section-title" />
+
+                <ui:VisualElement class="row">
+                    <ui:Label text="X" class="axis-label" />
+                    <ui:FloatField name="viewport-x" class="axis-field" />
+
+                    <ui:Label text="Y" class="axis-label" />
+                    <ui:FloatField name="viewport-y" class="axis-field" />
+                </ui:VisualElement>
+            </ui:VisualElement>
+
+            <ui:VisualElement class="section">
+                <ui:Label text="Size (px)" class="section-title" />
+
+                <ui:VisualElement class="row">
+                    <ui:Label text="W" class="axis-label" />
+                    <ui:FloatField name="viewport-width" class="axis-field" />
+
+                    <ui:Label text="H" class="axis-label" />
+                    <ui:FloatField name="viewport-height" class="axis-field" />
+                </ui:VisualElement>
+
+                <ui:Toggle name="viewport-lock-aspect" label="Lock aspect ratio" class="viewport-lock-toggle" />
+            </ui:VisualElement>
+
+            <ui:VisualElement class="section">
+                <ui:Label text="Outline color" class="section-title" />
+                <ui:VisualElement class="row viewport-color-row">
+                    <ui:VisualElement name="viewport-outline-color-preview" class="viewport-color-preview" />
+                    <ui:TextField name="viewport-outline-color-hex" value="#FF0000" class="viewport-color-hex-field" />
+                </ui:VisualElement>
+            </ui:VisualElement>
+
+            <ui:Label name="viewport-hint" text="Drag this window by the title bar. Drag the frame border in the scene to move it." class="viewport-hint" />
+        </ui:VisualElement>
+    </ui:VisualElement>
+</ui:UXML>

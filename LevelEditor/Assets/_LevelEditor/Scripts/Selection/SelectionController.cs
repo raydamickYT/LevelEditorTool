@@ -17,7 +17,7 @@ public class selectionController
     private HashSet<SelectableTargetData> _selectedGameObjects = new();
     // private SelectionBoxBase _selectionBoxView;
     private Vector2 _pressStartScreenPosition;
-    private bool startedOnGizmo, isPointerDown, isBoxDragging;
+    private bool startedOnGizmo, startedOnViewportFrame, isPointerDown, isBoxDragging;
     private float _dragThreshold = 10f;
     private SelectionCommand currentSelectionCommand = SelectionCommand.Select;
 
@@ -49,6 +49,15 @@ public class selectionController
             return;
         }
 
+        if (LevelViewportFrameInteraction.Instance != null
+            && LevelViewportFrameInteraction.Instance.TryBeginInteractionOnPointerDown())
+        {
+            startedOnViewportFrame = true;
+            _pressStartScreenPosition = Mouse.current.position.ReadValue();
+            isPointerDown = true;
+            return;
+        }
+
         _pressStartScreenPosition = Mouse.current.position.ReadValue();
         isPointerDown = true;
     }
@@ -58,6 +67,15 @@ public class selectionController
         if (startedOnGizmo)
         {
             startedOnGizmo = false;
+            isPointerDown = false;
+            isBoxDragging = false;
+            return;
+        }
+
+        if (startedOnViewportFrame)
+        {
+            LevelViewportFrameInteraction.Instance?.EndPointerInteraction();
+            startedOnViewportFrame = false;
             isPointerDown = false;
             isBoxDragging = false;
             return;
@@ -96,7 +114,10 @@ public class selectionController
 
         ResetSelectionCycle();
         if (!UIHelper.IsPointerOverUI())
+        {
+            LevelViewportFrameState.Instance.Deselect();
             TryClearSelectionWithUndo();
+        }
 
         currentSelectionCommand = SelectionCommand.Select;
     }
@@ -155,6 +176,8 @@ public class selectionController
 
     public void TryToggleSelection(GameObject clickedObject)
     {
+        LevelViewportFrameState.Instance.Deselect();
+
         List<int> beforeSelection = GetSelectedObjectIDs();
         HashSet<int> afterSelection = beforeSelection.ToHashSet();
 
@@ -179,6 +202,7 @@ public class selectionController
     public void SelectInRect(Rect screenRect)
     {
         ResetSelectionCycle();
+        LevelViewportFrameState.Instance.Deselect();
 
         List<int> beforeSelection = GetSelectedObjectIDs();
         List<int> afterSelection = new();
@@ -291,7 +315,7 @@ public class selectionController
         if (!selectableGameObjectsInSceneDict.TryGetValue(selectedObject, out SelectableTargetData obj))
             return;
 
-
+        LevelViewportFrameState.Instance.Deselect();
         LevelObject levelObject = selectedObject.GetComponent<LevelObject>();
         if (levelObject == null)
             return;

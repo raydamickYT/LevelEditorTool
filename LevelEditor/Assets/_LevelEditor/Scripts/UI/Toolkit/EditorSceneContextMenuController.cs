@@ -16,6 +16,7 @@ public sealed class EditorSceneContextMenuController : MonoBehaviour
     VisualElement documentRoot;
     VisualElement menuPanel;
     Toggle showAllCollisionBoxesToggle;
+    Button gameViewportFrameButton;
     Coroutine subscribeRoutine;
     bool inputSubscribed;
 
@@ -80,6 +81,7 @@ public sealed class EditorSceneContextMenuController : MonoBehaviour
         documentRoot = uiDocument.rootVisualElement;
         menuPanel = documentRoot.Q<VisualElement>("scene-context-menu");
         showAllCollisionBoxesToggle = documentRoot.Q<Toggle>("toggle-show-all-collision-boxes");
+        gameViewportFrameButton = documentRoot.Q<Button>("button-game-viewport-frame");
 
         if (documentRoot != null)
             documentRoot.pickingMode = PickingMode.Ignore;
@@ -90,6 +92,12 @@ public sealed class EditorSceneContextMenuController : MonoBehaviour
         {
             showAllCollisionBoxesToggle.SetValueWithoutNotify(PickColliderOutlineSettings.ShowAllCollisionBoxes);
             showAllCollisionBoxesToggle.RegisterValueChangedCallback(OnShowAllCollisionBoxesToggleChanged);
+        }
+
+        if (gameViewportFrameButton != null)
+        {
+            gameViewportFrameButton.clicked += OnGameViewportFrameButtonClicked;
+            gameViewportFrameButton.RegisterCallback<PointerDownEvent>(evt => evt.StopPropagation());
         }
 
         PickColliderOutlineSettings.Changed -= OnOutlineSettingsChanged;
@@ -141,7 +149,6 @@ public sealed class EditorSceneContextMenuController : MonoBehaviour
         documentRoot.style.display = DisplayStyle.Flex;
         menuPanel.BringToFront();
 
-        // tell the documentRoot to execute the PositionMenuAtPointer method on the next frame, to ensure that the menu panel is properly positioned after it becomes visible and can be picked.
         documentRoot.schedule.Execute(PositionMenuAtPointer).StartingIn(0);
     }
 
@@ -184,6 +191,12 @@ public sealed class EditorSceneContextMenuController : MonoBehaviour
 
     void OnShowAllCollisionBoxesToggleChanged(ChangeEvent<bool> evt)
         => PickColliderOutlineSettings.SetShowAllCollisionBoxes(evt.newValue);
+
+    void OnGameViewportFrameButtonClicked()
+    {
+        HideMenu();
+        ViewportFramePanelView.OpenPanel();
+    }
 
     void OnOutlineSettingsChanged()
     {

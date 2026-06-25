@@ -135,6 +135,11 @@ public static class LevelProjectService
         InstantiateFromRecords(file.objects);
         RefreshEditorPickColliders();
 
+        if (file.viewport != null)
+            LevelViewportFrameState.Instance.ApplyRecord(file.viewport);
+        else
+            LevelViewportFrameState.Instance.ResetToDefaults();
+
         EventManager.Instance.TriggerDelegate(ObjectHierarchyEvents.RebuildEntireHierarchy);
 
         EventManager.Instance.TriggerDelegate(
@@ -255,6 +260,8 @@ public static class LevelProjectService
 
             file.objects.Add(rec);
         }
+
+        file.viewport = LevelViewportFrameState.Instance.ToRecord();
 
         return file;
     }

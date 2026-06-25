@@ -44,6 +44,7 @@ public static class LevelEditorFileMenuCommands
 
         ObjectRegistry.ClearAllForNewLevel();
         LevelProjectSession.ClearProject();
+        LevelViewportFrameState.Instance.ResetToDefaults();
 
         if (ObjectLibraryManager.Instance != null)
             ObjectLibraryManager.Instance.RebuildLibraryFromAssetStorage();

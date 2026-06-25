@@ -9,6 +9,24 @@ public class LevelProjectFile
     public int formatVersion = 1;
     public string levelName = "";
     public List<LevelObjectRecord> objects = new();
+    public LevelViewportRecord viewport;
+}
+
+/// <summary>Editor-only game viewport / camera frame (not exported to external game JSON).</summary>
+[Serializable]
+public class LevelViewportRecord
+{
+    public bool enabled;
+    public float pixelX;
+    public float pixelY;
+    public float pixelWidth = 600f;
+    public float pixelHeight = 600f;
+    public float pixelScale = 0.01f;
+    public bool lockAspectRatio;
+    public float outlineR = 1f;
+    public float outlineG;
+    public float outlineB;
+    public float outlineA = 0.85f;
 }
 
 //One node in the level tree (sprite object or empty group).

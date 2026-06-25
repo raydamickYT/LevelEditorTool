@@ -86,6 +86,8 @@ public static class ExternalLevelJsonImportService
         if (result.Success)
         {
             ExternalLevelJsonImportSession.Set(sourcePath, json, result.FormatId, result.FormatDisplayName);
+            if (string.Equals(result.FormatId, "pgattic.platformer", StringComparison.Ordinal))
+                LevelViewportFrameState.Instance.ApplyPlatformerDefaults();
             LevelProjectDirtyState.MarkDirty();
             EventManager.Instance?.TriggerDelegate(ObjectHierarchyEvents.RebuildEntireHierarchy);
             EventManager.Instance?.TriggerDelegate(
@@ -189,6 +191,7 @@ public static class ExternalLevelJsonImportService
 
         ObjectRegistry.ClearAllForNewLevel();
         LevelProjectSession.ClearProject();
+        LevelViewportFrameState.Instance.ResetToDefaults();
         ExternalLevelJsonImportSession.Clear();
     }
 
