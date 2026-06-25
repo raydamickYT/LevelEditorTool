@@ -7,16 +7,25 @@ public static class ExternalLevelJsonImportSession
     public static string SourceJsonText { get; private set; }
     public static string FormatId { get; private set; }
     public static string FormatDisplayName { get; private set; }
+    public static ExternalJsonImportProfile ActiveProfile { get; private set; }
+
+    public static bool HasActiveProfile => ActiveProfile != null;
 
     public static bool HasActiveImport =>
         !string.IsNullOrEmpty(SourceJsonText) && !string.IsNullOrEmpty(FormatId);
 
-    public static void Set(string sourceFilePath, string sourceJsonText, string formatId, string formatDisplayName)
+    public static void Set(
+        string sourceFilePath,
+        string sourceJsonText,
+        string formatId,
+        string formatDisplayName,
+        ExternalJsonImportProfile profile = null)
     {
         SourceFilePath = sourceFilePath ?? string.Empty;
         SourceJsonText = sourceJsonText ?? string.Empty;
         FormatId = formatId ?? string.Empty;
         FormatDisplayName = formatDisplayName ?? string.Empty;
+        ActiveProfile = profile;
     }
 
     public static void Clear()
@@ -25,5 +34,6 @@ public static class ExternalLevelJsonImportSession
         SourceJsonText = string.Empty;
         FormatId = string.Empty;
         FormatDisplayName = string.Empty;
+        ActiveProfile = null;
     }
 }

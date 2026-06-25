@@ -9,4 +9,5 @@ public sealed class ExternalLevelImportResult
     public int SpawnedObjectCount;
     public readonly List<string> Warnings = new();
     public string ErrorMessage;
+    public bool NeedsMappingWizard;
 }

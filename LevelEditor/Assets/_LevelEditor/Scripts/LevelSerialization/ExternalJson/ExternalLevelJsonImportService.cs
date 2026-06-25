@@ -60,19 +60,69 @@ public static class ExternalLevelJsonImportService
         }
 
         IExternalLevelJsonImporter importer = Importers.FirstOrDefault(i => i.CanImport(json));
-        if (importer == null)
+        if (importer != null)
+        {
+            PrepareSceneForImport();
+            return CompleteImport(importer.Import(json, sourcePath), json, sourcePath, null);
+        }
+
+        if (!string.IsNullOrEmpty(sourcePath)
+            && ExternalJsonProfileStorage.TryLoadProfileForJson(sourcePath, out ExternalJsonImportProfile savedProfile))
+        {
+            PrepareSceneForImport();
+            ExternalLevelImportResult profileResult = ProfileDrivenLevelJsonImporter.Import(savedProfile, json, sourcePath);
+            if (profileResult.Success)
+                return CompleteImport(profileResult, json, sourcePath, savedProfile);
+        }
+
+        JsonStructureScanResult scan = JsonStructureScanner.Scan(json);
+        ExternalJsonImportProfile suggestedProfile = JsonStructureScanner.BuildSuggestedProfile(
+            scan,
+            string.IsNullOrEmpty(sourcePath) ? "custom" : Path.GetFileName(sourcePath));
+
+        ExternalJsonMappingWizardView.Open(json, sourcePath, suggestedProfile);
+
+        return new ExternalLevelImportResult
+        {
+            Success = false,
+            NeedsMappingWizard = true,
+            SourcePath = sourcePath,
+            FormatDisplayName = "JSON mapping required",
+            ErrorMessage = "This JSON format is not recognized yet. Complete the mapping wizard to import it.",
+        };
+    }
+
+    public static ExternalLevelImportResult ImportWithProfile(
+        ExternalJsonImportProfile profile,
+        string json,
+        string sourcePath)
+    {
+        if (profile == null)
         {
             return new ExternalLevelImportResult
             {
                 Success = false,
-                ErrorMessage = "No registered importer recognizes this JSON structure.",
+                ErrorMessage = "Import profile is missing.",
                 SourcePath = sourcePath,
             };
         }
 
         PrepareSceneForImport();
+        ExternalLevelImportResult result = ProfileDrivenLevelJsonImporter.Import(profile, json, sourcePath);
+        result = CompleteImport(result, json, sourcePath, profile);
 
-        ExternalLevelImportResult result = importer.Import(json, sourcePath);
+        if (result.Success && !string.IsNullOrEmpty(sourcePath))
+            ExternalJsonProfileStorage.SaveProfileForJson(sourcePath, profile);
+
+        return result;
+    }
+
+    static ExternalLevelImportResult CompleteImport(
+        ExternalLevelImportResult result,
+        string json,
+        string sourcePath,
+        ExternalJsonImportProfile profile)
+    {
         if (result == null)
         {
             return new ExternalLevelImportResult
@@ -83,17 +133,18 @@ public static class ExternalLevelJsonImportService
             };
         }
 
-        if (result.Success)
-        {
-            ExternalLevelJsonImportSession.Set(sourcePath, json, result.FormatId, result.FormatDisplayName);
-            if (string.Equals(result.FormatId, "pgattic.platformer", StringComparison.Ordinal))
-                LevelViewportFrameState.Instance.ApplyPlatformerDefaults();
-            LevelProjectDirtyState.MarkDirty();
-            EventManager.Instance?.TriggerDelegate(ObjectHierarchyEvents.RebuildEntireHierarchy);
-            EventManager.Instance?.TriggerDelegate(
-                SelectionEvents.ReplaceSelectionWithObject,
-                Enumerable.Empty<GameObject>());
-        }
+        if (!result.Success)
+            return result;
+
+        if (profile == null && string.Equals(result.FormatId, "pgattic.platformer", StringComparison.Ordinal))
+            LevelViewportFrameState.Instance.ApplyPlatformerDefaults();
+
+        ExternalLevelJsonImportSession.Set(sourcePath, json, result.FormatId, result.FormatDisplayName, profile);
+        LevelProjectDirtyState.MarkDirty();
+        EventManager.Instance?.TriggerDelegate(ObjectHierarchyEvents.RebuildEntireHierarchy);
+        EventManager.Instance?.TriggerDelegate(
+            SelectionEvents.ReplaceSelectionWithObject,
+            Enumerable.Empty<GameObject>());
 
         return result;
     }
@@ -177,7 +228,7 @@ public static class ExternalLevelJsonImportService
 
     public static float PlatformerPlatformHeightPixels => PlatformerBoxHeightPixels;
 
-    static void PrepareSceneForImport()
+    public static void PrepareSceneForImport()
     {
         if (EventManager.Instance != null)
         {

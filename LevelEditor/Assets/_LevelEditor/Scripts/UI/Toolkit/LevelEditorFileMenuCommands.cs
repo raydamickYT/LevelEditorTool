@@ -245,6 +245,9 @@ public static class LevelEditorFileMenuCommands
 
         if (!result.Success)
         {
+            if (result.NeedsMappingWizard)
+                return;
+
             EditorPopupService.ShowWarning(
                 "Import failed",
                 string.IsNullOrEmpty(result.ErrorMessage)

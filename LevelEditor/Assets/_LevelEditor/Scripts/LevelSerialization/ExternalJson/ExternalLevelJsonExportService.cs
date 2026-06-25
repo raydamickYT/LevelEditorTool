@@ -11,6 +11,7 @@ public static class ExternalLevelJsonExportService
     static readonly IExternalLevelJsonExporter[] Exporters =
     {
         new PlatformerLevelJsonExporter(),
+        new ProfileDrivenLevelJsonExporter(),
     };
 
     public static IReadOnlyList<IExternalLevelJsonExporter> RegisteredExporters => Exporters;
@@ -24,6 +25,16 @@ public static class ExternalLevelJsonExportService
 
             if (sessionExporter != null && sessionExporter.CanExport())
                 return sessionExporter;
+
+            if (ExternalLevelJsonImportSession.HasActiveProfile)
+            {
+                IExternalLevelJsonExporter profileExporter = Exporters
+                    .OfType<ProfileDrivenLevelJsonExporter>()
+                    .FirstOrDefault(exporter => exporter.CanExport());
+
+                if (profileExporter != null)
+                    return profileExporter;
+            }
         }
 
         return Exporters.FirstOrDefault(exporter => exporter.CanExport());

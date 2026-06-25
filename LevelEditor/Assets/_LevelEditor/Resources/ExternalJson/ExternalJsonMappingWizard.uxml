@@ -1,0 +1,33 @@
+<ui:UXML xmlns:ui="UnityEngine.UIElements">
+    <Style src="ExternalJsonMappingWizard.uss" />
+
+    <ui:VisualElement name="json-mapping-root" class="json-mapping-root" picking-mode="Ignore" style="display: none;">
+        <ui:VisualElement name="json-mapping-panel" class="json-mapping-panel" picking-mode="Position">
+            <ui:VisualElement name="json-mapping-drag-header" class="window-header json-mapping-drag-header">
+                <ui:Label text="Map JSON Structure" class="window-title" />
+                <ui:Button name="json-mapping-close-button" text="×" class="json-mapping-close-button" />
+            </ui:VisualElement>
+
+            <ui:Label text="Fill in the mapping for this JSON format. Enabled sources will be imported." class="json-mapping-intro" />
+
+            <ui:TextField name="json-mapping-display-name" label="Profile name" class="json-mapping-field" />
+            <ui:FloatField name="json-mapping-pixel-scale" label="Pixel scale" class="json-mapping-field" />
+
+            <ui:VisualElement class="section">
+                <ui:Label name="json-mapping-viewport-section" text="Viewport (optional)" class="section-title" />
+                <ui:TextField name="json-mapping-viewport-width" label="Width path" class="json-mapping-field" />
+                <ui:TextField name="json-mapping-viewport-height" label="Height path" class="json-mapping-field" />
+            </ui:VisualElement>
+
+            <ui:Label name="json-mapping-sources-title" text="Object sources" class="section-title" />
+            <ui:ScrollView name="json-mapping-sources" class="json-mapping-sources" />
+
+            <ui:VisualElement class="json-mapping-actions">
+                <ui:Button name="json-mapping-cancel-button" text="Cancel" class="json-mapping-button" />
+                <ui:Button name="json-mapping-import-button" text="Import" class="json-mapping-button json-mapping-primary-button" />
+            </ui:VisualElement>
+        </ui:VisualElement>
+
+        <ui:Label name="json-mapping-tooltip" text="" class="json-mapping-tooltip" picking-mode="Ignore" />
+    </ui:VisualElement>
+</ui:UXML>

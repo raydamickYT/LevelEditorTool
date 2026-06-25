@@ -1,0 +1,128 @@
+.json-mapping-root {
+    position: absolute;
+    left: 0;
+    top: 0;
+    right: 0;
+    bottom: 0;
+}
+
+.json-mapping-panel {
+    position: absolute;
+    left: 140px;
+    top: 80px;
+    width: 420px;
+    max-height: 80%;
+    padding: 12px;
+    background-color: #686868;
+    border-radius: 6px;
+    border-width: 1px;
+    border-color: #555555;
+}
+
+.window-header {
+    flex-direction: row;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 8px;
+}
+
+.window-title {
+    font-size: 13px;
+    -unity-font-style: bold;
+    color: #ffffff;
+    flex-grow: 1;
+}
+
+.json-mapping-drag-header {
+    cursor: move;
+}
+
+.json-mapping-close-button {
+    width: 24px;
+    min-width: 24px;
+    height: 24px;
+    margin: 0;
+    padding: 0;
+}
+
+.json-mapping-intro {
+    font-size: 11px;
+    color: #e0e0e0;
+    margin-bottom: 8px;
+    white-space: normal;
+}
+
+.section-title {
+    font-size: 12px;
+    -unity-font-style: bold;
+    color: #d8d8d8;
+    margin-top: 8px;
+    margin-bottom: 4px;
+}
+
+.json-mapping-field {
+    margin-bottom: 4px;
+}
+
+.json-mapping-sources {
+    min-height: 180px;
+    max-height: 320px;
+    margin-top: 4px;
+    margin-bottom: 8px;
+    background-color: #5a5a5a;
+    border-radius: 4px;
+    padding: 6px;
+}
+
+.json-mapping-source-row {
+    margin-bottom: 8px;
+    padding-bottom: 8px;
+    border-bottom-width: 1px;
+    border-bottom-color: #4a4a4a;
+}
+
+.json-mapping-source-header {
+    flex-direction: row;
+    align-items: center;
+    justify-content: space-between;
+}
+
+.json-mapping-source-toggle {
+    color: #f0f0f0;
+    flex-grow: 1;
+}
+
+.json-mapping-shape-field {
+    min-width: 140px;
+}
+
+.json-mapping-actions {
+    flex-direction: row;
+    justify-content: flex-end;
+}
+
+.json-mapping-button {
+    min-width: 80px;
+    margin-left: 6px;
+}
+
+.json-mapping-primary-button {
+    -unity-font-style: bold;
+}
+
+.json-mapping-tooltip {
+    position: absolute;
+    display: none;
+    max-width: 260px;
+    padding-left: 8px;
+    padding-right: 8px;
+    padding-top: 4px;
+    padding-bottom: 4px;
+    background-color: rgba(40, 40, 40, 0.95);
+    border-width: 1px;
+    border-color: rgb(90, 90, 90);
+    border-radius: 3px;
+    color: rgb(245, 245, 245);
+    font-size: 11px;
+    white-space: normal;
+}
