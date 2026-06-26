@@ -10,13 +10,31 @@
                 <ui:Button name="item-open" text="Open Project" class="menu-item" />
                 <ui:Button name="item-save" text="Save Project" class="menu-item" />
                 <ui:Button name="item-save-as" text="Save Project As…" class="menu-item" />
-                <!-- <ui:Button name="item-export" text="Export" class="menu-item" /> --> <!-- Future feature: does the same as saving right now -->
-                <ui:VisualElement class="menu-separator" />
-                <ui:Button name="item-import-external-json" text="Import Level JSON…" class="menu-item" />
-                <ui:Button name="item-export-external-json" text="Export Level JSON…" class="menu-item" />
+                <ui:VisualElement name="menu-file-recent-host" class="menu-submenu-host">
+                    <ui:Button name="item-recent-projects-trigger" text="Recent Projects ▸" class="menu-item menu-submenu-trigger" />
+                    <ui:VisualElement name="menu-file-recent-panel" class="dropdown-panel menu-submenu-panel" style="display: none;">
+                        <ui:VisualElement name="menu-file-recent-list" class="menu-recent-list" />
+                    </ui:VisualElement>
+                </ui:VisualElement>
+            </ui:VisualElement>
+        </ui:VisualElement>
+        <ui:VisualElement name="engine-link-menu-host" class="menu-host">
+            <ui:Button name="menu-engine-link-trigger" text="Engine Link" class="menu-trigger" />
+            <ui:VisualElement name="menu-engine-link-panel" class="dropdown-panel" style="display: none;">
                 <ui:Button name="item-import-unity-assets" text="Link Unity Project" class="menu-item" />
                 <!-- <ui:Button name="item-import-folder" text="Import Folder" class="menu-item" /> -->
                 <ui:Button name="item-import-assets" text="Import Sprites" class="menu-item" />
+            </ui:VisualElement>
+        </ui:VisualElement>
+        <ui:VisualElement name="level-format-menu-host" class="menu-host">
+            <ui:Button name="menu-level-format-trigger" text="Level Format" class="menu-trigger" />
+            <ui:VisualElement name="menu-level-format-panel" class="dropdown-panel" style="display: none;">
+                <ui:Button name="item-import-external-json" text="Import Level…" class="menu-item" />
+                <ui:Button name="item-export-external-json" text="Export Level…" class="menu-item" />
+                <ui:VisualElement class="menu-separator" />
+                <ui:Label text="Profiles" class="menu-section-label" />
+                <ui:Button name="item-edit-level-format-profile" text="Edit Profile…" class="menu-item" />
+                <ui:Button name="item-remove-level-format-profile" text="Remove Profile…" class="menu-item" />
             </ui:VisualElement>
         </ui:VisualElement>
         <ui:VisualElement name="gizmo-toolbar" class="gizmo-toolbar">

@@ -4,7 +4,7 @@
     <ui:VisualElement name="json-mapping-root" class="json-mapping-root" picking-mode="Ignore" style="display: none;">
         <ui:VisualElement name="json-mapping-panel" class="json-mapping-panel" picking-mode="Position">
             <ui:VisualElement name="json-mapping-drag-header" class="window-header json-mapping-drag-header">
-                <ui:Label text="Map JSON Structure" class="window-title" />
+                <ui:Label name="json-mapping-title" text="Map JSON Structure" class="window-title" />
                 <ui:Button name="json-mapping-close-button" text="×" class="json-mapping-close-button" />
             </ui:VisualElement>
 

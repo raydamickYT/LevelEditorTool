@@ -7,7 +7,7 @@
             <ui:Label text="Transform" class="window-title" />
 
             <ui:VisualElement class="layer-row">
-                <ui:Label text="Render Layer" class="layer-label" />
+                <ui:Label name="render-layer-label" text="Render Layer" class="layer-label" />
                 <ui:IntegerField name="Object Layer" class="layer-field" />
             </ui:VisualElement>
         </ui:VisualElement>
@@ -16,13 +16,13 @@
             <ui:Label text="Position" class="section-title" />
 
             <ui:VisualElement class="row">
-                <ui:Label text="X" class="axis-label" />
+                <ui:Label name="position-x-label" text="X" class="axis-label" />
                 <ui:FloatField name="position-x" class="axis-field"/>
 
-                <ui:Label text="Y" class="axis-label" />
+                <ui:Label name="position-y-label" text="Y" class="axis-label" />
                 <ui:FloatField name="position-y" class="axis-field" />
 
-                <ui:Label text="Z" class="axis-label" />
+                <ui:Label name="position-z-label" text="Z" class="axis-label" />
                 <ui:FloatField name="position-z" class="axis-field" />
 
             </ui:VisualElement>
@@ -32,7 +32,7 @@
             <ui:Label text="Rotation" class="section-title" />
 
             <ui:VisualElement class="row">
-                <ui:Label text="Z" class="axis-label" />
+                <ui:Label name="rotation-z-label" text="Z" class="axis-label" />
                 <ui:FloatField name="rotation-z" class="axis-field" />
                 <ui:Label text="Mirror Object" class="layer-label" />
             <ui:Button name="mirror-scale-h-button" text="⇄" tooltip="Horizontaal spiegelen (X)" class="mirror-inline-button" />
@@ -44,10 +44,10 @@
             <ui:Label text="Scale" class="section-title" />
 
             <ui:VisualElement class="row">
-                <ui:Label text="X" class="axis-label" />
+                <ui:Label name="scale-x-label" text="X" class="axis-label" />
                 <ui:FloatField name="scale-x" class="axis-field" />
 
-                <ui:Label text="Y" class="axis-label" />
+                <ui:Label name="scale-y-label" text="Y" class="axis-label" />
                 <ui:FloatField name="scale-y" class="axis-field" />
 
             </ui:VisualElement>

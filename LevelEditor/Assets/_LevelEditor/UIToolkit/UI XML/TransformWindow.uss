@@ -85,6 +85,21 @@
     margin-right: 3px;
 }
 
+.draggable-numeric-label {
+    cursor: resize-horizontal;
+    -unity-font-style: bold;
+    color: #9ecbff;
+}
+
+.draggable-numeric-label:hover {
+    color: #cfe5ff;
+}
+
+.layer-label.draggable-numeric-label {
+    width: auto;
+    min-width: 0;
+}
+
 .axis-field {
     width: 60px;
     min-width: 56px;

@@ -55,6 +55,7 @@ public class TransformWindowView : MonoBehaviour
         collisionToggle = root.Q<Toggle>("collision-toggle");
 
         RegisterCallbacks();
+        EnableNumericDragHandles(root);
         SetTarget(null);
 
         EventManager.Instance.AddDelegateListener(SelectionEvents.OnSelectionChanged, (Action<HashSet<SelectableTargetData>>)ActivateWindow);
@@ -90,7 +91,20 @@ public class TransformWindowView : MonoBehaviour
             collisionToggle.RegisterValueChangedCallback(_ => ApplyCollision());
     }
 
-    //update UI visuals
+    void EnableNumericDragHandles(VisualElement root)
+    {
+        const float scrubSensitivity = 0.05f;
+        const int decimalPlaces = 2;
+
+        DraggableNumericLabel.Enable(root.Q<Label>("render-layer-label"), layerField);
+        DraggableNumericLabel.Enable(root.Q<Label>("position-x-label"), positionX, scrubSensitivity, decimalPlaces);
+        DraggableNumericLabel.Enable(root.Q<Label>("position-y-label"), positionY, scrubSensitivity, decimalPlaces);
+        DraggableNumericLabel.Enable(root.Q<Label>("position-z-label"), positionZ, scrubSensitivity, decimalPlaces);
+        DraggableNumericLabel.Enable(root.Q<Label>("rotation-z-label"), rotationZ, scrubSensitivity, decimalPlaces);
+        DraggableNumericLabel.Enable(root.Q<Label>("scale-x-label"), scaleX, scrubSensitivity, decimalPlaces);
+        DraggableNumericLabel.Enable(root.Q<Label>("scale-y-label"), scaleY, scrubSensitivity, decimalPlaces);
+    }
+
     public void RefreshUI()
     {
         if (selectedLevelObjects.Count == 0)

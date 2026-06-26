@@ -12,7 +12,7 @@ public sealed class ExternalJsonMappingWizardView : MonoBehaviour
     const string UxmlResourcePath = "ExternalJson/ExternalJsonMappingWizard";
 
     const string TooltipProfileName =
-        "Friendly name for this JSON format mapping. Saved as a .leveleditor-profile.json file beside your level JSON for re-import.";
+        "Friendly name for this level format mapping. Saved with the Level Editor project so it can be edited and reused later.";
 
     const string TooltipPixelScale =
         "Converts pixel coordinates from the JSON into editor world units. 0.01 means 100 JSON pixels = 1 world unit.";
@@ -64,6 +64,7 @@ public sealed class ExternalJsonMappingWizardView : MonoBehaviour
     VisualElement panelRoot;
     VisualElement dragHeader;
     VisualElement sourcesContainer;
+    Label titleLabel;
     FloatField pixelScaleField;
     TextField displayNameField;
     TextField viewportWidthField;
@@ -83,6 +84,7 @@ public sealed class ExternalJsonMappingWizardView : MonoBehaviour
     string pendingJson;
     string pendingSourcePath;
     ExternalJsonImportProfile workingProfile;
+    bool editProfileOnly;
     readonly List<SourceRowBinding> sourceRows = new();
     bool isDraggingWindow;
     Vector2 dragStartPointer;
@@ -137,7 +139,18 @@ public sealed class ExternalJsonMappingWizardView : MonoBehaviour
             return;
         }
 
-        Instance.Show(json, sourcePath, suggestedProfile);
+        Instance.Show(json, sourcePath, suggestedProfile, editOnly: false);
+    }
+
+    public static void OpenForEdit(ExternalJsonImportProfile profile)
+    {
+        if (Instance == null)
+        {
+            Debug.LogWarning("JSON mapping wizard is not available.");
+            return;
+        }
+
+        Instance.Show(string.Empty, string.Empty, profile, editOnly: true);
     }
 
     void TrySetSortingOrder()
@@ -161,6 +174,7 @@ public sealed class ExternalJsonMappingWizardView : MonoBehaviour
         documentRoot = root.Q<VisualElement>("json-mapping-root");
         panelRoot = root.Q<VisualElement>("json-mapping-panel");
         dragHeader = root.Q<VisualElement>("json-mapping-drag-header");
+        titleLabel = root.Q<Label>("json-mapping-title");
         sourcesContainer = root.Q<VisualElement>("json-mapping-sources");
         pixelScaleField = root.Q<FloatField>("json-mapping-pixel-scale");
         displayNameField = root.Q<TextField>("json-mapping-display-name");
@@ -308,11 +322,18 @@ public sealed class ExternalJsonMappingWizardView : MonoBehaviour
             hoverTooltip.style.display = DisplayStyle.None;
     }
 
-    void Show(string json, string sourcePath, ExternalJsonImportProfile suggestedProfile)
+    void Show(string json, string sourcePath, ExternalJsonImportProfile suggestedProfile, bool editOnly)
     {
         pendingJson = json;
         pendingSourcePath = sourcePath;
         workingProfile = CloneProfile(suggestedProfile);
+        editProfileOnly = editOnly;
+
+        if (titleLabel != null)
+            titleLabel.text = editProfileOnly ? "Edit Level Format Profile" : "Map JSON Structure";
+
+        if (importButton != null)
+            importButton.text = editProfileOnly ? "Save Profile" : "Import";
 
         if (displayNameField != null)
             displayNameField.value = workingProfile.displayName ?? string.Empty;
@@ -527,6 +548,13 @@ public sealed class ExternalJsonMappingWizardView : MonoBehaviour
     void OnImportClicked()
     {
         ApplyUiToProfile();
+
+        if (editProfileOnly)
+        {
+            SaveEditedProfile();
+            return;
+        }
+
         ExternalLevelImportResult result = ExternalLevelJsonImportService.ImportWithProfile(
             workingProfile,
             pendingJson,
@@ -550,6 +578,28 @@ public sealed class ExternalJsonMappingWizardView : MonoBehaviour
             message += "\n" + string.Join("\n", result.Warnings);
 
         EditorPopupService.ShowToast(message);
+    }
+
+    void SaveEditedProfile()
+    {
+        HidePanel();
+
+        if (workingProfile == null)
+        {
+            EditorPopupService.ShowWarning("No profile", "There is no level format profile to save.");
+            return;
+        }
+
+        ExternalLevelJsonImportSession.Set(
+            sourceFilePath: ExternalLevelJsonImportSession.SourceFilePath,
+            sourceJsonText: ExternalLevelJsonImportSession.SourceJsonText,
+            formatId: workingProfile.formatId,
+            formatDisplayName: workingProfile.displayName,
+            profile: workingProfile);
+
+        ExternalJsonProfileStorage.SaveProjectProfile(workingProfile);
+        LevelProjectDirtyState.MarkDirty();
+        EditorPopupService.ShowToast("Profile saved");
     }
 
     void ApplyUiToProfile()

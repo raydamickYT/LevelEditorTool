@@ -45,4 +45,9 @@ public class LevelObjectRecord
     public float sx, sy, sz;
     public int sortingOrder;
     public bool hasCollision;
+    public bool hasExternalJsonBinding;
+    public string externalJsonSourceFormatId = "";
+    public string externalJsonSourceCategory = "";
+    public int externalJsonSourceIndex = -1;
+    public string externalJsonSourceFragment = "";
 }

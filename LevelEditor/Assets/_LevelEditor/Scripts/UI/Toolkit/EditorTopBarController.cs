@@ -1,5 +1,7 @@
 using System;
 using System.Collections.Generic;
+using System.IO;
+using System.Linq;
 using UnityEngine;
 using UnityEngine.InputSystem;
 using UnityEngine.UIElements;
@@ -12,10 +14,16 @@ public sealed class EditorTopBarController : MonoBehaviour
 {
     [SerializeField] UIDocument uiDocument;
     [SerializeField] GameObject gridRendererObject;
+    // Above the floating windows (viewport panel 33100, mapping wizard 33200) so the menu dropdowns overlay them.
+    [SerializeField] int sortingOrder = 33500;
 
     VisualElement _root;
-    VisualElement _menuPanel;
-    Button _menuTrigger;
+    VisualElement _fileMenuPanel;
+    VisualElement _fileRecentList;
+    VisualElement _fileRecentSubmenuPanel;
+    Button _fileRecentProjectsTrigger;
+    readonly List<VisualElement> _menuPanels = new();
+    readonly List<Button> _menuTriggers = new();
     Button _gizmoMoveButton;
     Button _gizmoRotateButton;
     Button _gizmoScaleButton;
@@ -33,6 +41,20 @@ public sealed class EditorTopBarController : MonoBehaviour
     {
         if (uiDocument == null)
             uiDocument = GetComponent<UIDocument>();
+
+        TrySetSortingOrder();
+    }
+
+    void TrySetSortingOrder()
+    {
+        if (uiDocument == null)
+            return;
+
+        System.Reflection.PropertyInfo property = typeof(UIDocument).GetProperty("sortingOrder");
+        if (property == null || !property.CanWrite)
+            return;
+
+        property.SetValue(uiDocument, sortingOrder);
     }
 
     void OnEnable()
@@ -42,19 +64,24 @@ public sealed class EditorTopBarController : MonoBehaviour
 
         VisualElement root = uiDocument.rootVisualElement;
         _root = root;
-        _menuPanel = root.Q<VisualElement>("menu-file-panel");
-        _menuTrigger = root.Q<Button>("menu-file-trigger");
-
-        if (_menuTrigger != null)
-            _menuTrigger.clicked += ToggleFileMenu;
+        _fileMenuPanel = root.Q<VisualElement>("menu-file-panel");
+        _fileRecentList = root.Q<VisualElement>("menu-file-recent-list");
+        _fileRecentSubmenuPanel = root.Q<VisualElement>("menu-file-recent-panel");
+        _fileRecentProjectsTrigger = root.Q<Button>("item-recent-projects-trigger");
+        RegisterMenu(root.Q<Button>("menu-file-trigger"), _fileMenuPanel);
+        RegisterMenu(root.Q<Button>("menu-engine-link-trigger"), root.Q<VisualElement>("menu-engine-link-panel"));
+        RegisterMenu(root.Q<Button>("menu-level-format-trigger"), root.Q<VisualElement>("menu-level-format-panel"));
 
         Register(root.Q<Button>("item-new-file"), OnNewFile);
         Register(root.Q<Button>("item-open"), OnOpen);
         Register(root.Q<Button>("item-save"), OnSave);
         Register(root.Q<Button>("item-save-as"), OnSaveAs);
+        Register(_fileRecentProjectsTrigger, ToggleRecentProjectsSubmenu);
         Register(root.Q<Button>("item-export"), OnExport);
         Register(root.Q<Button>("item-import-external-json"), OnImportExternalLevelJson);
         Register(root.Q<Button>("item-export-external-json"), OnExportExternalLevelJson);
+        Register(root.Q<Button>("item-edit-level-format-profile"), OnEditLevelFormatProfile);
+        Register(root.Q<Button>("item-remove-level-format-profile"), OnRemoveLevelFormatProfile);
         Register(root.Q<Button>("item-import-unity-assets"), OnImportUnityAssets);
         // Register(root.Q<Button>("item-import-folder"), OnImportFolder);
         Register(root.Q<Button>("item-import-assets"), OnImportAssets);
@@ -83,9 +110,6 @@ public sealed class EditorTopBarController : MonoBehaviour
 
         _hoverCallbacks.Clear();
 
-        if (_menuTrigger != null)
-            _menuTrigger.clicked -= ToggleFileMenu;
-
         foreach ((Button button, System.Action handler) in _registeredClicks)
         {
             if (button != null)
@@ -93,9 +117,13 @@ public sealed class EditorTopBarController : MonoBehaviour
         }
 
         _registeredClicks.Clear();
+        _menuPanels.Clear();
+        _menuTriggers.Clear();
         _root = null;
-        _menuTrigger = null;
-        _menuPanel = null;
+        _fileMenuPanel = null;
+        _fileRecentList = null;
+        _fileRecentSubmenuPanel = null;
+        _fileRecentProjectsTrigger = null;
         _gizmoMoveButton = null;
         _gizmoRotateButton = null;
         _gizmoScaleButton = null;
@@ -184,7 +212,7 @@ public sealed class EditorTopBarController : MonoBehaviour
         RegisterShortcutTooltip(root.Q<Button>("item-new-file"), "Shortcut: Shift + N");
         RegisterShortcutTooltip(root.Q<Button>("item-open"), "Shortcut: Shift + O");
         RegisterShortcutTooltip(root.Q<Button>("item-save"), "Shortcut: Shift + S");
-        RegisterShortcutTooltip(root.Q<Button>("item-import-game-assets"), "Shortcut: Shift + I");
+        RegisterShortcutTooltip(root.Q<Button>("item-import-unity-assets"), "Shortcut: Shift + I");
     }
 
     void RegisterShortcutTooltip(VisualElement element, string shortcutText)
@@ -283,10 +311,15 @@ public sealed class EditorTopBarController : MonoBehaviour
             return;
 
         Vector2 panelPosition = ScreenToPanelPosition(Mouse.current.position.ReadValue());
-        if (IsInsideElement(_menuTrigger, panelPosition) || IsInsideElement(_menuPanel, panelPosition))
+        if (_menuTriggers.Any(trigger => IsInsideElement(trigger, panelPosition))
+            || _menuPanels.Any(panel => IsInsideElement(panel, panelPosition))
+            || IsInsideElement(_fileRecentSubmenuPanel, panelPosition)
+            || IsInsideElement(_fileRecentProjectsTrigger, panelPosition))
+        {
             return;
+        }
 
-        CloseMenu();
+        CloseMenus();
     }
 
     void Register(Button button, System.Action handler)
@@ -298,24 +331,99 @@ public sealed class EditorTopBarController : MonoBehaviour
         _registeredClicks.Add((button, handler));
     }
 
-    void ToggleFileMenu()
+    void RegisterMenu(Button trigger, VisualElement panel)
     {
-        if (_menuPanel == null)
+        if (trigger == null || panel == null)
             return;
 
-        bool open = _menuPanel.style.display == DisplayStyle.None;
-        _menuPanel.style.display = open ? DisplayStyle.Flex : DisplayStyle.None;
+        System.Action handler = () => ToggleMenu(panel);
+        trigger.clicked += handler;
+        _registeredClicks.Add((trigger, handler));
+        _menuTriggers.Add(trigger);
+        _menuPanels.Add(panel);
     }
 
-    void CloseMenu()
+    void ToggleMenu(VisualElement panel)
     {
-        if (_menuPanel != null)
-            _menuPanel.style.display = DisplayStyle.None;
+        if (panel == null)
+            return;
+
+        bool open = panel.resolvedStyle.display == DisplayStyle.None;
+        CloseMenus();
+        if (open)
+            panel.style.display = DisplayStyle.Flex;
+    }
+
+    void ToggleRecentProjectsSubmenu()
+    {
+        if (_fileRecentSubmenuPanel == null)
+            return;
+
+        bool open = _fileRecentSubmenuPanel.resolvedStyle.display == DisplayStyle.None;
+        CloseRecentProjectsSubmenu();
+        if (!open)
+            return;
+
+        RebuildRecentProjectsMenu();
+        _fileRecentSubmenuPanel.style.display = DisplayStyle.Flex;
+        _fileRecentSubmenuPanel.BringToFront();
+    }
+
+    void CloseRecentProjectsSubmenu()
+    {
+        if (_fileRecentSubmenuPanel != null)
+            _fileRecentSubmenuPanel.style.display = DisplayStyle.None;
+    }
+
+    void RebuildRecentProjectsMenu()
+    {
+        if (_fileRecentList == null)
+            return;
+
+        _fileRecentList.Clear();
+        LevelProjectRecentList.RemoveMissingEntries();
+        IReadOnlyList<string> recent = LevelProjectRecentList.GetRecentProjectDirectories();
+
+        if (recent.Count == 0)
+        {
+            var emptyLabel = new Label("No recent projects");
+            emptyLabel.AddToClassList("menu-recent-empty");
+            _fileRecentList.Add(emptyLabel);
+            return;
+        }
+
+        foreach (string projectDirectory in recent)
+        {
+            string displayName = Path.GetFileName(
+                projectDirectory.TrimEnd(Path.DirectorySeparatorChar, Path.AltDirectorySeparatorChar));
+            if (string.IsNullOrWhiteSpace(displayName))
+                displayName = projectDirectory;
+
+            var item = new Button { text = displayName };
+            item.AddToClassList("menu-item");
+            string capturedDirectory = projectDirectory;
+            item.clicked += () =>
+            {
+                CloseMenus();
+                LevelEditorFileMenuCommands.OpenRecentProject(capturedDirectory);
+            };
+            _fileRecentList.Add(item);
+        }
+    }
+
+    void CloseMenus()
+    {
+        CloseRecentProjectsSubmenu();
+        foreach (VisualElement panel in _menuPanels)
+        {
+            if (panel != null)
+                panel.style.display = DisplayStyle.None;
+        }
     }
 
     bool IsMenuOpen()
     {
-        return _menuPanel != null && _menuPanel.resolvedStyle.display != DisplayStyle.None;
+        return _menuPanels.Any(panel => panel != null && panel.resolvedStyle.display != DisplayStyle.None);
     }
 
     bool IsInsideElement(VisualElement element, Vector2 panelPosition)
@@ -339,61 +447,73 @@ public sealed class EditorTopBarController : MonoBehaviour
 
     void OnNewFile()
     {
-        CloseMenu();
+        CloseMenus();
         LevelEditorFileMenuCommands.NewEmptyLevel();
     }
 
     void OnOpen()
     {
-        CloseMenu();
+        CloseMenus();
         LevelEditorFileMenuCommands.OpenLevel();
     }
 
     void OnSave()
     {
-        CloseMenu();
+        CloseMenus();
         LevelEditorFileMenuCommands.SaveLevel();
     }
 
     void OnSaveAs()
     {
-        CloseMenu();
+        CloseMenus();
         LevelEditorFileMenuCommands.SaveLevelAs();
     }
 
     void OnExport()
     {
-        CloseMenu();
+        CloseMenus();
         LevelEditorFileMenuCommands.ExportLevel();
     }
 
     void OnImportFolder()
     {
-        CloseMenu();
+        CloseMenus();
         LevelEditorFileMenuCommands.ImportFolder();
     }
 
     void OnImportExternalLevelJson()
     {
-        CloseMenu();
+        CloseMenus();
         LevelEditorFileMenuCommands.ImportExternalLevelJson();
     }
 
     void OnExportExternalLevelJson()
     {
-        CloseMenu();
+        CloseMenus();
         LevelEditorFileMenuCommands.ExportExternalLevelJson();
+    }
+
+    void OnEditLevelFormatProfile()
+    {
+        CloseMenus();
+        LevelEditorFileMenuCommands.EditLevelFormatProfile();
+    }
+
+    void OnRemoveLevelFormatProfile()
+    {
+        CloseMenus();
+        LevelEditorFileMenuCommands.RemoveLevelFormatProfile();
     }
 
     void OnImportUnityAssets()
     {
-        CloseMenu();
+        CloseMenus();
         LevelEditorFileMenuCommands.ImportGameAssets();
     }
 
     void OnImportAssets()
     {
-        CloseMenu();
+        CloseMenus();
         LevelEditorFileMenuCommands.ImportAssets();
     }
 }

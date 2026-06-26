@@ -17,6 +17,7 @@
     position: relative;
     flex-direction: column;
     align-items: flex-start;
+    margin-right: 4px;
 }
 
 .menu-trigger {
@@ -72,4 +73,47 @@
     margin-left: 8px;
     margin-right: 8px;
     background-color: rgb(170, 170, 170);
+}
+
+.menu-section-label {
+    height: 22px;
+    padding-left: 12px;
+    padding-right: 12px;
+    margin-left: 4px;
+    margin-right: 4px;
+    color: rgb(80, 80, 80);
+    -unity-font-style: bold;
+    -unity-text-align: middle-left;
+}
+
+.menu-recent-list {
+    flex-direction: column;
+}
+
+.menu-submenu-host {
+    position: relative;
+}
+
+.menu-submenu-trigger {
+    -unity-text-align: middle-left;
+}
+
+.menu-submenu-panel {
+    position: absolute;
+    left: 100%;
+    top: 0;
+    min-width: 200px;
+    margin-left: 2px;
+}
+
+.menu-recent-empty {
+    height: 28px;
+    padding-left: 12px;
+    padding-right: 12px;
+    margin-left: 4px;
+    margin-right: 4px;
+    color: rgb(120, 120, 120);
+    font-size: 11px;
+    -unity-font-style: italic;
+    -unity-text-align: middle-left;
 }

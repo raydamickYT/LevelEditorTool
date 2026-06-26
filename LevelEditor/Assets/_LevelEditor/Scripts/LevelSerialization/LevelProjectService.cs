@@ -65,6 +65,8 @@ public static class LevelProjectService
             TryWriteBundledAssets(directory, assetIds);
             AssetStorageService.WriteProjectRegistrySnapshot(Path.Combine(directory, ProjectAssetRegistryFileName));
             LevelProjectSession.SetProjectDirectory(directory);
+            ExternalJsonProfileStorage.SaveProjectProfile(ExternalLevelJsonImportSession.ActiveProfile);
+            LevelProjectRecentList.RegisterProjectDirectory(directory);
         }
 
         LevelProjectSession.SetCurrentLevelJsonPath(Path.GetFullPath(levelJsonFilePath));
@@ -114,6 +116,7 @@ public static class LevelProjectService
                 AssetStorageService.MergeProjectRegistrySnapshot(projectReg, levelDirectory);
 
             AssetStorageService.MergeBundledAssetsFromLevelFolder(levelDirectory);
+            RestoreExternalJsonProfileForProject();
         }
 
         if (ObjectLibraryManager.Instance != null)
@@ -149,6 +152,7 @@ public static class LevelProjectService
         LevelProjectSession.SetCurrentLevelJsonPath(fullLevelPath);
         LevelProjectDirtyState.SetSavedBaselineFromCurrentScene();
         SyncUnityLinkForLevelDirectory(levelDirectory);
+        LevelProjectRecentList.RegisterProjectDirectory(levelDirectory);
     }
 
     static void SyncUnityLinkForLevelDirectory(string levelDirectory)
@@ -168,6 +172,22 @@ public static class LevelProjectService
         }
 
         LevelEditorToolLinkManifest.WriteActiveLevelIfLinked();
+    }
+
+    static void RestoreExternalJsonProfileForProject()
+    {
+        if (ExternalJsonProfileStorage.TryLoadProjectProfile(out ExternalJsonImportProfile profile))
+        {
+            ExternalLevelJsonImportSession.Set(
+                sourceFilePath: string.Empty,
+                sourceJsonText: string.Empty,
+                formatId: profile.formatId,
+                formatDisplayName: profile.displayName,
+                profile: profile);
+            return;
+        }
+
+        ExternalLevelJsonImportSession.Clear();
     }
 
     public static string GetCurrentLevelDisplayName()
@@ -256,6 +276,15 @@ public static class LevelProjectService
             {
                 rec.sortingOrder = GetPrimarySortingOrder(t);
                 rec.hasCollision = lo.HasCollision && IsSpriteAsset(lo.AssetID);
+
+                if (lo.TryGetComponent(out ExternalJsonObjectBinding binding))
+                {
+                    rec.hasExternalJsonBinding = true;
+                    rec.externalJsonSourceFormatId = binding.SourceFormatId ?? string.Empty;
+                    rec.externalJsonSourceCategory = binding.SourceCategory ?? string.Empty;
+                    rec.externalJsonSourceIndex = binding.SourceIndex;
+                    rec.externalJsonSourceFragment = binding.SourceJsonFragment ?? string.Empty;
+                }
             }
 
             file.objects.Add(rec);
@@ -458,6 +487,16 @@ public static class LevelProjectService
                 null,
                 rec.objectName,
                 rec.hasCollision);
+
+            if (rec.hasExternalJsonBinding)
+            {
+                memento.HasExternalJsonBinding = true;
+                memento.ExternalJsonSourceFormatId = rec.externalJsonSourceFormatId ?? string.Empty;
+                memento.ExternalJsonSourceCategory = rec.externalJsonSourceCategory ?? string.Empty;
+                memento.ExternalJsonSourceIndex = rec.externalJsonSourceIndex;
+                memento.ExternalJsonSourceFragment = rec.externalJsonSourceFragment ?? string.Empty;
+            }
+
             GameObject spawned = LevelObjectSpawner.Spawn(memento, false, parentTransform, false, deferHierarchyNotification: true);
             if (spawned == null)
                 continue;

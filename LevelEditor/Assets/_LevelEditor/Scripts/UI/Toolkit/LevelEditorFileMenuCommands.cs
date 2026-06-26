@@ -99,6 +99,47 @@ public static class LevelEditorFileMenuCommands
         LevelProjectService.LoadLevelFromPath(levelJsonPath);
     }
 
+    public static void OpenRecentProject(string projectDirectory)
+    {
+        if (string.IsNullOrWhiteSpace(projectDirectory))
+            return;
+
+        if (LevelProjectDirtyState.HasUnsavedChanges())
+        {
+            EditorPopupService.ShowConfirmDialog(
+                "Unsaved changes",
+                "You have unsaved changes. Do you want to save them before opening another project?",
+                "Save and open",
+                () =>
+                {
+                    SaveLevel();
+                    if (!LevelProjectDirtyState.HasUnsavedChanges())
+                        EditorPopupService.RunAfterSaveFeedback(() => LoadRecentProject(projectDirectory));
+                },
+                () => LoadRecentProject(projectDirectory),
+                "Discard changes");
+            return;
+        }
+
+        LoadRecentProject(projectDirectory);
+    }
+
+    static void LoadRecentProject(string projectDirectory)
+    {
+        string fullDirectory = Path.GetFullPath(projectDirectory);
+        if (!LevelProjectService.TryGetLevelJsonPath(fullDirectory, out string levelJsonPath))
+        {
+            LevelProjectRecentList.RemoveMissingEntries();
+            EditorPopupService.ShowWarning(
+                "Project not found",
+                "This recent project is no longer available on disk.",
+                fullDirectory);
+            return;
+        }
+
+        LevelProjectService.LoadLevelFromPath(levelJsonPath);
+    }
+
     public static void SaveLevel()
     {
         if (TrySaveOpenProject(showToast: true))
@@ -291,6 +332,51 @@ public static class LevelEditorFileMenuCommands
 
         EditorPopupService.ShowToast(message);
         Debug.Log($"External JSON export OK ({result.FormatId}): {result.OutputPath}");
+    }
+
+    public static void EditLevelFormatProfile()
+    {
+        ExternalJsonImportProfile profile = ExternalLevelJsonImportSession.ActiveProfile;
+        if (profile == null)
+            ExternalJsonProfileStorage.TryLoadProjectProfile(out profile);
+
+        if (profile == null)
+        {
+            EditorPopupService.ShowWarning(
+                "No profile",
+                "This project does not have a level format profile yet. Import a level first to create one.");
+            return;
+        }
+
+        ExternalJsonMappingWizardView.OpenForEdit(profile);
+    }
+
+    public static void RemoveLevelFormatProfile()
+    {
+        bool hasProfile = ExternalLevelJsonImportSession.ActiveProfile != null
+            || ExternalJsonProfileStorage.TryLoadProjectProfile(out _);
+
+        if (!hasProfile)
+        {
+            EditorPopupService.ShowWarning(
+                "No profile",
+                "This project does not have a level format profile to remove.");
+            return;
+        }
+
+        EditorPopupService.ShowConfirmDialog(
+            "Remove profile",
+            "Remove the level format profile for this project? This does not delete level objects or external JSON files.",
+            "Remove Profile",
+            () =>
+            {
+                ExternalJsonProfileStorage.DeleteProjectProfile();
+                ExternalLevelJsonImportSession.Clear();
+                LevelProjectDirtyState.MarkDirty();
+                EditorPopupService.ShowToast("Profile removed");
+            },
+            null,
+            "Cancel");
     }
 
     public static void ImportAssets()

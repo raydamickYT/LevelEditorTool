@@ -136,7 +136,16 @@ public sealed class ViewportFramePanelView : MonoBehaviour
         if (closeButton != null)
             closeButton.clicked += HidePanel;
 
+        EnableNumericDragHandles(root);
         RegisterWindowDrag();
+    }
+
+    void EnableNumericDragHandles(VisualElement root)
+    {
+        DraggableNumericLabel.Enable(root.Q<Label>("viewport-x-label"), pixelXField);
+        DraggableNumericLabel.Enable(root.Q<Label>("viewport-y-label"), pixelYField);
+        DraggableNumericLabel.Enable(root.Q<Label>("viewport-width-label"), pixelWidthField);
+        DraggableNumericLabel.Enable(root.Q<Label>("viewport-height-label"), pixelHeightField);
     }
 
     void RegisterWindowDrag()

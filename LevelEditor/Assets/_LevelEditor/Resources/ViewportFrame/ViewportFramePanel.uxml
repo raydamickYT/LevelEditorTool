@@ -14,10 +14,10 @@
                 <ui:Label text="Position (px)" class="section-title" />
 
                 <ui:VisualElement class="row">
-                    <ui:Label text="X" class="axis-label" />
+                    <ui:Label name="viewport-x-label" text="X" class="axis-label" />
                     <ui:FloatField name="viewport-x" class="axis-field" />
 
-                    <ui:Label text="Y" class="axis-label" />
+                    <ui:Label name="viewport-y-label" text="Y" class="axis-label" />
                     <ui:FloatField name="viewport-y" class="axis-field" />
                 </ui:VisualElement>
             </ui:VisualElement>
@@ -26,10 +26,10 @@
                 <ui:Label text="Size (px)" class="section-title" />
 
                 <ui:VisualElement class="row">
-                    <ui:Label text="W" class="axis-label" />
+                    <ui:Label name="viewport-width-label" text="W" class="axis-label" />
                     <ui:FloatField name="viewport-width" class="axis-field" />
 
-                    <ui:Label text="H" class="axis-label" />
+                    <ui:Label name="viewport-height-label" text="H" class="axis-label" />
                     <ui:FloatField name="viewport-height" class="axis-field" />
                 </ui:VisualElement>
 
