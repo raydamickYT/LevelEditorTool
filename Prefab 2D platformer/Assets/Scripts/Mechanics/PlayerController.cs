@@ -23,6 +23,7 @@ namespace Platformer.Mechanics
         /// Max horizontal speed of the player.
         /// </summary>
         public float maxSpeed = 7;
+        public float deadZone = 0.1f;
         /// <summary>
         /// Initial jump velocity at the start of a jump.
         /// </summary>
@@ -30,8 +31,10 @@ namespace Platformer.Mechanics
 
         public JumpState jumpState = JumpState.Grounded;
         private bool stopJump;
-        /*internal new*/ public Collider2D collider2d;
-        /*internal new*/ public AudioSource audioSource;
+        /*internal new*/
+        public Collider2D collider2d;
+        /*internal new*/
+        public AudioSource audioSource;
         public Health health;
         public bool controlEnabled = true;
 
@@ -56,7 +59,7 @@ namespace Platformer.Mechanics
 
             m_MoveAction = InputSystem.actions.FindAction("Player/Move");
             m_JumpAction = InputSystem.actions.FindAction("Player/Jump");
-            
+
             m_MoveAction.Enable();
             m_JumpAction.Enable();
         }
@@ -66,6 +69,7 @@ namespace Platformer.Mechanics
             if (controlEnabled)
             {
                 move.x = m_MoveAction.ReadValue<Vector2>().x;
+
                 if (jumpState == JumpState.Grounded && m_JumpAction.WasPressedThisFrame())
                     jumpState = JumpState.PrepareToJump;
                 else if (m_JumpAction.WasReleasedThisFrame())
@@ -136,7 +140,9 @@ namespace Platformer.Mechanics
             animator.SetBool("grounded", IsGrounded);
             animator.SetFloat("velocityX", Mathf.Abs(velocity.x) / maxSpeed);
 
-            targetVelocity = move * maxSpeed;
+            if (move.x < -deadZone || move.x > deadZone)
+                targetVelocity = move * maxSpeed;
+            
         }
 
         public enum JumpState
