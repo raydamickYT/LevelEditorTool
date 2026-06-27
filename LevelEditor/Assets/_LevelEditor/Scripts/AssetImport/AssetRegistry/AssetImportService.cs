@@ -122,10 +122,29 @@ public class AssetImportService
         importedAsset.FolderPath = folderPath;
 
         if (UnityAssetMetaReader.TryGetSpritePixelsPerUnit(filePath, out float pixelsPerUnit))
+        {
             importedAsset.PixelsPerUnit = pixelsPerUnit;
+            // SpriteImporter builds the preview sprite at a fixed 100 PPU. Rebuild it with the
+            // project's real PPU so the size at placement matches the size after reload (and Unity).
+            ApplyPixelsPerUnitToPreviewSprite(importedAsset, pixelsPerUnit);
+        }
 
         AssetStorageService.SaveMetaData(importedAsset);
         return importedAsset;
+    }
+
+    static void ApplyPixelsPerUnitToPreviewSprite(ImportedAssetMetaData asset, float pixelsPerUnit)
+    {
+        if (pixelsPerUnit <= 0f || asset is not ImportedSpriteData spriteData || spriteData.Sprite == null)
+            return;
+
+        Sprite current = spriteData.Sprite;
+        if (Mathf.Approximately(current.pixelsPerUnit, pixelsPerUnit))
+            return;
+
+        Sprite rebuilt = Sprite.Create(current.texture, current.rect, new Vector2(0.5f, 0.5f), pixelsPerUnit);
+        rebuilt.name = current.name;
+        spriteData.Sprite = rebuilt;
     }
 
     ImportedAssetMetaData ImportUnityPrefabReference(string projectRoot, string filePath, string relativePath, string folderPath, Dictionary<string, string> guidToAssetPath)
