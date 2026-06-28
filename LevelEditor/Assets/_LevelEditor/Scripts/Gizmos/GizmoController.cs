@@ -140,11 +140,8 @@ public class GizmoController
     {
         if (tempParentObject != null)
         {
-            foreach (var target in _currentGizmoTargets)
-            {
-                LevelObjectsRoot.Instance.AddObjectToLevelObjectRoot(target.BaseObject);
-            }
-
+            // DisableAndDetach restores each object to its original parent (root OR its group),
+            // so we must NOT force everything to the root here.
             tempParentObject.DisableAndDetach();
         }
     }
