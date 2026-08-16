@@ -1,0 +1,197 @@
+.onboarding-root {
+    position: absolute;
+    left: 0;
+    right: 0;
+    top: 0;
+    bottom: 0;
+}
+
+.onboarding-overlay {
+    position: absolute;
+    left: 0;
+    right: 0;
+    top: 0;
+    bottom: 0;
+    justify-content: center;
+    align-items: center;
+    background-color: rgba(25, 25, 28, 0.55);
+}
+
+.onboarding-panel {
+    width: 720px;
+    max-height: 90%;
+    background-color: rgb(232, 232, 232);
+    border-width: 1px;
+    border-color: rgb(95, 95, 95);
+    border-radius: 6px;
+    padding-left: 22px;
+    padding-right: 22px;
+    padding-top: 18px;
+    padding-bottom: 16px;
+    flex-direction: column;
+}
+
+.onboarding-header {
+    margin-bottom: 14px;
+}
+
+.onboarding-title {
+    color: rgb(30, 30, 30);
+    -unity-font-style: bold;
+    font-size: 22px;
+    margin-bottom: 4px;
+}
+
+.onboarding-subtitle {
+    color: rgb(70, 70, 70);
+    font-size: 13px;
+    white-space: normal;
+}
+
+.onboarding-section {
+    flex-direction: column;
+    margin-bottom: 8px;
+}
+
+.onboarding-section-title {
+    color: rgb(45, 45, 45);
+    -unity-font-style: bold;
+    font-size: 14px;
+    margin-bottom: 8px;
+}
+
+.onboarding-recent-scroll {
+    max-height: 180px;
+    background-color: rgb(215, 215, 215);
+    border-width: 1px;
+    border-color: rgb(160, 160, 160);
+    border-radius: 3px;
+    margin-bottom: 8px;
+    padding-top: 4px;
+    padding-bottom: 4px;
+}
+
+.onboarding-recent-list {
+    flex-direction: column;
+    padding-left: 4px;
+    padding-right: 4px;
+}
+
+.onboarding-empty-label {
+    color: rgb(100, 100, 100);
+    font-size: 12px;
+    padding-left: 10px;
+    padding-right: 10px;
+    padding-top: 10px;
+    padding-bottom: 10px;
+}
+
+/* Filled from C#: add buttons with this class to onboarding-recent-list */
+.onboarding-recent-item {
+    height: 34px;
+    margin-left: 4px;
+    margin-right: 4px;
+    margin-top: 2px;
+    margin-bottom: 2px;
+    padding-left: 10px;
+    padding-right: 10px;
+    border-width: 0;
+    border-radius: 3px;
+    -unity-text-align: middle-left;
+    background-color: rgba(0, 0, 0, 0);
+    color: rgb(35, 35, 35);
+}
+
+.onboarding-recent-item:hover {
+    background-color: rgb(200, 210, 230);
+}
+
+.onboarding-secondary-button {
+    align-self: flex-start;
+    min-height: 28px;
+    padding-left: 12px;
+    padding-right: 12px;
+    background-color: rgb(230, 230, 230);
+    border-width: 1px;
+    border-color: rgb(140, 140, 140);
+    border-radius: 2px;
+}
+
+.onboarding-secondary-button:hover {
+    background-color: rgb(240, 240, 240);
+}
+
+.onboarding-divider {
+    height: 1px;
+    background-color: rgb(170, 170, 170);
+    margin-top: 10px;
+    margin-bottom: 14px;
+}
+
+.onboarding-new-row {
+    flex-direction: row;
+    justify-content: space-between;
+}
+
+.onboarding-choice-card {
+    flex-grow: 1;
+    flex-shrink: 1;
+    width: 0;
+    min-height: 96px;
+    margin-right: 8px;
+    padding-left: 14px;
+    padding-right: 14px;
+    padding-top: 12px;
+    padding-bottom: 12px;
+    background-color: rgb(245, 245, 245);
+    border-width: 1px;
+    border-color: rgb(140, 140, 140);
+    border-radius: 4px;
+    flex-direction: column;
+    align-items: flex-start;
+    justify-content: flex-start;
+}
+
+.onboarding-choice-card:last-child {
+    margin-right: 0;
+}
+
+.onboarding-choice-card:hover {
+    background-color: rgb(220, 228, 242);
+    border-color: rgb(110, 130, 170);
+}
+
+.onboarding-choice-title {
+    color: rgb(30, 30, 30);
+    -unity-font-style: bold;
+    font-size: 15px;
+    margin-bottom: 6px;
+}
+
+.onboarding-choice-desc {
+    color: rgb(70, 70, 70);
+    font-size: 12px;
+    white-space: normal;
+}
+
+.onboarding-footer {
+    margin-top: 14px;
+    flex-direction: row;
+    justify-content: flex-end;
+}
+
+.onboarding-skip-button {
+    min-height: 28px;
+    padding-left: 12px;
+    padding-right: 12px;
+    background-color: rgba(0, 0, 0, 0);
+    border-width: 0;
+    color: rgb(90, 90, 90);
+    font-size: 12px;
+}
+
+.onboarding-skip-button:hover {
+    color: rgb(40, 40, 40);
+    background-color: rgb(210, 210, 210);
+    border-radius: 2px;
+}

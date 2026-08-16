@@ -1,0 +1,46 @@
+<ui:UXML xmlns:ui="UnityEngine.UIElements" editor-extension-mode="False">
+    <Style src="OnboardingScreen.uss" />
+    <ui:VisualElement name="onboarding-root" class="onboarding-root">
+        <ui:VisualElement name="onboarding-overlay" class="onboarding-overlay">
+            <ui:VisualElement name="onboarding-panel" class="onboarding-panel">
+
+                <ui:VisualElement class="onboarding-header">
+                    <ui:Label name="onboarding-title" text="Playtest Blocks" class="onboarding-title" />
+                    <ui:Label name="onboarding-subtitle" text="Start a project to begin building levels." class="onboarding-subtitle" />
+                </ui:VisualElement>
+
+                <ui:VisualElement name="onboarding-recent-section" class="onboarding-section">
+                    <ui:Label text="Recent projects" class="onboarding-section-title" />
+                    <ui:ScrollView name="onboarding-recent-scroll" class="onboarding-recent-scroll" mode="Vertical">
+                        <ui:VisualElement name="onboarding-recent-list" class="onboarding-recent-list">
+                            <!-- Recent project buttons are filled from C# (LevelProjectRecentList). -->
+                            <ui:Label name="onboarding-recent-empty" text="No recent projects yet." class="onboarding-empty-label" />
+                        </ui:VisualElement>
+                    </ui:ScrollView>
+                    <ui:Button name="onboarding-open-project-button" text="Open other project…" class="onboarding-secondary-button" />
+                </ui:VisualElement>
+
+                <ui:VisualElement class="onboarding-divider" />
+
+                <ui:VisualElement name="onboarding-new-section" class="onboarding-section">
+                    <ui:Label text="New project" class="onboarding-section-title" />
+                    <ui:VisualElement class="onboarding-new-row">
+                        <ui:Button name="onboarding-new-unity-button" class="onboarding-choice-card">
+                            <ui:Label text="Unity" class="onboarding-choice-title" />
+                            <ui:Label text="Link a Unity project and start with game assets." class="onboarding-choice-desc" />
+                        </ui:Button>
+                        <ui:Button name="onboarding-new-finished-game-button" class="onboarding-choice-card">
+                            <ui:Label text="Finished game" class="onboarding-choice-title" />
+                            <ui:Label text="Import an existing level JSON from your game." class="onboarding-choice-desc" />
+                        </ui:Button>
+                    </ui:VisualElement>
+                </ui:VisualElement>
+
+                <ui:VisualElement class="onboarding-footer">
+                    <ui:Button name="onboarding-skip-button" text="Continue without project" class="onboarding-skip-button" />
+                </ui:VisualElement>
+
+            </ui:VisualElement>
+        </ui:VisualElement>
+    </ui:VisualElement>
+</ui:UXML>
